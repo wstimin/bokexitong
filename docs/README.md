@@ -36,16 +36,27 @@
 4. 启动前端：在 `frontend` 目录执行 `npm install`，再执行 `npm run dev`
 5. 访问前端：`http://localhost:5173`
 
-## 服务器 Docker 部署
+## 服务器一键拉取部署
 
-服务器推荐安装 Docker 和 Docker Compose，然后在项目根目录执行：
+新服务器推荐直接执行下面这一条命令，脚本会自动安装基础工具、拉取 GitHub 项目、安装 Docker、生成 `.env`，并启动 MySQL 8、后端和前端：
 
 ```bash
-cp .env.example .env
-docker compose up -d --build
+curl -fsSL https://raw.githubusercontent.com/wstimin/bokexitong/main/scripts/install.sh | bash
 ```
 
-也可以使用一键部署脚本：
+默认安装目录是 `/opt/bokexitong`。如果想安装到指定目录，例如宝塔常用目录，可以这样执行：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/wstimin/bokexitong/main/scripts/install.sh | INSTALL_DIR=/www/wwwroot/bokexitong bash
+```
+
+如果服务器提示 `curl: command not found`，先安装 curl：
+
+```bash
+apt update && apt install -y curl
+```
+
+如果项目已经下载到服务器，也可以在项目根目录执行：
 
 ```bash
 chmod +x scripts/deploy.sh

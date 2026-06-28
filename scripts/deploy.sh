@@ -71,9 +71,16 @@ create_env_file() {
     return
   fi
 
-  info "Creating .env file. Press Enter to use generated defaults."
-  read -r -p "MySQL root password: " MYSQL_PASSWORD_INPUT || true
-  read -r -p "JWT secret, at least 32 chars: " JWT_SECRET_INPUT || true
+  MYSQL_PASSWORD_INPUT=""
+  JWT_SECRET_INPUT=""
+
+  if [ "${DEPLOY_AUTO_YES:-}" = "1" ] || [ ! -t 0 ]; then
+    info "Creating .env file with generated secrets."
+  else
+    info "Creating .env file. Press Enter to use generated defaults."
+    read -r -p "MySQL root password: " MYSQL_PASSWORD_INPUT || true
+    read -r -p "JWT secret, at least 32 chars: " JWT_SECRET_INPUT || true
+  fi
 
   MYSQL_PASSWORD="${MYSQL_PASSWORD_INPUT:-$(openssl rand -hex 12 2>/dev/null || date +%s%N)}"
   JWT_SECRET="${JWT_SECRET_INPUT:-$(openssl rand -hex 32 2>/dev/null || date +%s%N)-jwt-secret-change-me}"

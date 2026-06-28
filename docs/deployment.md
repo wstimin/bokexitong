@@ -73,18 +73,47 @@ Rocky 9 / AlmaLinux 9 也可以使用：
 dnf install -y curl wget git vim unzip tar ca-certificates
 ```
 
-### 2. 方式一：安装 Docker 和 Docker Compose
+### 2. 方式一：一键拉取并部署，推荐
 
-如果你准备用项目根目录的 `docker-compose.yml` 部署，只需要安装 Docker。
-
-项目已经提供一键部署脚本，上传项目到服务器后可以直接执行：
+新服务器直接复制下面这一条命令执行即可：
 
 ```bash
-chmod +x scripts/deploy.sh
-bash scripts/deploy.sh
+curl -fsSL https://raw.githubusercontent.com/wstimin/bokexitong/main/scripts/install.sh | bash
 ```
 
-脚本会自动检查 Docker、创建 `.env`、构建并启动 MySQL 8、后端和前端服务。下面的 Docker 安装命令适合需要手动安装或排查环境时使用。
+这条命令会自动完成：
+
+- 安装基础工具：`git`、`curl`、`ca-certificates`、`openssl`
+- 拉取 GitHub 仓库：`https://github.com/wstimin/bokexitong.git`
+- 默认安装到：`/opt/bokexitong`
+- 安装 Docker 和 Docker Compose 插件
+- 自动生成 `.env`，包含 MySQL 8 密码和 JWT 密钥
+- 构建并启动 MySQL 8、Spring Boot 后端、Vue 前端
+
+如果想指定安装目录，例如安装到宝塔站点目录：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/wstimin/bokexitong/main/scripts/install.sh | INSTALL_DIR=/www/wwwroot/bokexitong bash
+```
+
+如果服务器没有 `curl`，先执行：
+
+Ubuntu / Debian：
+
+```bash
+apt update
+apt install -y curl
+```
+
+CentOS / Rocky / AlmaLinux：
+
+```bash
+yum install -y curl
+```
+
+后续更新项目，也执行同一条命令即可，脚本会进入安装目录自动 `git pull` 并重新部署。
+
+下面的 Docker 安装命令适合需要手动安装或排查环境时使用。
 
 Ubuntu / Debian：
 
@@ -370,6 +399,20 @@ Nginx 1.20+
 
 宝塔部署适合不熟悉命令行的服务器用户。推荐使用“前端静态站点 + 后端 Java 项目 + MySQL 8”的方式部署。
 
+如果只是想快速跑起来，推荐在宝塔“终端”里执行一键拉取部署命令：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/wstimin/bokexitong/main/scripts/install.sh | INSTALL_DIR=/www/wwwroot/bokexitong bash
+```
+
+脚本会自动拉取 GitHub 仓库、安装 Docker、生成 `.env`，并启动 MySQL 8、后端和前端。部署完成后直接访问：
+
+```text
+http://服务器IP/
+```
+
+如果你想完全通过宝塔的 Java 项目、MySQL、Nginx 站点来管理，可以按下面的手动方式部署。
+
 ### 1. 安装环境
 
 在宝塔软件商店安装：
@@ -542,7 +585,25 @@ http://你的域名/login
 
 1Panel 推荐使用 Docker Compose 部署，最省心，也最适合后续迁移。
 
-### 1. 上传项目
+### 1. 快速方式：SSH 一键拉取部署
+
+在 1Panel 服务器的 SSH 终端中执行：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/wstimin/bokexitong/main/scripts/install.sh | INSTALL_DIR=/opt/bokexitong bash
+```
+
+脚本会自动拉取 GitHub 仓库、安装 Docker、生成 `.env`，并启动 MySQL 8、后端和前端。
+
+部署完成后，在 1Panel 中进入“容器”即可看到：
+
+- `anime-blog-mysql`
+- `anime-blog-backend`
+- `anime-blog-frontend`
+
+如果后续需要更新项目，继续执行同一条命令即可。
+
+### 2. 面板方式：上传或拉取项目
 
 在 1Panel 中进入：文件，上传整个项目到服务器，例如：
 
@@ -554,11 +615,11 @@ http://你的域名/login
 
 ```bash
 cd /opt
-git clone 你的仓库地址 anime-blog
+git clone https://github.com/wstimin/bokexitong.git anime-blog
 cd anime-blog
 ```
 
-### 2. 修改环境变量
+### 3. 修改环境变量
 
 在项目根目录复制环境变量文件：
 
@@ -573,7 +634,7 @@ MYSQL_ROOT_PASSWORD=请改成强密码
 BLOG_JWT_SECRET=请改成至少32位的随机字符串
 ```
 
-### 3. 使用 1Panel 编排部署
+### 4. 使用 1Panel 编排部署
 
 进入 1Panel：容器 -> 编排 -> 创建编排。
 
@@ -595,7 +656,7 @@ MySQL 首次启动会自动执行：
 sql/personal_blog.sql
 ```
 
-### 4. 1Panel 网站反向代理
+### 5. 1Panel 网站反向代理
 
 如果直接使用 `docker-compose.yml` 中的 `80:80`，访问服务器 IP 即可。
 
@@ -616,7 +677,7 @@ http://127.0.0.1:18080
 
 3. 绑定域名并申请 HTTPS 证书。
 
-### 5. 1Panel 部署检查
+### 6. 1Panel 部署检查
 
 查看容器日志：
 
@@ -640,11 +701,81 @@ http://你的域名/api/portal/home
 
 ## 五、服务器直接部署
 
-服务器直接部署分两种：Docker Compose 一键部署，以及不使用 Docker 的手动部署。
+服务器直接部署分三种：一键拉取部署、手动 Docker Compose 部署，以及不使用 Docker 的完全手动部署。
 
-### 方案 A：Docker Compose 一键部署
+### 方案 A：一键拉取 + Docker Compose 部署
 
-这是最推荐的服务器部署方式。
+这是最推荐的服务器直接部署方式。登录服务器后执行：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/wstimin/bokexitong/main/scripts/install.sh | bash
+```
+
+脚本默认会把项目安装到：
+
+```text
+/opt/bokexitong
+```
+
+部署完成后访问：
+
+```text
+http://服务器IP/
+```
+
+后续更新代码并重新部署，继续执行同一条命令：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/wstimin/bokexitong/main/scripts/install.sh | bash
+```
+
+常用目录：
+
+```bash
+cd /opt/bokexitong
+```
+
+查看服务状态：
+
+```bash
+docker compose ps
+```
+
+查看日志：
+
+```bash
+docker compose logs -f
+```
+
+重启服务：
+
+```bash
+docker compose restart
+```
+
+停止服务：
+
+```bash
+docker compose down
+```
+
+如果你要指定安装目录：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/wstimin/bokexitong/main/scripts/install.sh | INSTALL_DIR=/opt/anime-blog bash
+```
+
+如果项目已经在服务器本地目录中，只想在项目目录内重新部署，可以执行：
+
+```bash
+cd /opt/bokexitong
+chmod +x scripts/deploy.sh
+bash scripts/deploy.sh
+```
+
+### 方案 B：手动 Docker Compose 部署
+
+这是备用方式，适合你想手动控制代码目录、`.env` 内容和 Docker Compose 启动过程的情况。
 
 ### 1. 安装 Docker
 
@@ -663,11 +794,11 @@ docker -v
 docker compose version
 ```
 
-### 2. 上传项目并配置环境变量
+### 2. 拉取项目并配置环境变量
 
 ```bash
 cd /opt
-# 上传项目到 /opt/anime-blog 后进入目录
+git clone https://github.com/wstimin/bokexitong.git anime-blog
 cd /opt/anime-blog
 cp .env.example .env
 vi .env
@@ -686,7 +817,7 @@ BLOG_JWT_SECRET=请改成至少32位的随机字符串
 docker compose up -d --build
 ```
 
-也可以直接使用项目的一键部署脚本：
+如果项目已经下载到服务器，也可以直接使用项目内的一键部署脚本：
 
 ```bash
 chmod +x scripts/deploy.sh
@@ -743,7 +874,7 @@ docker exec anime-blog-mysql mysqldump -uroot -p personal_blog > personal_blog_b
 docker exec -i anime-blog-mysql mysql -uroot -p personal_blog < personal_blog_backup.sql
 ```
 
-### 方案 B：不使用 Docker 的手动部署
+### 方案 C：不使用 Docker 的手动部署
 
 适合已有 MySQL 8、Nginx、JDK 17 的服务器。
 
