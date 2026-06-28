@@ -45,6 +45,13 @@ cp .env.example .env
 docker compose up -d --build
 ```
 
+也可以使用一键部署脚本：
+
+```bash
+chmod +x scripts/deploy.sh
+bash scripts/deploy.sh
+```
+
 部署后访问：
 
 - 前端：`http://服务器IP/`

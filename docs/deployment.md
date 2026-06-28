@@ -77,6 +77,15 @@ dnf install -y curl wget git vim unzip tar ca-certificates
 
 如果你准备用项目根目录的 `docker-compose.yml` 部署，只需要安装 Docker。
 
+项目已经提供一键部署脚本，上传项目到服务器后可以直接执行：
+
+```bash
+chmod +x scripts/deploy.sh
+bash scripts/deploy.sh
+```
+
+脚本会自动检查 Docker、创建 `.env`、构建并启动 MySQL 8、后端和前端服务。下面的 Docker 安装命令适合需要手动安装或排查环境时使用。
+
 Ubuntu / Debian：
 
 ```bash
@@ -675,6 +684,13 @@ BLOG_JWT_SECRET=请改成至少32位的随机字符串
 
 ```bash
 docker compose up -d --build
+```
+
+也可以直接使用项目的一键部署脚本：
+
+```bash
+chmod +x scripts/deploy.sh
+bash scripts/deploy.sh
 ```
 
 查看服务状态：
