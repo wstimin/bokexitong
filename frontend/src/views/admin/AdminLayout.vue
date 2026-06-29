@@ -14,16 +14,31 @@
     <main class="admin-main">
       <div class="admin-header">
         <h1>{{ title }}</h1>
-        <RouterLink class="btn-ghost" to="/">返回前台</RouterLink>
+        <div class="hero-actions">
+          <button class="btn-ghost" @click="passwordVisible = true">修改密码</button>
+          <RouterLink class="btn-ghost" to="/">返回前台</RouterLink>
+        </div>
       </div>
       <RouterView />
     </main>
+    <el-dialog v-model="passwordVisible" title="修改密码" width="420px">
+      <el-form label-position="top">
+        <el-form-item label="原密码"><el-input v-model="password.oldPassword" type="password" show-password /></el-form-item>
+        <el-form-item label="新密码"><el-input v-model="password.newPassword" type="password" show-password /></el-form-item>
+      </el-form>
+      <template #footer>
+        <button class="btn-ghost" @click="passwordVisible = false">取消</button>
+        <button class="btn-primary" @click="changePassword">保存</button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, reactive, ref } from 'vue'
+import { ElMessage } from 'element-plus'
 import { useRoute } from 'vue-router'
+import { userApi } from '../../api/blog'
 
 const route = useRoute()
 const names = {
@@ -35,4 +50,13 @@ const names = {
   '/admin/users': '用户权限'
 }
 const title = computed(() => names[route.path] || '后台管理')
+const passwordVisible = ref(false)
+const password = reactive({ oldPassword: '', newPassword: '' })
+const changePassword = async () => {
+  await userApi.changePassword({ ...password })
+  password.oldPassword = ''
+  password.newPassword = ''
+  passwordVisible.value = false
+  ElMessage.success('密码已修改')
+}
 </script>

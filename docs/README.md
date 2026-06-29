@@ -1,6 +1,6 @@
 # 二次元风格个人博客系统
 
-这是一个基于 Spring Boot 3 + Vue 3 + MySQL 8 的前后端分离个人博客系统，按“前台门户 + 创作中心 + 后台管理”的结构实现。视觉风格偏二次元，图片不内置生成，统一通过后台录入 URL 使用。
+这是一个基于 Spring Boot 3 + Vue 3 + MySQL 8 的前后端分离个人博客系统，按“前台门户 + 用户中心 + 后台管理”的结构实现。前台只展示公开文章，登录用户在用户中心发布和管理自己的文章，后台管理通过 `/admin` 路径进入。
 
 ## 技术栈
 
@@ -13,9 +13,9 @@
 
 - 前台门户：首页横幅、文章列表、分类、标签云、文章详情、Markdown 渲染、代码高亮
 - 互动社区：登录后评论、点赞、收藏
-- 创作中心：发布文章、草稿、封面图片 URL、Markdown 正文
-- 后台管理：仪表盘、文章管理、分类标签、评论审核、用户封禁/解封
-- 图片链接管理：新增、编辑、删除图片 URL，支持 HERO、COVER、AVATAR、RECOMMEND 用途和预览
+- 用户中心：维护个人资料、修改密码、发布文章、草稿、编辑/删除自己的文章，支持上传图片、视频和附件
+- 后台管理：仪表盘、文章管理、分类标签、评论审核、用户资料/角色/状态/密码管理
+- 图片链接管理：后台新增、编辑、删除图片 URL，支持 HERO、COVER、AVATAR、RECOMMEND 用途和预览
 
 ## 图片 URL 使用方式
 
@@ -26,7 +26,7 @@
 - `AVATAR`：可作为用户头像素材
 - `RECOMMEND`：可作为推荐位图片素材
 
-文章发布页也支持直接输入封面图片 URL。
+用户中心发布文章时支持上传封面图片，也支持直接输入封面图片 URL。
 
 ## 本地启动步骤
 
@@ -99,10 +99,17 @@ SPRING_DATASOURCE_PASSWORD=你的密码
 ## 后端接口简表
 
 - `POST /api/auth/login`：登录
+- `GET /api/users/me`：当前用户资料
+- `PUT /api/users/me`：修改当前用户资料
+- `PUT /api/users/me/password`：修改当前用户密码
 - `GET /api/portal/home`：首页数据
 - `GET /api/portal/articles`：公开文章分页
 - `GET /api/portal/articles/{id}`：文章详情
+- `GET /api/articles/mine`：我的文章分页
 - `POST /api/articles`：发布/保存文章
+- `PUT /api/articles/{id}`：修改自己的文章
+- `DELETE /api/articles/{id}`：删除自己的文章
+- `POST /api/uploads`：登录后上传文件、图片或视频
 - `GET /api/admin/dashboard`：后台统计
 - `GET|POST|DELETE /api/admin/images`：图片 URL 管理
 - `GET|POST|DELETE /api/admin/categories`：分类管理

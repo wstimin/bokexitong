@@ -1,8 +1,12 @@
 package com.example.blog.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.example.blog.dto.AdminUserRequest;
 import com.example.blog.dto.LoginRequest;
 import com.example.blog.dto.LoginResponse;
+import com.example.blog.dto.PasswordChangeRequest;
+import com.example.blog.dto.PasswordResetRequest;
+import com.example.blog.dto.ProfileRequest;
 import com.example.blog.dto.RegisterRequest;
 import com.example.blog.entity.BlogUser;
 import com.example.blog.mapper.BlogUserMapper;
@@ -56,5 +60,76 @@ public class AuthService {
         userMapper.insert(user);
         user.setPassword(null);
         return user;
+    }
+
+    public BlogUser currentUser(Long userId) {
+        BlogUser user = userMapper.selectById(userId);
+        if (user == null) {
+            throw new IllegalArgumentException("用户不存在");
+        }
+        user.setPassword(null);
+        return user;
+    }
+
+    public BlogUser updateProfile(Long userId, ProfileRequest request) {
+        BlogUser user = userMapper.selectById(userId);
+        if (user == null) {
+            throw new IllegalArgumentException("用户不存在");
+        }
+        user.setNickname(request.getNickname());
+        user.setAvatar(request.getAvatar());
+        user.setEmail(request.getEmail());
+        user.setUpdatedAt(LocalDateTime.now());
+        userMapper.updateById(user);
+        user.setPassword(null);
+        return user;
+    }
+
+    public void changePassword(Long userId, PasswordChangeRequest request) {
+        BlogUser user = userMapper.selectById(userId);
+        if (user == null) {
+            throw new IllegalArgumentException("用户不存在");
+        }
+        if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
+            throw new IllegalArgumentException("原密码不正确");
+        }
+        updatePassword(user, request.getNewPassword());
+    }
+
+    public BlogUser updateUserByAdmin(Long id, AdminUserRequest request) {
+        BlogUser user = userMapper.selectById(id);
+        if (user == null) {
+            throw new IllegalArgumentException("用户不存在");
+        }
+        user.setNickname(request.getNickname());
+        user.setAvatar(request.getAvatar());
+        user.setEmail(request.getEmail());
+        if (request.getRole() != null && !request.getRole().isBlank()) {
+            user.setRole(request.getRole());
+        }
+        if (request.getStatus() != null) {
+            user.setStatus(request.getStatus());
+        }
+        user.setUpdatedAt(LocalDateTime.now());
+        userMapper.updateById(user);
+        user.setPassword(null);
+        return user;
+    }
+
+    public void resetPasswordByAdmin(Long id, PasswordResetRequest request) {
+        BlogUser user = userMapper.selectById(id);
+        if (user == null) {
+            throw new IllegalArgumentException("用户不存在");
+        }
+        updatePassword(user, request.getNewPassword());
+    }
+
+    private void updatePassword(BlogUser user, String newPassword) {
+        if (newPassword == null || newPassword.length() < 6) {
+            throw new IllegalArgumentException("新密码至少 6 位");
+        }
+        user.setPassword(passwordEncoder.encode(newPassword));
+        user.setUpdatedAt(LocalDateTime.now());
+        userMapper.updateById(user);
     }
 }

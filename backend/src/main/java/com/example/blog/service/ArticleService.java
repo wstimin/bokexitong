@@ -56,9 +56,22 @@ public class ArticleService {
         return article;
     }
 
+    public Article publicDetail(Long id) {
+        Article article = detail(id, false);
+        if (!"PUBLISHED".equals(article.getStatus())) {
+            throw new IllegalArgumentException("文章不存在");
+        }
+        article.setViewCount((article.getViewCount() == null ? 0 : article.getViewCount()) + 1);
+        articleMapper.updateById(article);
+        return article;
+    }
+
     @Transactional
     public Article saveArticle(Long id, Long userId, ArticleRequest request) {
         Article article = id == null ? new Article() : detail(id, false);
+        if (id != null && !userId.equals(article.getUserId())) {
+            throw new IllegalArgumentException("只能修改自己的文章");
+        }
         article.setUserId(article.getUserId() == null ? userId : article.getUserId());
         article.setCategoryId(request.getCategoryId());
         article.setTitle(request.getTitle());
@@ -95,6 +108,23 @@ public class ArticleService {
         likeRecordMapper.delete(new LambdaQueryWrapper<LikeRecord>().in(LikeRecord::getArticleId, ids));
         favoriteMapper.delete(new LambdaQueryWrapper<Favorite>().in(Favorite::getArticleId, ids));
         articleMapper.deleteBatchIds(ids);
+    }
+
+    @Transactional
+    public void removeByOwner(Long id, Long userId) {
+        Article article = detail(id, false);
+        if (!userId.equals(article.getUserId())) {
+            throw new IllegalArgumentException("只能删除自己的文章");
+        }
+        removeBatch(List.of(id));
+    }
+
+    public Page<Article> userPage(Long userId, long current, long size, String keyword, String status) {
+        return articleMapper.selectPage(new Page<>(current, size), new LambdaQueryWrapper<Article>()
+                .eq(Article::getUserId, userId)
+                .like(keyword != null && !keyword.isBlank(), Article::getTitle, keyword)
+                .eq(status != null && !status.isBlank(), Article::getStatus, status)
+                .orderByDesc(Article::getUpdatedAt, Article::getCreatedAt));
     }
 
     private void syncTags(Long articleId, List<Long> tagIds) {

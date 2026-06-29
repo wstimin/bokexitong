@@ -5,10 +5,7 @@
       <div class="shell hero-content">
         <span class="eyebrow">Anime Style Personal Blog</span>
         <h1>星绘 Blog</h1>
-        <p>一个二次元风格的个人博客系统，支持文章、分类、标签、评论、点赞、收藏、创作中心和后台数据看板。</p>
-        <div class="hero-actions">
-          <RouterLink class="btn-primary" to="/create">开始创作</RouterLink>
-        </div>
+        <p>这里展示最新发布的文章。登录后的用户可以在用户中心创作内容、维护资料和修改密码。</p>
       </div>
     </section>
 
@@ -16,7 +13,6 @@
       <section>
         <div class="section-title">
           <h2>最新文章</h2>
-          <RouterLink class="nav-link" to="/create">发布文章</RouterLink>
         </div>
         <div class="article-grid">
           <ArticleCard v-for="article in articles" :key="article.id" :article="article" />

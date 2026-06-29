@@ -22,6 +22,7 @@ public class ArticleController {
     }
 
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public Result<Page<Article>> page(@RequestParam(defaultValue = "1") long current,
                                       @RequestParam(defaultValue = "10") long size,
                                       @RequestParam(required = false) String keyword,
@@ -30,7 +31,17 @@ public class ArticleController {
         return Result.ok(articleService.page(current, size, keyword, status, categoryId));
     }
 
+    @GetMapping("/mine")
+    public Result<Page<Article>> mine(@AuthenticationPrincipal BlogPrincipal principal,
+                                      @RequestParam(defaultValue = "1") long current,
+                                      @RequestParam(defaultValue = "10") long size,
+                                      @RequestParam(required = false) String keyword,
+                                      @RequestParam(required = false) String status) {
+        return Result.ok(articleService.userPage(principal.userId(), current, size, keyword, status));
+    }
+
     @GetMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public Result<Article> detail(@PathVariable Long id) {
         return Result.ok(articleService.detail(id, false));
     }
@@ -50,6 +61,12 @@ public class ArticleController {
     @PreAuthorize("hasRole('ADMIN')")
     public Result<Void> remove(@RequestBody List<Long> ids) {
         articleService.removeBatch(ids);
+        return Result.ok();
+    }
+
+    @DeleteMapping("/{id}")
+    public Result<Void> removeMine(@AuthenticationPrincipal BlogPrincipal principal, @PathVariable Long id) {
+        articleService.removeByOwner(id, principal.userId());
         return Result.ok();
     }
 }

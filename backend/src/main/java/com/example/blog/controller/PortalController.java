@@ -57,6 +57,6 @@ public class PortalController {
 
     @GetMapping("/articles/{id}")
     public Result<Article> detail(@PathVariable Long id) {
-        return Result.ok(articleService.detail(id, true));
+        return Result.ok(articleService.publicDetail(id));
     }
 }

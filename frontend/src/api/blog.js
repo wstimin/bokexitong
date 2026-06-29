@@ -5,6 +5,12 @@ export const authApi = {
   register: (data) => http.post('/auth/register', data)
 }
 
+export const userApi = {
+  me: () => http.get('/users/me'),
+  updateProfile: (data) => http.put('/users/me', data),
+  changePassword: (data) => http.put('/users/me/password', data)
+}
+
 export const portalApi = {
   home: () => http.get('/portal/home'),
   articles: (params) => http.get('/portal/articles', { params }),
@@ -13,8 +19,10 @@ export const portalApi = {
 
 export const articleApi = {
   page: (params) => http.get('/articles', { params }),
+  mine: (params) => http.get('/articles/mine', { params }),
   save: (data) => http.post('/articles', data),
   update: (id, data) => http.put(`/articles/${id}`, data),
+  removeMine: (id) => http.delete(`/articles/${id}`),
   remove: (ids) => http.delete('/articles', { data: ids }),
   like: (id) => http.post(`/articles/${id}/like`),
   favorite: (id) => http.post(`/articles/${id}/favorite`)
@@ -33,6 +41,8 @@ export const adminApi = {
   deleteImage: (id) => http.delete(`/admin/images/${id}`),
   users: (params) => http.get('/admin/users', { params }),
   userStatus: (id, status) => http.put(`/admin/users/${id}/status`, null, { params: { status } }),
+  updateUser: (id, data) => http.put(`/admin/users/${id}`, data),
+  resetUserPassword: (id, data) => http.put(`/admin/users/${id}/password`, data),
   deleteUser: (id) => http.delete(`/admin/users/${id}`),
   comments: (params) => http.get('/admin/comments', { params }),
   auditComment: (id, status) => http.put(`/admin/comments/${id}/status`, null, { params: { status } }),
@@ -42,4 +52,12 @@ export const adminApi = {
 export const commentApi = {
   page: (params) => http.get('/comments', { params }),
   save: (data) => http.post('/comments', data)
+}
+
+export const uploadApi = {
+  file: (file) => {
+    const form = new FormData()
+    form.append('file', file)
+    return http.post('/uploads', form, { headers: { 'Content-Type': 'multipart/form-data' } })
+  }
 }

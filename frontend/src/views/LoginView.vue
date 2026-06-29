@@ -22,6 +22,6 @@ const auth = useAuthStore()
 const router = useRouter()
 const login = async () => {
   await auth.login(form)
-  router.push(auth.isAdmin ? '/admin/dashboard' : '/')
+  router.push(router.currentRoute.value.query.redirect || '/user')
 }
 </script>

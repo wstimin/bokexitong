@@ -4,7 +4,7 @@ import { useAuthStore } from '../stores/auth'
 const routes = [
   { path: '/', component: () => import('../views/portal/HomeView.vue') },
   { path: '/article/:id', component: () => import('../views/portal/ArticleDetail.vue') },
-  { path: '/create', component: () => import('../views/portal/CreateCenter.vue') },
+  { path: '/create', redirect: '/user' },
   { path: '/user', component: () => import('../views/portal/UserCenter.vue') },
   { path: '/login', component: () => import('../views/LoginView.vue') },
   {
@@ -26,8 +26,11 @@ const router = createRouter({ history: createWebHistory(), routes })
 
 router.beforeEach((to) => {
   const auth = useAuthStore()
-  if ((to.path.startsWith('/admin') && !auth.isAdmin) || (to.path === '/create' && !auth.isLogin)) {
-    return '/login'
+  if (to.path.startsWith('/admin') && !auth.isAdmin) {
+    return '/login?redirect=/admin/dashboard'
+  }
+  if (to.path === '/user' && !auth.isLogin) {
+    return '/login?redirect=/user'
   }
 })
 

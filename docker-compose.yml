@@ -38,6 +38,8 @@ services:
       BLOG_JWT_SECRET: ${BLOG_JWT_SECRET:-please-change-this-secret-to-at-least-32-characters}
     ports:
       - "8080:8080"
+    volumes:
+      - upload-data:/app/uploads
 
   frontend:
     build:
@@ -51,3 +53,4 @@ services:
 
 volumes:
   mysql-data:
+  upload-data:

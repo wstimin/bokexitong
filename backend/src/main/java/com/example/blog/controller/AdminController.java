@@ -3,12 +3,15 @@ package com.example.blog.controller;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.blog.common.Result;
+import com.example.blog.dto.AdminUserRequest;
 import com.example.blog.dto.DashboardStats;
+import com.example.blog.dto.PasswordResetRequest;
 import com.example.blog.entity.*;
 import com.example.blog.mapper.*;
 import com.example.blog.service.DashboardService;
 import com.example.blog.service.InteractionService;
 import com.example.blog.service.ArticleService;
+import com.example.blog.service.AuthService;
 import com.example.blog.security.BlogPrincipal;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -30,11 +33,13 @@ public class AdminController {
     private final FavoriteMapper favoriteMapper;
     private final InteractionService interactionService;
     private final ArticleService articleService;
+    private final AuthService authService;
 
     public AdminController(DashboardService dashboardService, CategoryMapper categoryMapper, TagMapper tagMapper,
                            ImageResourceMapper imageResourceMapper, BlogUserMapper userMapper,
                            ArticleMapper articleMapper, CommentMapper commentMapper, LikeRecordMapper likeRecordMapper,
-                           FavoriteMapper favoriteMapper, InteractionService interactionService, ArticleService articleService) {
+                           FavoriteMapper favoriteMapper, InteractionService interactionService, ArticleService articleService,
+                           AuthService authService) {
         this.dashboardService = dashboardService;
         this.categoryMapper = categoryMapper;
         this.tagMapper = tagMapper;
@@ -46,6 +51,7 @@ public class AdminController {
         this.favoriteMapper = favoriteMapper;
         this.interactionService = interactionService;
         this.articleService = articleService;
+        this.authService = authService;
     }
 
     @GetMapping("/dashboard")
@@ -148,11 +154,28 @@ public class AdminController {
     }
 
     @PutMapping("/users/{id}/status")
-    public Result<Void> userStatus(@PathVariable Long id, @RequestParam Integer status) {
+    public Result<Void> userStatus(@AuthenticationPrincipal BlogPrincipal principal, @PathVariable Long id, @RequestParam Integer status) {
+        protectAdminAccess(principal == null ? null : principal.userId(), id, null, status);
         BlogUser user = userMapper.selectById(id);
+        if (user == null) {
+            throw new IllegalArgumentException("用户不存在");
+        }
         user.setStatus(status);
         user.setUpdatedAt(LocalDateTime.now());
         userMapper.updateById(user);
+        return Result.ok();
+    }
+
+    @PutMapping("/users/{id}")
+    public Result<BlogUser> updateUser(@AuthenticationPrincipal BlogPrincipal principal, @PathVariable Long id,
+                                       @RequestBody AdminUserRequest request) {
+        protectAdminAccess(principal == null ? null : principal.userId(), id, request.getRole(), request.getStatus());
+        return Result.ok(authService.updateUserByAdmin(id, request));
+    }
+
+    @PutMapping("/users/{id}/password")
+    public Result<Void> resetPassword(@PathVariable Long id, @RequestBody PasswordResetRequest request) {
+        authService.resetPasswordByAdmin(id, request);
         return Result.ok();
     }
 
@@ -180,6 +203,28 @@ public class AdminController {
         favoriteMapper.delete(new LambdaQueryWrapper<Favorite>().eq(Favorite::getUserId, id));
         userMapper.deleteById(id);
         return Result.ok();
+    }
+
+    private void protectAdminAccess(Long currentUserId, Long targetUserId, String nextRole, Integer nextStatus) {
+        BlogUser target = userMapper.selectById(targetUserId);
+        if (target == null || !"ADMIN".equals(target.getRole())) {
+            return;
+        }
+        boolean selfLock = currentUserId != null && currentUserId.equals(targetUserId)
+                && ((nextRole != null && !"ADMIN".equals(nextRole)) || (nextStatus != null && nextStatus == 0));
+        if (selfLock) {
+            throw new IllegalArgumentException("不能降级或封禁当前登录的管理员账号");
+        }
+        boolean removingAdmin = (nextRole != null && !"ADMIN".equals(nextRole)) || (nextStatus != null && nextStatus == 0);
+        boolean affectsActiveAdmin = target.getStatus() != null && target.getStatus() == 1 && removingAdmin;
+        if (affectsActiveAdmin) {
+            Long activeAdminCount = userMapper.selectCount(new LambdaQueryWrapper<BlogUser>()
+                    .eq(BlogUser::getRole, "ADMIN")
+                    .eq(BlogUser::getStatus, 1));
+            if (activeAdminCount <= 1) {
+                throw new IllegalArgumentException("至少需要保留一个可用的管理员账号");
+            }
+        }
     }
 
     @GetMapping("/comments")
