@@ -28,7 +28,7 @@ public class ArticleController {
                                       @RequestParam(required = false) String keyword,
                                       @RequestParam(required = false) String status,
                                       @RequestParam(required = false) Long categoryId) {
-        return Result.ok(articleService.page(current, size, keyword, status, categoryId));
+        return Result.ok(articleService.page(current, size, keyword, status, categoryId, null));
     }
 
     @GetMapping("/mine")

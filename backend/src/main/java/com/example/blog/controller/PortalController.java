@@ -37,7 +37,7 @@ public class PortalController {
     @GetMapping("/home")
     public Result<Map<String, Object>> home() {
         Map<String, Object> data = new HashMap<>();
-        data.put("articles", articleService.page(1, 6, null, "PUBLISHED", null).getRecords());
+        data.put("articles", articleService.page(1, 6, null, "PUBLISHED", null, null).getRecords());
         data.put("categories", categoryMapper.selectList(new LambdaQueryWrapper<Category>().orderByAsc(Category::getSort)));
         data.put("tags", tagMapper.selectList(new LambdaQueryWrapper<Tag>().orderByDesc(Tag::getCreatedAt)));
         data.put("hero", imageResourceMapper.selectList(new LambdaQueryWrapper<ImageResource>()
@@ -51,8 +51,9 @@ public class PortalController {
     public Result<Page<Article>> articles(@RequestParam(defaultValue = "1") long current,
                                           @RequestParam(defaultValue = "10") long size,
                                           @RequestParam(required = false) String keyword,
-                                          @RequestParam(required = false) Long categoryId) {
-        return Result.ok(articleService.page(current, size, keyword, "PUBLISHED", categoryId));
+                                          @RequestParam(required = false) Long categoryId,
+                                          @RequestParam(required = false) Long tagId) {
+        return Result.ok(articleService.page(current, size, keyword, "PUBLISHED", categoryId, tagId));
     }
 
     @GetMapping("/articles/{id}")

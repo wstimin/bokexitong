@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 
 @Service
@@ -36,11 +37,31 @@ public class ArticleService {
         this.favoriteMapper = favoriteMapper;
     }
 
-    public Page<Article> page(long current, long size, String keyword, String status, Long categoryId) {
+    public Page<Article> page(long current, long size, String keyword, String status, Long categoryId, Long tagId) {
+        boolean hasKeyword = keyword != null && !keyword.isBlank();
+        final List<Long> taggedArticleIds;
+        if (tagId != null) {
+            taggedArticleIds = articleTagMapper.selectList(new LambdaQueryWrapper<ArticleTag>()
+                            .eq(ArticleTag::getTagId, tagId))
+                    .stream()
+                    .map(ArticleTag::getArticleId)
+                    .toList();
+            if (taggedArticleIds.isEmpty()) {
+                Page<Article> emptyPage = new Page<>(current, size);
+                emptyPage.setRecords(Collections.emptyList());
+                emptyPage.setTotal(0);
+                return emptyPage;
+            }
+        } else {
+            taggedArticleIds = null;
+        }
         return articleMapper.selectPage(new Page<>(current, size), new LambdaQueryWrapper<Article>()
-                .like(keyword != null && !keyword.isBlank(), Article::getTitle, keyword)
+                .and(hasKeyword, wrapper -> wrapper.like(Article::getTitle, keyword)
+                        .or().like(Article::getSummary, keyword)
+                        .or().like(Article::getContent, keyword))
                 .eq(status != null && !status.isBlank(), Article::getStatus, status)
                 .eq(categoryId != null, Article::getCategoryId, categoryId)
+                .in(taggedArticleIds != null, Article::getId, taggedArticleIds)
                 .orderByDesc(Article::getPublishedAt, Article::getCreatedAt));
     }
 
