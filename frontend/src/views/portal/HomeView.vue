@@ -8,7 +8,6 @@
         <p>一个二次元风格的个人博客系统，支持文章、分类、标签、评论、点赞、收藏、创作中心和后台数据看板。</p>
         <div class="hero-actions">
           <RouterLink class="btn-primary" to="/create">开始创作</RouterLink>
-          <RouterLink class="btn-ghost" to="/admin/images">配置首页图片 URL</RouterLink>
         </div>
       </div>
     </section>
@@ -38,10 +37,6 @@
           <div class="tag-row">
             <span v-for="tag in tags" :key="tag.id" class="anime-tag" :style="{ color: tag.color }">{{ tag.name }}</span>
           </div>
-        </div>
-        <div class="side-panel">
-          <h3>图片 URL 位</h3>
-          <p>后台图片管理中类型为 HERO 的启用图片，会自动成为首页横幅背景。</p>
         </div>
       </aside>
     </main>

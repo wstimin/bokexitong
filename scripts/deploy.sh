@@ -112,6 +112,29 @@ deploy() {
   ok "Services started."
 }
 
+fix_seed_data() {
+  cd "$PROJECT_DIR"
+  [ -f sql/fix_mojibake_seed_data.sql ] || return 0
+
+  info "Applying seed data text fix..."
+  MYSQL_PASSWORD="root123456"
+  if [ -f "$ENV_FILE" ]; then
+    MYSQL_PASSWORD="$(grep -E '^MYSQL_ROOT_PASSWORD=' "$ENV_FILE" | tail -n 1 | cut -d= -f2- || true)"
+    MYSQL_PASSWORD="${MYSQL_PASSWORD:-root123456}"
+  fi
+
+  for _ in $(seq 1 30); do
+    if compose_cmd exec -T mysql mysqladmin ping -h 127.0.0.1 -uroot -p"$MYSQL_PASSWORD" >/dev/null 2>&1; then
+      compose_cmd exec -T mysql mysql -uroot -p"$MYSQL_PASSWORD" personal_blog < sql/fix_mojibake_seed_data.sql
+      ok "Seed data text fixed."
+      return
+    fi
+    sleep 2
+  done
+
+  warn "MySQL was not ready; skip seed data fix. Run: docker compose exec -T mysql mysql -uroot -p personal_blog < sql/fix_mojibake_seed_data.sql"
+}
+
 show_status() {
   cd "$PROJECT_DIR"
   info "Current service status:"
@@ -163,6 +186,7 @@ main() {
   install_docker
   create_env_file
   deploy
+  fix_seed_data
   show_status
 }
 

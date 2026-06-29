@@ -25,8 +25,13 @@ public class InteractionService {
     }
 
     public Page<Comment> comments(Long articleId, long current, long size) {
+        return comments(articleId, current, size, null);
+    }
+
+    public Page<Comment> comments(Long articleId, long current, long size, String status) {
         return commentMapper.selectPage(new Page<>(current, size), new LambdaQueryWrapper<Comment>()
                 .eq(articleId != null, Comment::getArticleId, articleId)
+                .eq(status != null && !status.isBlank(), Comment::getStatus, status)
                 .orderByDesc(Comment::getCreatedAt));
     }
 
@@ -42,6 +47,10 @@ public class InteractionService {
         Comment comment = commentMapper.selectById(id);
         comment.setStatus(status);
         commentMapper.updateById(comment);
+    }
+
+    public void deleteComment(Long id) {
+        commentMapper.deleteById(id);
     }
 
     public void like(Long userId, Long articleId) {

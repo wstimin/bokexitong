@@ -6,6 +6,7 @@ import com.example.blog.dto.ArticleRequest;
 import com.example.blog.entity.Article;
 import com.example.blog.security.BlogPrincipal;
 import com.example.blog.service.ArticleService;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -46,6 +47,7 @@ public class ArticleController {
     }
 
     @DeleteMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public Result<Void> remove(@RequestBody List<Long> ids) {
         articleService.removeBatch(ids);
         return Result.ok();

@@ -103,6 +103,10 @@ a { color: inherit; text-decoration: none; }
 .stat-card strong { display: block; margin-top: 8px; font-size: 30px; }
 .admin-card { padding: 18px; }
 .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+.admin-filters { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.danger-action { color: #d93636; border-color: rgba(217, 54, 54, .28); }
+.danger-action:disabled { opacity: .45; cursor: not-allowed; }
+.pager { display: flex; justify-content: flex-end; margin-top: 14px; }
 .image-preview { width: 116px; height: 66px; object-fit: cover; border-radius: 8px; border: 1px solid var(--line); background: #fff0f7; }
 .editor-grid { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 18px; padding: 28px 0 56px; }
 .form-panel { padding: 18px; }

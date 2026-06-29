@@ -5,8 +5,14 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.blog.dto.ArticleRequest;
 import com.example.blog.entity.Article;
 import com.example.blog.entity.ArticleTag;
+import com.example.blog.entity.Comment;
+import com.example.blog.entity.Favorite;
+import com.example.blog.entity.LikeRecord;
 import com.example.blog.mapper.ArticleMapper;
 import com.example.blog.mapper.ArticleTagMapper;
+import com.example.blog.mapper.CommentMapper;
+import com.example.blog.mapper.FavoriteMapper;
+import com.example.blog.mapper.LikeRecordMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,10 +23,17 @@ import java.util.List;
 public class ArticleService {
     private final ArticleMapper articleMapper;
     private final ArticleTagMapper articleTagMapper;
+    private final CommentMapper commentMapper;
+    private final LikeRecordMapper likeRecordMapper;
+    private final FavoriteMapper favoriteMapper;
 
-    public ArticleService(ArticleMapper articleMapper, ArticleTagMapper articleTagMapper) {
+    public ArticleService(ArticleMapper articleMapper, ArticleTagMapper articleTagMapper, CommentMapper commentMapper,
+                          LikeRecordMapper likeRecordMapper, FavoriteMapper favoriteMapper) {
         this.articleMapper = articleMapper;
         this.articleTagMapper = articleTagMapper;
+        this.commentMapper = commentMapper;
+        this.likeRecordMapper = likeRecordMapper;
+        this.favoriteMapper = favoriteMapper;
     }
 
     public Page<Article> page(long current, long size, String keyword, String status, Long categoryId) {
@@ -72,7 +85,15 @@ public class ArticleService {
         return article;
     }
 
+    @Transactional
     public void removeBatch(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return;
+        }
+        articleTagMapper.delete(new LambdaQueryWrapper<ArticleTag>().in(ArticleTag::getArticleId, ids));
+        commentMapper.delete(new LambdaQueryWrapper<Comment>().in(Comment::getArticleId, ids));
+        likeRecordMapper.delete(new LambdaQueryWrapper<LikeRecord>().in(LikeRecord::getArticleId, ids));
+        favoriteMapper.delete(new LambdaQueryWrapper<Favorite>().in(Favorite::getArticleId, ids));
         articleMapper.deleteBatchIds(ids);
     }
 

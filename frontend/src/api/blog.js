@@ -33,8 +33,10 @@ export const adminApi = {
   deleteImage: (id) => http.delete(`/admin/images/${id}`),
   users: (params) => http.get('/admin/users', { params }),
   userStatus: (id, status) => http.put(`/admin/users/${id}/status`, null, { params: { status } }),
+  deleteUser: (id) => http.delete(`/admin/users/${id}`),
   comments: (params) => http.get('/admin/comments', { params }),
-  auditComment: (id, status) => http.put(`/admin/comments/${id}/status`, null, { params: { status } })
+  auditComment: (id, status) => http.put(`/admin/comments/${id}/status`, null, { params: { status } }),
+  deleteComment: (id) => http.delete(`/admin/comments/${id}`)
 }
 
 export const commentApi = {
