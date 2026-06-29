@@ -108,23 +108,4 @@ CREATE TABLE image_resource (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 INSERT INTO blog_user(username, nickname, password, avatar, email, role, status)
-VALUES ('admin', '站长', '{noop}123456', '', 'admin@example.com', 'ADMIN', 1),
-       ('demo', '演示用户', '{noop}123456', '', 'demo@example.com', 'USER', 1);
-
-INSERT INTO category(name, description, sort)
-VALUES ('日常随笔', '生活碎片与灵感记录', 1),
-       ('技术笔记', 'Java、Vue、数据库与工具链', 2),
-       ('动漫杂谈', '番剧感想与角色分析', 3);
-
-INSERT INTO tag(name, color)
-VALUES ('SpringBoot3', '#60a5fa'), ('Vue3', '#3ad9c9'), ('Markdown', '#ff77b7'), ('二次元', '#a78bfa');
-
-INSERT INTO article(user_id, category_id, title, summary, cover_url, content, content_type, status, view_count, like_count, favorite_count, published_at)
-VALUES
-(1, 2, '用 Spring Boot 3 和 Vue 3 搭一个二次元博客', '从接口、权限、文章创作到后台仪表盘，记录一个前后端分离博客系统的搭建过程。', '', '# 开篇\n\n这是一个支持 Markdown、代码高亮、评论互动和后台管理的个人博客系统。\n\n```java\nSystem.out.println("Hello Blog");\n```', 'MARKDOWN', 'PUBLISHED', 128, 18, 9, NOW()),
-(1, 3, '给博客加一点番剧感 UI', '用柔和色彩、徽章标签、横幅图和卡片动效，让内容系统更有个人气质。', '', '## 设计思路\n\n二次元风格不等于堆满元素，关键是色彩、节奏和细节统一。', 'MARKDOWN', 'PUBLISHED', 86, 12, 5, NOW());
-
-INSERT INTO article_tag(article_id, tag_id) VALUES (1, 1), (1, 2), (1, 3), (2, 4);
-
-INSERT INTO image_resource(title, url, type, description, sort, enabled)
-VALUES ('首页横幅占位图', 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=1600&q=80', 'HERO', '后台可替换为你自己的二次元横幅 URL', 1, 1);
+VALUES ('admin', '站长', '{noop}123456', '', 'admin@example.com', 'ADMIN', 1);
