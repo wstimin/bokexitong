@@ -21,6 +21,8 @@ public class ArticleCardResponse {
     private Integer favoriteCount;
     private String status;
     private LocalDateTime publishedAt;
+    private String reviewReason;
+    private LocalDateTime reviewedAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private List<Tag> tags;

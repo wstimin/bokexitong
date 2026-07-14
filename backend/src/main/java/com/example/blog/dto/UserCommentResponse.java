@@ -12,5 +12,7 @@ public class UserCommentResponse {
     private String articleStatus;
     private String content;
     private String status;
+    private String reviewReason;
+    private LocalDateTime reviewedAt;
     private LocalDateTime createdAt;
 }

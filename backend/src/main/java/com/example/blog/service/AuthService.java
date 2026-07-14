@@ -52,6 +52,7 @@ public class AuthService {
         if (user.getStatus() != null && user.getStatus() == 0) {
             throw new IllegalArgumentException("账号已被禁用");
         }
+        validateLoginType(user, clean(request.getLoginType()));
         boolean passwordChangeRequired = isDefaultAdminPassword(user);
         user.setPassword(null);
         String token = jwtTokenProvider.generateToken(user.getId(), user.getUsername(), user.getRole());
@@ -227,5 +228,17 @@ public class AuthService {
         return "ADMIN".equals(user.getRole())
                 && "admin".equals(user.getUsername())
                 && passwordEncoder.matches("123456", user.getPassword());
+    }
+
+    private void validateLoginType(BlogUser user, String loginType) {
+        if (loginType == null) {
+            return;
+        }
+        if ("ADMIN".equals(loginType) && !"ADMIN".equals(user.getRole())) {
+            throw new IllegalArgumentException("该账号不是管理员，请使用用户登录入口");
+        }
+        if ("USER".equals(loginType) && "ADMIN".equals(user.getRole())) {
+            throw new IllegalArgumentException("管理员账号请从后台登录入口进入");
+        }
     }
 }

@@ -302,9 +302,12 @@ public class AdminController {
     }
 
     @PutMapping("/comments/{id}/status")
-    public Result<Void> auditComment(@AuthenticationPrincipal BlogPrincipal principal, @PathVariable Long id, @RequestParam String status) {
-        interactionService.auditComment(id, status);
-        operationLogService.record(principal, "AUDIT", "COMMENT", id, status);
+    public Result<Void> auditComment(@AuthenticationPrincipal BlogPrincipal principal, @PathVariable Long id,
+                                     @RequestParam String status,
+                                     @RequestParam(required = false) String reason) {
+        interactionService.auditComment(id, status, reason);
+        String detail = reason == null || reason.isBlank() ? status : status + " - " + reason.trim();
+        operationLogService.record(principal, "AUDIT", "COMMENT", id, detail);
         return Result.ok();
     }
 

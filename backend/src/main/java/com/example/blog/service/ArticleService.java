@@ -130,6 +130,8 @@ public class ArticleService {
         article.setContent(request.getContent());
         article.setContentType(request.getContentType() == null ? "MARKDOWN" : request.getContentType());
         article.setStatus(normalizeUserStatus(request.getStatus()));
+        article.setReviewReason(null);
+        article.setReviewedAt(null);
         article.setUpdatedAt(LocalDateTime.now());
         if (id == null) {
             article.setViewCount(0);
@@ -145,14 +147,21 @@ public class ArticleService {
         return article;
     }
 
-    public Article updateStatusByAdmin(Long id, String status) {
+    public Article updateStatusByAdmin(Long id, String status, String reason) {
         Article article = detail(id, false);
         String nextStatus = normalizeAdminStatus(status);
+        String cleanReason = clean(reason);
         article.setStatus(nextStatus);
         article.setUpdatedAt(LocalDateTime.now());
         if ("PUBLISHED".equals(nextStatus) && article.getPublishedAt() == null) {
             article.setPublishedAt(LocalDateTime.now());
         }
+        if (List.of("REJECTED", "OFFLINE").contains(nextStatus)) {
+            article.setReviewReason(cleanReason);
+        } else {
+            article.setReviewReason(null);
+        }
+        article.setReviewedAt(LocalDateTime.now());
         articleMapper.updateById(article);
         return article;
     }
@@ -277,6 +286,8 @@ public class ArticleService {
         response.setFavoriteCount(article.getFavoriteCount());
         response.setStatus(article.getStatus());
         response.setPublishedAt(article.getPublishedAt());
+        response.setReviewReason(article.getReviewReason());
+        response.setReviewedAt(article.getReviewedAt());
         response.setCreatedAt(article.getCreatedAt());
         response.setUpdatedAt(article.getUpdatedAt());
         Category category = categories.get(article.getCategoryId());
@@ -301,12 +312,22 @@ public class ArticleService {
         response.setViewCount(card.getViewCount());
         response.setLikeCount(card.getLikeCount());
         response.setFavoriteCount(card.getFavoriteCount());
+        response.setStatus(card.getStatus());
         response.setPublishedAt(card.getPublishedAt());
+        response.setReviewReason(card.getReviewReason());
+        response.setReviewedAt(card.getReviewedAt());
         response.setCreatedAt(card.getCreatedAt());
+        response.setUpdatedAt(card.getUpdatedAt());
         response.setTags(card.getTags());
         response.setContent(article.getContent());
         response.setContentType(article.getContentType());
         return response;
+    }
+
+    private String clean(String value) {
+        if (value == null) return null;
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 
     private Map<Long, List<Tag>> loadTagsByArticle(List<Long> articleIds) {

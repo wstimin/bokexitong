@@ -73,9 +73,14 @@ public class ArticleController {
     @PreAuthorize("hasRole('ADMIN')")
     public Result<Article> updateStatus(@AuthenticationPrincipal BlogPrincipal principal,
                                         @PathVariable Long id,
-                                        @RequestParam String status) {
-        Article article = articleService.updateStatusByAdmin(id, status);
-        operationLogService.record(principal, "AUDIT", "ARTICLE", id, status + " - " + article.getTitle());
+                                        @RequestParam String status,
+                                        @RequestParam(required = false) String reason) {
+        Article article = articleService.updateStatusByAdmin(id, status, reason);
+        String detail = status + " - " + article.getTitle();
+        if (reason != null && !reason.isBlank()) {
+            detail += " - " + reason.trim();
+        }
+        operationLogService.record(principal, "AUDIT", "ARTICLE", id, detail);
         return Result.ok(article);
     }
 

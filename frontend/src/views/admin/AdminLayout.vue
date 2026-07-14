@@ -22,7 +22,8 @@
         <h1>{{ title }}</h1>
         <div class="hero-actions">
           <button class="btn-ghost" @click="passwordVisible = true">修改密码</button>
-          <RouterLink class="btn-ghost" to="/">返回前台</RouterLink>
+          <RouterLink class="btn-ghost" to="/">打开前台首页</RouterLink>
+          <button class="btn-ghost danger-action" @click="logout">退出登录</button>
         </div>
       </div>
       <el-alert v-if="auth.passwordChangeRequired" class="admin-alert" title="当前管理员仍在使用默认密码，请立即修改。生产环境会禁止默认密码启动。" type="error" :closable="false" />
@@ -49,12 +50,13 @@
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { userApi } from '../../api/blog'
 import { useAuthStore } from '../../stores/auth'
 import { useSiteStore } from '../../stores/site'
 
 const route = useRoute()
+const router = useRouter()
 const site = useSiteStore()
 const auth = useAuthStore()
 const names = {
@@ -84,5 +86,10 @@ const changePassword = async () => {
   password.newPassword = ''
   passwordVisible.value = false
   ElMessage.success('密码已修改')
+}
+
+const logout = () => {
+  auth.logout()
+  router.push('/admin/login')
 }
 </script>

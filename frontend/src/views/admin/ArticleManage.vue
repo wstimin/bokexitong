@@ -18,6 +18,9 @@
         <el-table-column label="状态" width="120">
           <template #default="{ row }"><el-tag :type="statusType(row.status)">{{ statusText(row.status) }}</el-tag></template>
         </el-table-column>
+        <el-table-column label="审核说明" min-width="180" show-overflow-tooltip>
+          <template #default="{ row }">{{ row.reviewReason || '-' }}</template>
+        </el-table-column>
         <el-table-column prop="viewCount" label="阅读" width="90" />
         <el-table-column prop="likeCount" label="点赞" width="90" />
         <el-table-column prop="favoriteCount" label="收藏" width="90" />
@@ -52,6 +55,14 @@
         </div>
         <h1>{{ previewArticle.title }}</h1>
         <p v-if="previewArticle.summary" class="detail-summary">{{ previewArticle.summary }}</p>
+        <el-alert
+          v-if="previewArticle.reviewReason"
+          class="review-alert"
+          :title="`${statusText(previewArticle.status)}：${previewArticle.reviewReason}`"
+          :description="previewArticle.reviewedAt ? `处理时间：${previewArticle.reviewedAt}` : ''"
+          type="warning"
+          :closable="false"
+        />
         <div class="markdown" v-html="previewHtml"></div>
       </div>
       <template #footer>
@@ -113,7 +124,19 @@ const openPreview = async (row) => {
 const canPublish = (status) => ['PENDING', 'REJECTED', 'OFFLINE'].includes(status)
 
 const changeStatus = async (row, status) => {
-  await articleApi.updateStatus(row.id, status)
+  let reason = ''
+  if (['REJECTED', 'OFFLINE'].includes(status)) {
+    const action = status === 'REJECTED' ? '驳回' : '下架'
+    const result = await ElMessageBox.prompt(`请填写${action}原因，作者会在用户中心看到这条说明。`, `${action}文章`, {
+      confirmButtonText: '确认',
+      cancelButtonText: '取消',
+      inputType: 'textarea',
+      inputPlaceholder: '例如：标题不够清晰、正文缺少必要信息、包含不适合公开展示的内容等',
+      inputValidator: (value) => Boolean(value && value.trim()) || `${action}原因不能为空`
+    })
+    reason = result.value.trim()
+  }
+  await articleApi.updateStatus(row.id, status, reason || undefined)
   ElMessage.success(`文章已${statusText(status)}`)
   previewVisible.value = false
   load()

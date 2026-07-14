@@ -29,7 +29,7 @@ export const articleApi = {
   update: (id, data) => http.put(`/articles/${id}`, data),
   removeMine: (id) => http.delete(`/articles/${id}`),
   remove: (ids) => http.delete('/articles', { data: ids }),
-  updateStatus: (id, status) => http.put(`/articles/${id}/status`, null, { params: { status } }),
+  updateStatus: (id, status, reason) => http.put(`/articles/${id}/status`, null, { params: { status, reason } }),
   like: (id) => http.post(`/articles/${id}/like`),
   favorite: (id) => http.post(`/articles/${id}/favorite`)
 }
@@ -54,7 +54,7 @@ export const adminApi = {
   resetUserPassword: (id, data) => http.put(`/admin/users/${id}/password`, data),
   deleteUser: (id) => http.delete(`/admin/users/${id}`),
   comments: (params) => http.get('/admin/comments', { params }),
-  auditComment: (id, status) => http.put(`/admin/comments/${id}/status`, null, { params: { status } }),
+  auditComment: (id, status, reason) => http.put(`/admin/comments/${id}/status`, null, { params: { status, reason } }),
   deleteComment: (id) => http.delete(`/admin/comments/${id}`)
 }
 

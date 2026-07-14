@@ -71,12 +71,14 @@ public class InteractionService {
         comment.setParentId(comment.getParentId() == null || comment.getParentId() < 0 ? 0 : comment.getParentId());
         comment.setContent(content);
         comment.setStatus("PENDING");
+        comment.setReviewReason(null);
+        comment.setReviewedAt(null);
         comment.setCreatedAt(LocalDateTime.now());
         commentMapper.insert(comment);
         return comment;
     }
 
-    public void auditComment(Long id, String status) {
+    public void auditComment(Long id, String status, String reason) {
         Comment comment = commentMapper.selectById(id);
         if (comment == null) {
             throw new IllegalArgumentException("Comment does not exist");
@@ -85,6 +87,8 @@ public class InteractionService {
             throw new IllegalArgumentException("Unsupported comment status");
         }
         comment.setStatus(status);
+        comment.setReviewReason("REJECTED".equals(status) ? clean(reason) : null);
+        comment.setReviewedAt(LocalDateTime.now());
         commentMapper.updateById(comment);
     }
 
@@ -186,6 +190,8 @@ public class InteractionService {
             response.setArticleStatus(article == null ? "DELETED" : article.getStatus());
             response.setContent(comment.getContent());
             response.setStatus(comment.getStatus());
+            response.setReviewReason(comment.getReviewReason());
+            response.setReviewedAt(comment.getReviewedAt());
             response.setCreatedAt(comment.getCreatedAt());
             return response;
         }).toList();

@@ -61,7 +61,7 @@ public class SiteSettingService {
         settings.put(SITE_NAME, "博客系统");
         settings.put(HERO_TITLE, "博客系统");
         settings.put(HERO_SUBTITLE, "用卡片浏览公开文章，点开后再阅读完整内容。登录后可以进入用户中心创作、管理自己的文章。");
-        settings.put(HERO_BADGE, "Personal Blog");
+        settings.put(HERO_BADGE, "博客");
         settings.put(BACKGROUND_URL, "");
         settings.put(ALLOW_REGISTER, "true");
         return settings;

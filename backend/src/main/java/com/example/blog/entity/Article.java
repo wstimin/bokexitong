@@ -21,6 +21,8 @@ public class Article {
     private Integer likeCount;
     private Integer favoriteCount;
     private LocalDateTime publishedAt;
+    private String reviewReason;
+    private LocalDateTime reviewedAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private Integer deleted;

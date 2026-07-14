@@ -228,8 +228,12 @@ a { color: inherit; text-decoration: none; }
 .cover-fields { display: grid; gap: 10px; align-content: start; }
 .writer-tools { margin-top: -4px; }
 .writer-actions { margin-top: 14px; }
-.writer-preview { margin-top: 14px; }
-.writer-preview .markdown { padding: 12px 0; }
+.writer-mode-tabs { width: 100%; }
+.writer-preview-box { min-height: 394px; padding: 14px; border-radius: 8px; background: #fff; border: 1px solid rgba(40,45,68,.12); }
+.content-filters { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+.review-note { color: var(--muted); }
+.review-note.has-note { color: #b45309; font-weight: 700; }
+.review-alert { margin-bottom: 16px; }
 .my-articles { grid-column: 1 / -1; }
 .inline-field { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; width: 100%; align-items: center; }
 .upload-row { display: flex; gap: 10px; flex-wrap: wrap; }

@@ -21,6 +21,9 @@
         <el-table-column label="状态" width="120">
           <template #default="{ row }"><el-tag :type="statusType(row.status)">{{ statusText(row.status) }}</el-tag></template>
         </el-table-column>
+        <el-table-column label="审核说明" min-width="180" show-overflow-tooltip>
+          <template #default="{ row }">{{ row.reviewReason || '-' }}</template>
+        </el-table-column>
         <el-table-column prop="createdAt" label="创建时间" width="180" />
         <el-table-column label="操作" width="230" fixed="right">
           <template #default="{ row }">
@@ -68,7 +71,18 @@ const search = () => {
 }
 
 const audit = async (id, status) => {
-  await adminApi.auditComment(id, status)
+  let reason = ''
+  if (status === 'REJECTED') {
+    const result = await ElMessageBox.prompt('请填写驳回原因，用户会在个人中心看到这条说明。', '驳回评论', {
+      confirmButtonText: '确认',
+      cancelButtonText: '取消',
+      inputType: 'textarea',
+      inputPlaceholder: '例如：评论内容重复、与文章无关、包含不适合公开展示的内容等',
+      inputValidator: (value) => Boolean(value && value.trim()) || '驳回原因不能为空'
+    })
+    reason = result.value.trim()
+  }
+  await adminApi.auditComment(id, status, reason || undefined)
   ElMessage.success(`评论已${statusText(status)}`)
   load()
 }

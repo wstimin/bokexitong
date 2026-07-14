@@ -12,7 +12,11 @@ INSERT INTO site_setting(setting_key, setting_value, description) VALUES
 ('siteName', '博客系统', '站点名称'),
 ('heroTitle', '博客系统', '首页大标题'),
 ('heroSubtitle', '用卡片浏览公开文章，点开后再阅读完整内容。登录后可以进入用户中心创作、管理自己的文章。', '首页说明'),
-('heroBadge', 'Personal Blog', '首页徽标文字'),
+('heroBadge', '博客', '首页徽标文字'),
 ('backgroundUrl', '', '全站背景图 URL'),
 ('allowRegister', 'true', '是否开放公开注册')
 ON DUPLICATE KEY UPDATE setting_key = setting_key;
+
+UPDATE site_setting
+SET setting_value = '博客'
+WHERE setting_key = 'heroBadge' AND setting_value = CHAR(80, 101, 114, 115, 111, 110, 97, 108, 32, 66, 108, 111, 103);

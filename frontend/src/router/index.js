@@ -5,8 +5,9 @@ const routes = [
   { path: '/', component: () => import('../views/portal/HomeView.vue') },
   { path: '/article/:id', component: () => import('../views/portal/ArticleDetail.vue') },
   { path: '/create', redirect: '/user' },
-  { path: '/user', component: () => import('../views/portal/UserCenter.vue'), meta: { requiresAuth: true } },
-  { path: '/login', component: () => import('../views/LoginView.vue') },
+  { path: '/user', component: () => import('../views/portal/UserCenter.vue'), meta: { requiresAuth: true, requiresUser: true } },
+  { path: '/login', component: () => import('../views/LoginView.vue'), meta: { loginType: 'USER' } },
+  { path: '/admin/login', component: () => import('../views/LoginView.vue'), meta: { loginType: 'ADMIN' } },
   {
     path: '/admin',
     component: () => import('../views/admin/AdminLayout.vue'),
@@ -29,14 +30,17 @@ const router = createRouter({ history: createWebHistory(), routes })
 
 router.beforeEach((to) => {
   const auth = useAuthStore()
-  if (to.path === '/login' && auth.isLogin) {
+  if ((to.path === '/login' || to.path === '/admin/login') && auth.isLogin) {
     return auth.isAdmin ? '/admin/dashboard' : '/user'
   }
   if (to.meta.requiresAuth && !auth.isLogin) {
-    return { path: '/login', query: { redirect: to.fullPath } }
+    return { path: to.meta.requiresAdmin ? '/admin/login' : '/login', query: { redirect: to.fullPath } }
   }
   if (to.meta.requiresAdmin && !auth.isAdmin) {
-    return auth.isLogin ? '/user' : { path: '/login', query: { redirect: to.fullPath } }
+    return auth.isLogin ? '/' : { path: '/admin/login', query: { redirect: to.fullPath } }
+  }
+  if (to.meta.requiresUser && auth.isAdmin) {
+    return '/admin/dashboard'
   }
 })
 

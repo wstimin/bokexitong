@@ -12,6 +12,7 @@
         <p>{{ pageHint }}</p>
       </div>
 
+      <el-alert v-if="isAdminLogin" class="auth-alert" title="后台入口仅允许管理员账号登录，普通用户请使用前台登录。" type="info" :closable="false" />
       <el-alert v-if="isRegister && !site.allowRegister" class="auth-alert" title="站点暂未开放注册" type="warning" :closable="false" />
 
       <el-form label-position="top" @keyup.enter="submit">
@@ -77,8 +78,10 @@
 
       <div class="auth-actions">
         <button v-if="!isLogin" class="auth-switch" type="button" @click="setMode('login')">已有账号，去登录</button>
-        <button v-if="isLogin && site.allowRegister" class="auth-switch" type="button" @click="setMode('register')">还没有账号，去注册</button>
-        <button v-if="!isForgot" class="auth-switch" type="button" @click="setMode('forgot')">忘记密码</button>
+        <button v-if="isLogin && site.allowRegister && !isAdminLogin" class="auth-switch" type="button" @click="setMode('register')">还没有账号，去注册</button>
+        <button v-if="!isForgot && !isAdminLogin" class="auth-switch" type="button" @click="setMode('forgot')">忘记密码</button>
+        <RouterLink v-if="isAdminLogin" class="auth-switch" to="/login">前台用户登录</RouterLink>
+        <RouterLink v-else class="auth-switch" to="/admin/login">后台管理员登录</RouterLink>
       </div>
     </section>
   </main>
@@ -102,24 +105,26 @@ const sendingScene = ref('')
 const registerCountdown = ref(0)
 const resetCountdown = ref(0)
 
-const mode = computed(() => route.query.mode || 'login')
+const isAdminLogin = computed(() => route.meta.loginType === 'ADMIN')
+const mode = computed(() => (isAdminLogin.value ? 'login' : route.query.mode || 'login'))
 const isLogin = computed(() => mode.value === 'login')
-const isRegister = computed(() => mode.value === 'register')
-const isForgot = computed(() => mode.value === 'forgot')
-const pageTitle = computed(() => (isRegister.value ? '注册账号' : isForgot.value ? '重置密码' : '登录'))
+const isRegister = computed(() => !isAdminLogin.value && mode.value === 'register')
+const isForgot = computed(() => !isAdminLogin.value && mode.value === 'forgot')
+const pageTitle = computed(() => (isAdminLogin.value ? '后台登录' : isRegister.value ? '注册账号' : isForgot.value ? '重置密码' : '用户登录'))
 const pageHint = computed(() => {
+  if (isAdminLogin.value) return '管理员账号进入后台处理文章、评论、用户和站点设置。'
   if (isRegister.value) return site.allowRegister ? '使用邮箱验证码确认账号归属后开始写博客。' : '管理员已关闭公开注册。'
   if (isForgot.value) return '通过绑定邮箱验证身份，然后设置新密码。'
-  return '使用用户名或邮箱进入系统。'
+  return '普通用户登录后进入用户中心写文章、管理收藏和评论。'
 })
-const submitText = computed(() => (isRegister.value ? '注册并进入' : isForgot.value ? '重置密码' : '进入系统'))
+const submitText = computed(() => (isRegister.value ? '注册并进入' : isForgot.value ? '重置密码' : isAdminLogin.value ? '进入后台' : '进入用户中心'))
 const submitDisabled = computed(() => loading.value || (isRegister.value && !site.allowRegister))
 const canSendRegisterCode = computed(() => site.allowRegister && !sendingScene.value && !registerCountdown.value)
 const canSendResetCode = computed(() => !sendingScene.value && !resetCountdown.value)
 
 onMounted(() => site.loadSite())
 
-const redirectTo = () => route.query.redirect || '/user'
+const redirectTo = () => route.query.redirect || (isAdminLogin.value ? '/admin/dashboard' : '/user')
 
 const setMode = (nextMode) => {
   const query = { ...route.query }
@@ -156,7 +161,7 @@ const login = async () => {
     ElMessage.warning('请填写账号和密码')
     return
   }
-  await auth.login({ account: form.account, password: form.password })
+  await auth.login({ account: form.account, password: form.password, loginType: isAdminLogin.value ? 'ADMIN' : 'USER' })
   if (auth.passwordChangeRequired) {
     ElMessage.warning('当前管理员仍在使用默认密码，请立即修改')
   }
@@ -192,7 +197,7 @@ const register = async () => {
     code: form.code,
     password: form.password
   })
-  await auth.login({ account: form.username, password: form.password })
+  await auth.login({ account: form.username, password: form.password, loginType: 'USER' })
   ElMessage.success('注册成功')
   router.push(redirectTo())
 }

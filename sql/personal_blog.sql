@@ -56,6 +56,8 @@ CREATE TABLE article (
   like_count INT DEFAULT 0,
   favorite_count INT DEFAULT 0,
   published_at DATETIME,
+  review_reason VARCHAR(500),
+  reviewed_at DATETIME,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   deleted TINYINT DEFAULT 0,
@@ -77,6 +79,8 @@ CREATE TABLE comment (
   parent_id BIGINT DEFAULT 0,
   content VARCHAR(1000) NOT NULL,
   status VARCHAR(20) DEFAULT 'PENDING',
+  review_reason VARCHAR(500),
+  reviewed_at DATETIME,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   INDEX idx_comment_article(article_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -152,6 +156,6 @@ INSERT INTO site_setting(setting_key, setting_value, description) VALUES
 ('siteName', '博客系统', '站点名称'),
 ('heroTitle', '博客系统', '首页大标题'),
 ('heroSubtitle', '用卡片浏览公开文章，点开后再阅读完整内容。登录后可以进入用户中心创作、管理自己的文章。', '首页说明'),
-('heroBadge', 'Personal Blog', '首页徽标文字'),
+('heroBadge', '博客', '首页徽标文字'),
 ('backgroundUrl', '', '全站背景图 URL'),
 ('allowRegister', 'true', '是否开放公开注册');

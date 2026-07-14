@@ -74,11 +74,20 @@
           </el-form-item>
 
           <el-form-item label="正文">
-            <el-input v-model="articleForm.content" type="textarea" :rows="18" placeholder="从这里开始写正文。可以直接写普通文字，也可以用下方按钮插入图片、视频、附件、小标题和列表。" />
+            <el-tabs v-model="writerMode" class="writer-mode-tabs">
+              <el-tab-pane label="编辑" name="edit">
+                <el-input v-model="articleForm.content" type="textarea" :rows="18" placeholder="从这里开始写正文。可以直接写普通文字，也可以用下方按钮插入图片、视频、附件、小标题和列表。" />
+              </el-tab-pane>
+              <el-tab-pane label="预览" name="preview">
+                <div class="writer-preview-box markdown" v-html="previewHtml"></div>
+              </el-tab-pane>
+            </el-tabs>
           </el-form-item>
         </el-form>
 
         <div class="upload-row writer-tools">
+          <button class="btn-ghost" type="button" @click="insertSnippet('**加粗文字**')">加粗</button>
+          <button class="btn-ghost" type="button" @click="insertSnippet('\n\n> 引用内容\n')">引用</button>
           <el-upload :show-file-list="false" :http-request="(options) => uploadArticleFile(options, 'image')" accept="image/*">
             <button class="btn-ghost" type="button">插入图片</button>
           </el-upload>
@@ -92,12 +101,6 @@
           <button class="btn-ghost" type="button" @click="insertSnippet('\n\n- 列表项\n')">列表</button>
           <button class="btn-ghost" type="button" @click="insertSnippet('\n\n```\n代码写在这里\n```\n')">代码块</button>
         </div>
-
-        <el-collapse class="writer-preview">
-          <el-collapse-item title="预览正文" name="preview">
-            <div class="markdown" v-html="previewHtml"></div>
-          </el-collapse-item>
-        </el-collapse>
 
         <div class="hero-actions writer-actions">
           <button class="btn-primary" @click="saveArticle('PENDING')">提交审核</button>
@@ -113,11 +116,27 @@
         </div>
         <el-tabs v-model="activityTab" class="user-activity-tabs">
           <el-tab-pane label="我的文章" name="articles">
+            <div class="content-filters">
+              <el-input v-model="articleQuery.keyword" class="filter-input" placeholder="搜索我的文章" clearable @keyup.enter="loadMine(1)" @clear="loadMine(1)" />
+              <el-select v-model="articleQuery.status" class="filter-select" placeholder="全部状态" clearable @change="loadMine(1)">
+                <el-option label="草稿" value="DRAFT" />
+                <el-option label="待审核" value="PENDING" />
+                <el-option label="已发布" value="PUBLISHED" />
+                <el-option label="已驳回" value="REJECTED" />
+                <el-option label="已下架" value="OFFLINE" />
+              </el-select>
+              <button class="btn-ghost" @click="loadMine(1)">查询</button>
+            </div>
             <div class="table-scroll">
-              <el-table :data="mineRows" border style="min-width: 760px">
+              <el-table :data="mineRows" border style="min-width: 940px">
                 <el-table-column prop="title" label="标题" min-width="220" show-overflow-tooltip />
                 <el-table-column label="状态" width="110">
                   <template #default="{ row }"><el-tag :type="statusType(row.status)">{{ statusText(row.status) }}</el-tag></template>
+                </el-table-column>
+                <el-table-column label="处理说明" min-width="220" show-overflow-tooltip>
+                  <template #default="{ row }">
+                    <span :class="row.reviewReason ? 'review-note has-note' : 'review-note'">{{ row.reviewReason || '-' }}</span>
+                  </template>
                 </el-table-column>
                 <el-table-column label="更新时间" width="180">
                   <template #default="{ row }">{{ formatDate(row.updatedAt || row.createdAt) }}</template>
@@ -182,10 +201,15 @@
 
           <el-tab-pane label="我的评论" name="comments">
             <div class="table-scroll">
-              <el-table :data="commentRows" border style="min-width: 900px">
+              <el-table :data="commentRows" border style="min-width: 1040px">
                 <el-table-column prop="content" label="评论内容" min-width="260" show-overflow-tooltip />
                 <el-table-column label="状态" width="110">
                   <template #default="{ row }"><el-tag :type="commentStatusType(row.status)">{{ commentStatusText(row.status) }}</el-tag></template>
+                </el-table-column>
+                <el-table-column label="审核说明" min-width="200" show-overflow-tooltip>
+                  <template #default="{ row }">
+                    <span :class="row.reviewReason ? 'review-note has-note' : 'review-note'">{{ row.reviewReason || '-' }}</span>
+                  </template>
                 </el-table-column>
                 <el-table-column prop="articleTitle" label="文章" min-width="220" show-overflow-tooltip />
                 <el-table-column label="文章状态" width="110">
@@ -234,9 +258,11 @@ const auth = useAuthStore()
 const router = useRouter()
 const accountTab = ref('profile')
 const activityTab = ref('articles')
+const writerMode = ref('edit')
 const profile = reactive({ nickname: '', avatar: '', email: '' })
 const password = reactive({ oldPassword: '', newPassword: '' })
 const articleForm = reactive({ title: '', summary: '', coverUrl: '', content: '', contentType: 'MARKDOWN', categoryId: null, tagIds: [] })
+const articleQuery = reactive({ keyword: '', status: '' })
 const mineRows = ref([])
 const favoriteRows = ref([])
 const commentRows = ref([])
@@ -353,7 +379,12 @@ const insertSnippet = (text) => {
 
 const loadMine = async (page = articlePage.current) => {
   articlePage.current = page
-  const res = await articleApi.mine({ current: articlePage.current, size: articlePage.size })
+  const res = await articleApi.mine({
+    current: articlePage.current,
+    size: articlePage.size,
+    keyword: articleQuery.keyword?.trim() || undefined,
+    status: articleQuery.status || undefined
+  })
   mineRows.value = res.data.records || []
   articlePage.total = res.data.total || 0
 }
