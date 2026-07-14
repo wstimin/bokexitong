@@ -10,13 +10,13 @@
 
     <el-form label-position="top" class="settings-form">
       <el-form-item label="站点名称">
-        <el-input v-model="form.siteName" maxlength="40" show-word-limit placeholder="例如：小鹿的技术博客" />
+        <el-input v-model="form.siteName" maxlength="40" show-word-limit placeholder="请输入站点名称" />
       </el-form-item>
       <el-form-item label="首页徽标文字">
-        <el-input v-model="form.heroBadge" maxlength="40" show-word-limit placeholder="例如：Personal Blog" />
+        <el-input v-model="form.heroBadge" maxlength="40" show-word-limit placeholder="请输入首页徽标文字" />
       </el-form-item>
       <el-form-item label="首页大标题">
-        <el-input v-model="form.heroTitle" maxlength="80" show-word-limit placeholder="例如：小鹿的技术博客" />
+        <el-input v-model="form.heroTitle" maxlength="80" show-word-limit placeholder="请输入首页大标题" />
       </el-form-item>
       <el-form-item label="首页说明">
         <el-input v-model="form.heroSubtitle" type="textarea" :rows="4" maxlength="220" show-word-limit placeholder="写一段给访客看的介绍" />
@@ -35,7 +35,7 @@
     </el-form>
 
     <div class="settings-preview" :style="previewStyle">
-      <span class="eyebrow">{{ form.heroBadge || 'Personal Blog' }}</span>
+      <span class="eyebrow">{{ form.heroBadge || '博客' }}</span>
       <h1>{{ form.heroTitle || form.siteName || '博客系统' }}</h1>
       <p>{{ form.heroSubtitle || '用卡片浏览公开文章，点开后再阅读完整内容。' }}</p>
     </div>
@@ -68,7 +68,7 @@ const apply = (settings = {}) => {
   form.siteName = settings.siteName || '博客系统'
   form.heroTitle = settings.heroTitle || form.siteName
   form.heroSubtitle = settings.heroSubtitle || '用卡片浏览公开文章，点开后再阅读完整内容。登录后可以进入用户中心创作、管理自己的文章。'
-  form.heroBadge = settings.heroBadge || 'Personal Blog'
+  form.heroBadge = settings.heroBadge || '博客'
   form.backgroundUrl = settings.backgroundUrl || ''
   form.allowRegister = settings.allowRegister !== 'false'
 }

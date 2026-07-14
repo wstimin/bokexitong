@@ -1,7 +1,7 @@
 <template>
   <RouterLink class="article-card" :to="`/article/${article.id}`">
     <img v-if="article.coverUrl" class="cover" :src="coverSrc" :alt="article.title" />
-    <div v-else class="cover cover-placeholder">{{ article.categoryName || 'Blog' }}</div>
+    <div v-else class="cover cover-placeholder">{{ article.categoryName || '未设置封面' }}</div>
 
     <div class="card-body">
       <div class="card-kicker">
@@ -10,7 +10,7 @@
       </div>
 
       <h3>{{ article.title }}</h3>
-      <p>{{ article.summary || '作者还没有填写摘要，点开看看完整内容。' }}</p>
+      <p>{{ article.summary || '阅读全文查看完整内容。' }}</p>
 
       <div class="meta card-stats">
         <span>{{ article.authorName || '匿名作者' }}</span>

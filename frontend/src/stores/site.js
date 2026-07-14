@@ -22,7 +22,7 @@ export const useSiteStore = defineStore('site', {
     name: SITE_NAME,
     heroTitle: SITE_NAME,
     heroSubtitle: HERO_SUBTITLE,
-    heroBadge: 'Personal Blog',
+    heroBadge: '博客',
     allowRegister: true,
     logoUrl: '',
     backgroundUrl: '',
@@ -44,7 +44,7 @@ export const useSiteStore = defineStore('site', {
         this.name = settings.siteName || SITE_NAME
         this.heroTitle = settings.heroTitle || this.name
         this.heroSubtitle = settings.heroSubtitle || HERO_SUBTITLE
-        this.heroBadge = settings.heroBadge || 'Personal Blog'
+        this.heroBadge = settings.heroBadge || '博客'
         this.allowRegister = settings.allowRegister !== 'false'
         this.backgroundUrl = settings.backgroundUrl || ''
         this.logoUrl = logo?.url || ''

@@ -6,10 +6,6 @@
         <span class="eyebrow">{{ site.heroBadge }}</span>
         <h1>{{ site.heroTitle }}</h1>
         <p>{{ site.heroSubtitle }}</p>
-        <div class="hero-actions">
-          <RouterLink class="btn-primary" to="/user">开始创作</RouterLink>
-          <a class="btn-ghost" href="#articles">浏览文章</a>
-        </div>
       </div>
     </section>
 

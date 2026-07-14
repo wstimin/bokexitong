@@ -8,6 +8,18 @@
     </div>
 
     <div class="dashboard-grid">
+      <section class="admin-card dashboard-shortcuts">
+        <div class="chart-title">
+          <h2>常用操作</h2>
+        </div>
+        <div class="shortcut-grid">
+          <RouterLink v-for="item in shortcuts" :key="item.to" class="shortcut-item" :to="item.to">
+            <strong>{{ item.title }}</strong>
+            <span>{{ item.desc }}</span>
+          </RouterLink>
+        </div>
+      </section>
+
       <section class="admin-card">
         <div class="chart-title">
           <h2>近 7 天发布趋势</h2>
@@ -78,6 +90,15 @@ const statItems = computed(() => [
   { label: '待审文章', value: stats.value.pendingArticleCount || 0 },
   { label: '已发布文章', value: stats.value.publishedArticleCount || 0 }
 ])
+
+const shortcuts = [
+  { title: '站点设置', desc: '修改站点名称、首页文案和背景', to: '/admin/settings' },
+  { title: '图片资源', desc: '维护 Logo、横幅、封面和素材', to: '/admin/images' },
+  { title: '文章审核', desc: '审核、下架或删除用户文章', to: '/admin/articles' },
+  { title: '分类标签', desc: '整理文章分类和标签体系', to: '/admin/taxonomies' },
+  { title: '评论审核', desc: '处理待审评论和违规内容', to: '/admin/comments' },
+  { title: '用户权限', desc: '管理用户角色、状态和密码', to: '/admin/users' }
+]
 
 const initChart = (el, option) => {
   if (!el) return

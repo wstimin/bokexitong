@@ -15,62 +15,57 @@
       </div>
     </div>
 
-    <div class="table-scroll">
-      <el-table v-loading="loading" :data="rows" border style="min-width: 980px">
-        <el-table-column label="预览" width="140">
-          <template #default="{ row }">
-            <img class="image-preview" :src="assetUrl(row.url)" :alt="row.title || '图片预览'" />
-          </template>
-        </el-table-column>
-        <el-table-column prop="title" label="标题" min-width="150" show-overflow-tooltip />
-        <el-table-column label="用途" width="160">
-          <template #default="{ row }">{{ typeText(row.type) }}</template>
-        </el-table-column>
-        <el-table-column prop="url" label="图片 URL" min-width="260" show-overflow-tooltip />
-        <el-table-column prop="sort" label="排序" width="80" />
-        <el-table-column label="启用" width="90">
-          <template #default="{ row }">
+    <div v-loading="loading" class="image-resource-grid">
+      <article v-for="row in rows" :key="row.id" class="image-resource-card">
+        <img class="image-resource-thumb" :src="assetUrl(row.url)" :alt="row.title || '图片预览'" />
+        <div class="image-resource-body">
+          <div class="image-resource-title">
+            <h3>{{ row.title || '未命名图片' }}</h3>
             <el-tag :type="row.enabled ? 'success' : 'info'">{{ row.enabled ? '启用' : '停用' }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="230" fixed="right">
-          <template #default="{ row }">
-            <div class="action-row">
-              <el-button size="small" @click="open(row)">编辑</el-button>
-              <el-button size="small" @click="copyUrl(row.url)">复制</el-button>
-              <el-button size="small" type="danger" @click="remove(row)">删除</el-button>
-            </div>
-          </template>
-        </el-table-column>
-      </el-table>
-    </div>
-
-    <el-dialog v-model="visible" :title="form.id ? '编辑图片' : '新增图片'" width="580px">
-      <el-form label-position="top">
-        <el-form-item label="标题">
-          <el-input v-model="form.title" placeholder="例如：首页横幅、站点 Logo" />
-        </el-form-item>
-        <el-form-item label="图片 URL">
-          <div class="inline-field">
-            <el-input v-model="form.url" placeholder="上传图片或粘贴图片地址" />
-            <el-upload :show-file-list="false" :http-request="uploadIntoForm" accept="image/*">
-              <button class="btn-ghost" type="button">上传</button>
-            </el-upload>
           </div>
-        </el-form-item>
-        <el-form-item label="用途">
-          <el-select v-model="form.type" style="width: 100%">
-            <el-option v-for="item in imageTypes" :key="item.value" :label="item.label" :value="item.value" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="描述"><el-input v-model="form.description" type="textarea" :rows="3" /></el-form-item>
-        <el-form-item label="排序"><el-input-number v-model="form.sort" :min="0" /></el-form-item>
-        <el-form-item label="启用"><el-switch v-model="enabledBool" /></el-form-item>
-      </el-form>
-      <img v-if="form.url" class="cover" :src="assetUrl(form.url)" alt="图片预览" />
+          <p>{{ typeText(row.type) }} · 排序 {{ row.sort ?? 0 }}</p>
+          <div class="image-url" :title="row.url">{{ row.url }}</div>
+          <div class="action-row image-actions">
+            <el-button size="small" @click="open(row)">编辑</el-button>
+            <el-button size="small" @click="copyUrl(row.url)">复制 URL</el-button>
+            <el-button size="small" type="danger" @click="remove(row)">删除</el-button>
+          </div>
+        </div>
+      </article>
+    </div>
+    <el-empty v-if="!loading && rows.length === 0" description="暂无图片资源" />
+
+    <el-dialog v-model="visible" :title="form.id ? '编辑图片' : '新增图片'" width="620px" class="image-form-dialog">
+      <div class="image-dialog-layout">
+        <div class="image-dialog-preview">
+          <img v-if="form.url" :src="assetUrl(form.url)" alt="图片预览" />
+          <div v-else>暂无预览</div>
+        </div>
+        <el-form label-position="top" class="image-dialog-form">
+          <el-form-item label="标题">
+            <el-input v-model="form.title" placeholder="例如：首页横幅、站点 Logo" />
+          </el-form-item>
+          <el-form-item label="图片 URL">
+            <div class="inline-field">
+              <el-input v-model="form.url" placeholder="上传图片或粘贴图片地址" />
+              <el-upload :show-file-list="false" :http-request="uploadIntoForm" accept="image/*">
+                <button class="btn-ghost" type="button">上传</button>
+              </el-upload>
+            </div>
+          </el-form-item>
+          <el-form-item label="用途">
+            <el-select v-model="form.type" style="width: 100%">
+              <el-option v-for="item in imageTypes" :key="item.value" :label="item.label" :value="item.value" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="描述"><el-input v-model="form.description" type="textarea" :rows="3" /></el-form-item>
+          <el-form-item label="排序"><el-input-number v-model="form.sort" :min="0" /></el-form-item>
+          <el-form-item label="启用"><el-switch v-model="enabledBool" /></el-form-item>
+        </el-form>
+      </div>
       <template #footer>
-        <button class="btn-ghost" @click="visible = false">取消</button>
-        <button class="btn-primary" @click="save">保存</button>
+        <button class="btn-ghost" type="button" @click="visible = false">取消</button>
+        <button class="btn-primary" type="button" @click="save">保存</button>
       </template>
     </el-dialog>
   </section>
