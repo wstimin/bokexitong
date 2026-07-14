@@ -16,6 +16,7 @@
           <el-option label="封禁" :value="0" />
         </el-select>
         <button class="btn-ghost" :disabled="loading" @click="searchUsers">查询</button>
+        <button class="btn-primary" :disabled="actionLoading" @click="openCreate">新增用户</button>
       </div>
     </div>
 
@@ -73,6 +74,39 @@
       </template>
     </el-dialog>
 
+    <el-dialog v-model="createVisible" title="新增用户" width="560px">
+      <el-form label-position="top" class="user-form-grid">
+        <el-form-item label="用户名">
+          <el-input v-model="createForm.username" maxlength="20" show-word-limit placeholder="3-20 位字母、数字或下划线" />
+        </el-form-item>
+        <el-form-item label="昵称">
+          <el-input v-model="createForm.nickname" maxlength="30" show-word-limit placeholder="不填则使用用户名" />
+        </el-form-item>
+        <el-form-item label="邮箱">
+          <el-input v-model="createForm.email" placeholder="用于登录和找回密码" />
+        </el-form-item>
+        <el-form-item label="初始密码">
+          <el-input v-model="createForm.password" type="password" show-password placeholder="至少 6 位" />
+        </el-form-item>
+        <el-form-item label="头像 URL">
+          <el-input v-model="createForm.avatar" placeholder="可选" />
+        </el-form-item>
+        <el-form-item label="角色">
+          <el-select v-model="createForm.role" style="width: 100%">
+            <el-option label="管理员" value="ADMIN" />
+            <el-option label="普通用户" value="USER" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="状态">
+          <el-switch v-model="createStatusBool" active-text="正常" inactive-text="封禁" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <button class="btn-ghost" :disabled="actionLoading" @click="createVisible = false">取消</button>
+        <button class="btn-primary" :disabled="actionLoading" @click="createUser">创建用户</button>
+      </template>
+    </el-dialog>
+
     <el-dialog v-model="passwordVisible" title="重置密码" width="420px">
       <el-form label-position="top">
         <el-form-item label="新密码"><el-input v-model="newPassword" type="password" show-password /></el-form-item>
@@ -95,15 +129,22 @@ const total = ref(0)
 const loading = ref(false)
 const actionLoading = ref(false)
 const editVisible = ref(false)
+const createVisible = ref(false)
 const passwordVisible = ref(false)
 const currentId = ref(null)
 const newPassword = ref('')
 const query = reactive({ current: 1, size: 10, keyword: '', role: '', status: null })
+const createForm = reactive({ username: '', nickname: '', avatar: '', email: '', password: '', role: 'USER', status: 1 })
 const editForm = reactive({ nickname: '', avatar: '', email: '', role: 'USER', status: 1 })
 
 const statusBool = computed({
   get: () => editForm.status === 1,
   set: (value) => { editForm.status = value ? 1 : 0 }
+})
+
+const createStatusBool = computed({
+  get: () => createForm.status === 1,
+  set: (value) => { createForm.status = value ? 1 : 0 }
 })
 
 const cleanQuery = () => ({
@@ -127,6 +168,31 @@ const load = async () => {
 const searchUsers = () => {
   query.current = 1
   load()
+}
+
+const resetCreateForm = () => {
+  Object.assign(createForm, { username: '', nickname: '', avatar: '', email: '', password: '', role: 'USER', status: 1 })
+}
+
+const openCreate = () => {
+  resetCreateForm()
+  createVisible.value = true
+}
+
+const createUser = async () => {
+  if (!createForm.username.trim() || !createForm.email.trim() || !createForm.password.trim()) {
+    ElMessage.warning('请填写用户名、邮箱和初始密码')
+    return
+  }
+  actionLoading.value = true
+  try {
+    await adminApi.createUser({ ...createForm })
+    createVisible.value = false
+    ElMessage.success('用户已创建')
+    await load()
+  } finally {
+    actionLoading.value = false
+  }
 }
 
 const openEdit = (row) => {

@@ -26,6 +26,7 @@ import com.example.blog.security.BlogPrincipal;
 import com.example.blog.service.ArticleService;
 import com.example.blog.service.AuthService;
 import com.example.blog.service.DashboardService;
+import com.example.blog.service.EmailCodeService;
 import com.example.blog.service.InteractionService;
 import com.example.blog.service.OperationLogService;
 import com.example.blog.service.SiteSettingService;
@@ -61,12 +62,14 @@ public class AdminController {
     private final AuthService authService;
     private final SiteSettingService siteSettingService;
     private final OperationLogService operationLogService;
+    private final EmailCodeService emailCodeService;
 
     public AdminController(DashboardService dashboardService, CategoryMapper categoryMapper, TagMapper tagMapper,
                            ImageResourceMapper imageResourceMapper, BlogUserMapper userMapper,
                            ArticleMapper articleMapper, CommentMapper commentMapper, LikeRecordMapper likeRecordMapper,
                            FavoriteMapper favoriteMapper, InteractionService interactionService, ArticleService articleService,
-                           AuthService authService, SiteSettingService siteSettingService, OperationLogService operationLogService) {
+                           AuthService authService, SiteSettingService siteSettingService, OperationLogService operationLogService,
+                           EmailCodeService emailCodeService) {
         this.dashboardService = dashboardService;
         this.categoryMapper = categoryMapper;
         this.tagMapper = tagMapper;
@@ -81,6 +84,7 @@ public class AdminController {
         this.authService = authService;
         this.siteSettingService = siteSettingService;
         this.operationLogService = operationLogService;
+        this.emailCodeService = emailCodeService;
     }
 
     @GetMapping("/dashboard")
@@ -90,7 +94,7 @@ public class AdminController {
 
     @GetMapping("/settings")
     public Result<Map<String, String>> settings() {
-        return Result.ok(siteSettingService.publicSettings());
+        return Result.ok(siteSettingService.adminSettings());
     }
 
     @PutMapping("/settings")
@@ -99,6 +103,14 @@ public class AdminController {
         Map<String, String> settings = siteSettingService.save(payload);
         operationLogService.record(principal, "UPDATE", "SITE_SETTING", null, "更新站点基础设置");
         return Result.ok(settings);
+    }
+
+    @PostMapping("/settings/test-mail")
+    public Result<Void> testMail(@AuthenticationPrincipal BlogPrincipal principal,
+                                 @RequestBody Map<String, String> payload) {
+        emailCodeService.sendTestMail(payload.get("email"));
+        operationLogService.record(principal, "TEST", "MAIL_SETTING", null, payload.get("email"));
+        return Result.ok();
     }
 
     @GetMapping("/operation-logs")
@@ -235,6 +247,14 @@ public class AdminController {
         protectAdminAccess(principal == null ? null : principal.userId(), id, request.getRole(), request.getStatus());
         BlogUser user = authService.updateUserByAdmin(id, request);
         operationLogService.record(principal, "UPDATE", "USER", id, user.getUsername());
+        return Result.ok(user);
+    }
+
+    @PostMapping("/users")
+    public Result<BlogUser> createUser(@AuthenticationPrincipal BlogPrincipal principal,
+                                       @RequestBody AdminUserRequest request) {
+        BlogUser user = authService.createUserByAdmin(request);
+        operationLogService.record(principal, "CREATE", "USER", user.getId(), user.getUsername());
         return Result.ok(user);
     }
 

@@ -2,6 +2,42 @@
   <div class="page">
     <PortalNav />
     <main class="shell user-dashboard">
+      <section class="form-panel user-quick-panel">
+        <div class="section-title writer-title">
+          <div>
+            <h2>我的工作台</h2>
+            <p class="section-subtitle">常用操作都在这里，写作、管理内容和账户设置可以直接进入。</p>
+          </div>
+          <button class="btn-primary" type="button" @click="focusWriter">写新文章</button>
+        </div>
+        <div class="user-action-grid">
+          <button class="shortcut-item user-action-card" type="button" @click="focusWriter">
+            <strong>写文章</strong>
+            <span>编辑正文、插入图片、视频和附件。</span>
+          </button>
+          <button class="shortcut-item user-action-card" type="button" @click="switchActivity('articles')">
+            <strong>我的文章</strong>
+            <span>查看草稿、审核状态和发布记录。</span>
+          </button>
+          <button class="shortcut-item user-action-card" type="button" @click="switchActivity('favorites')">
+            <strong>我的收藏</strong>
+            <span>回看收藏过的公开文章。</span>
+          </button>
+          <button class="shortcut-item user-action-card" type="button" @click="switchActivity('comments')">
+            <strong>我的评论</strong>
+            <span>查看评论审核结果和关联文章。</span>
+          </button>
+          <button class="shortcut-item user-action-card" type="button" @click="switchAccount('profile')">
+            <strong>个人资料</strong>
+            <span>修改昵称、头像和邮箱。</span>
+          </button>
+          <button class="shortcut-item user-action-card" type="button" @click="switchAccount('password')">
+            <strong>修改密码</strong>
+            <span>定期更新登录密码。</span>
+          </button>
+        </div>
+      </section>
+
       <section class="form-panel account-panel">
         <div class="section-title"><h2>用户中心</h2></div>
         <el-tabs v-model="accountTab">
@@ -30,7 +66,7 @@
         </el-tabs>
       </section>
 
-      <section class="form-panel writer-panel">
+      <section ref="writerPanel" class="form-panel writer-panel">
         <div class="section-title writer-title">
           <div>
             <h2>{{ editingId ? '编辑文章' : '写新文章' }}</h2>
@@ -109,7 +145,7 @@
         </div>
       </section>
 
-      <section class="form-panel my-articles">
+      <section ref="activityPanel" class="form-panel my-articles">
         <div class="toolbar">
           <h2>我的内容</h2>
           <button class="btn-ghost" @click="refreshActivity">刷新</button>
@@ -241,6 +277,7 @@
         </el-tabs>
       </section>
     </main>
+    <PortalFooter />
   </div>
 </template>
 
@@ -250,6 +287,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { marked } from 'marked'
 import PortalNav from '../../components/PortalNav.vue'
+import PortalFooter from '../../components/PortalFooter.vue'
 import { articleApi, portalApi, uploadApi, userApi } from '../../api/blog'
 import { useAuthStore } from '../../stores/auth'
 import { normalizeAssetUrl } from '../../utils/assets'
@@ -259,6 +297,8 @@ const router = useRouter()
 const accountTab = ref('profile')
 const activityTab = ref('articles')
 const writerMode = ref('edit')
+const writerPanel = ref(null)
+const activityPanel = ref(null)
 const profile = reactive({ nickname: '', avatar: '', email: '' })
 const password = reactive({ oldPassword: '', newPassword: '' })
 const articleForm = reactive({ title: '', summary: '', coverUrl: '', content: '', contentType: 'MARKDOWN', categoryId: null, tagIds: [] })
@@ -407,6 +447,22 @@ const refreshActivity = () => {
   loadMine(articlePage.current)
   loadFavorites(favoritePage.current)
   loadComments(commentPage.current)
+}
+
+const focusWriter = () => {
+  resetArticleForm()
+  writerPanel.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
+
+const switchActivity = (tab) => {
+  activityTab.value = tab
+  refreshActivity()
+  activityPanel.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
+
+const switchAccount = (tab) => {
+  accountTab.value = tab
+  window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
 const pageCount = (total, size) => Math.max(1, Math.ceil(Math.max(total, 0) / size))

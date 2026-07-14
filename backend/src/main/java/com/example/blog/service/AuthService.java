@@ -152,6 +152,38 @@ public class AuthService {
         return user;
     }
 
+    public BlogUser createUserByAdmin(AdminUserRequest request) {
+        String username = clean(request.getUsername());
+        String email = clean(request.getEmail());
+        String password = clean(request.getPassword());
+        String nickname = clean(request.getNickname());
+        String role = clean(request.getRole());
+
+        validateUsername(username);
+        validateEmail(email);
+        validatePassword(password);
+        Long exists = userMapper.selectCount(new LambdaQueryWrapper<BlogUser>()
+                .eq(BlogUser::getUsername, username));
+        if (exists > 0) {
+            throw new IllegalArgumentException("用户名已存在");
+        }
+        ensureEmailUnique(email, null);
+
+        BlogUser user = new BlogUser();
+        user.setUsername(username);
+        user.setNickname(nickname == null ? username : nickname);
+        user.setPassword(passwordEncoder.encode(password));
+        user.setAvatar(clean(request.getAvatar()));
+        user.setEmail(email);
+        user.setRole("ADMIN".equals(role) ? "ADMIN" : "USER");
+        user.setStatus(request.getStatus() == null ? 1 : request.getStatus());
+        user.setCreatedAt(LocalDateTime.now());
+        user.setUpdatedAt(LocalDateTime.now());
+        userMapper.insert(user);
+        user.setPassword(null);
+        return user;
+    }
+
     public void resetPasswordByAdmin(Long id, PasswordResetRequest request) {
         BlogUser user = userMapper.selectById(id);
         if (user == null) {

@@ -46,6 +46,7 @@
         <el-empty v-else description="暂无公开评论" :image-size="72" />
       </section>
     </main>
+    <PortalFooter />
   </div>
 </template>
 
@@ -56,6 +57,7 @@ import { ElMessage } from 'element-plus'
 import { marked } from 'marked'
 import hljs from 'highlight.js/lib/common'
 import PortalNav from '../../components/PortalNav.vue'
+import PortalFooter from '../../components/PortalFooter.vue'
 import { articleApi, commentApi, portalApi } from '../../api/blog'
 import { useAuthStore } from '../../stores/auth'
 import { normalizeAssetUrl } from '../../utils/assets'

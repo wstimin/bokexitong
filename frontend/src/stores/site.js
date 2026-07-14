@@ -26,6 +26,10 @@ export const useSiteStore = defineStore('site', {
     allowRegister: true,
     logoUrl: '',
     backgroundUrl: '',
+    seoDescription: '',
+    seoKeywords: '',
+    icpBeian: '',
+    footerText: '',
     loaded: false,
     loading: false
   }),
@@ -47,7 +51,11 @@ export const useSiteStore = defineStore('site', {
         this.heroBadge = settings.heroBadge || '博客'
         this.allowRegister = settings.allowRegister !== 'false'
         this.backgroundUrl = settings.backgroundUrl || ''
-        this.logoUrl = logo?.url || ''
+        this.logoUrl = settings.logoUrl || logo?.url || ''
+        this.seoDescription = settings.seoDescription || ''
+        this.seoKeywords = settings.seoKeywords || ''
+        this.icpBeian = settings.icpBeian || ''
+        this.footerText = settings.footerText || ''
         this.loaded = true
         this.applyHead()
       } catch (error) {
@@ -60,7 +68,20 @@ export const useSiteStore = defineStore('site', {
       if (typeof document === 'undefined') return
       document.title = this.name
       setFavicon(this.logoUrl)
+      setMeta('description', this.seoDescription || this.heroSubtitle)
+      setMeta('keywords', this.seoKeywords)
       document.documentElement.style.setProperty('--site-background-image', this.backgroundSrc ? `url("${this.backgroundSrc}")` : 'none')
     }
   }
 })
+
+const setMeta = (name, content) => {
+  if (typeof document === 'undefined') return
+  let meta = document.querySelector(`meta[name="${name}"]`)
+  if (!meta) {
+    meta = document.createElement('meta')
+    meta.name = name
+    document.head.appendChild(meta)
+  }
+  meta.content = content || ''
+}

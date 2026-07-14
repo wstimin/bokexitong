@@ -46,8 +46,25 @@ public class ArticleController {
 
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public Result<Article> detail(@PathVariable Long id) {
-        return Result.ok(articleService.detail(id, false));
+    public Result<ArticleDetailResponse> detail(@PathVariable Long id) {
+        return Result.ok(articleService.detailResponse(id, false));
+    }
+
+    @PostMapping("/admin")
+    @PreAuthorize("hasRole('ADMIN')")
+    public Result<Article> createByAdmin(@AuthenticationPrincipal BlogPrincipal principal, @RequestBody ArticleRequest request) {
+        Article article = articleService.saveArticleByAdmin(null, principal.userId(), request);
+        operationLogService.record(principal, "CREATE", "ARTICLE", article.getId(), article.getTitle());
+        return Result.ok(article);
+    }
+
+    @PutMapping("/admin/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public Result<Article> updateByAdmin(@AuthenticationPrincipal BlogPrincipal principal, @PathVariable Long id,
+                                         @RequestBody ArticleRequest request) {
+        Article article = articleService.saveArticleByAdmin(id, principal.userId(), request);
+        operationLogService.record(principal, "UPDATE", "ARTICLE", id, article.getTitle());
+        return Result.ok(article);
     }
 
     @PostMapping

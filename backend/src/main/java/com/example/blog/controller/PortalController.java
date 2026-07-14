@@ -42,20 +42,31 @@ public class PortalController {
     @GetMapping("/home")
     public Result<Map<String, Object>> home() {
         Map<String, Object> data = new HashMap<>();
+        Map<String, String> settings = siteSettingService.publicSettings();
         data.put("articles", articleService.publicCardPage(1, 6, null, null, null).getRecords());
         data.put("categories", categoryMapper.selectList(new LambdaQueryWrapper<Category>().orderByAsc(Category::getSort)));
         data.put("tags", tagMapper.selectList(new LambdaQueryWrapper<Tag>().orderByDesc(Tag::getCreatedAt)));
-        data.put("settings", siteSettingService.publicSettings());
+        data.put("settings", settings);
         data.put("hero", imageResourceMapper.selectList(new LambdaQueryWrapper<ImageResource>()
                 .eq(ImageResource::getEnabled, 1)
                 .eq(ImageResource::getType, "HERO")
                 .orderByAsc(ImageResource::getSort)));
-        List<ImageResource> logos = imageResourceMapper.selectList(new LambdaQueryWrapper<ImageResource>()
-                .eq(ImageResource::getEnabled, 1)
-                .eq(ImageResource::getType, "LOGO")
-                .orderByAsc(ImageResource::getSort)
-                .orderByDesc(ImageResource::getCreatedAt));
-        data.put("logo", logos.isEmpty() ? null : logos.get(0));
+        String logoUrl = settings.get(SiteSettingService.LOGO_URL);
+        if (logoUrl != null && !logoUrl.isBlank()) {
+            ImageResource logo = new ImageResource();
+            logo.setTitle("站点 Logo");
+            logo.setUrl(logoUrl);
+            logo.setType("LOGO");
+            logo.setEnabled(1);
+            data.put("logo", logo);
+        } else {
+            List<ImageResource> logos = imageResourceMapper.selectList(new LambdaQueryWrapper<ImageResource>()
+                    .eq(ImageResource::getEnabled, 1)
+                    .eq(ImageResource::getType, "LOGO")
+                    .orderByAsc(ImageResource::getSort)
+                    .orderByDesc(ImageResource::getCreatedAt));
+            data.put("logo", logos.isEmpty() ? null : logos.get(0));
+        }
         return Result.ok(data);
     }
 

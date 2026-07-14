@@ -116,6 +116,10 @@ public class ArticleService {
         return toDetailResponse(publicDetail(id));
     }
 
+    public ArticleDetailResponse detailResponse(Long id, boolean increaseView) {
+        return toDetailResponse(detail(id, increaseView));
+    }
+
     @Transactional
     public Article saveArticle(Long id, Long userId, ArticleRequest request) {
         Article article = id == null ? new Article() : detail(id, false);
@@ -163,6 +167,41 @@ public class ArticleService {
         }
         article.setReviewedAt(LocalDateTime.now());
         articleMapper.updateById(article);
+        return article;
+    }
+
+    @Transactional
+    public Article saveArticleByAdmin(Long id, Long adminUserId, ArticleRequest request) {
+        Article article = id == null ? new Article() : detail(id, false);
+        LocalDateTime now = LocalDateTime.now();
+        String nextStatus = normalizeAdminStatus(request.getStatus());
+        article.setUserId(article.getUserId() == null ? adminUserId : article.getUserId());
+        article.setCategoryId(request.getCategoryId());
+        article.setTitle(request.getTitle());
+        article.setSummary(request.getSummary());
+        article.setCoverUrl(request.getCoverUrl());
+        article.setContent(request.getContent());
+        article.setContentType(request.getContentType() == null ? "MARKDOWN" : request.getContentType());
+        article.setStatus(nextStatus);
+        article.setUpdatedAt(now);
+        if ("PUBLISHED".equals(nextStatus) && article.getPublishedAt() == null) {
+            article.setPublishedAt(now);
+        }
+        if (!List.of("REJECTED", "OFFLINE").contains(nextStatus)) {
+            article.setReviewReason(null);
+        }
+        article.setReviewedAt(now);
+        if (id == null) {
+            article.setViewCount(0);
+            article.setLikeCount(0);
+            article.setFavoriteCount(0);
+            article.setCreatedAt(now);
+            articleMapper.insert(article);
+        } else {
+            articleMapper.updateById(article);
+            articleTagMapper.delete(new LambdaQueryWrapper<ArticleTag>().eq(ArticleTag::getArticleId, article.getId()));
+        }
+        syncTags(article.getId(), request.getTagIds());
         return article;
     }
 

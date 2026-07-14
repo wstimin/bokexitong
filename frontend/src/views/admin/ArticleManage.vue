@@ -1,18 +1,23 @@
 <template>
   <section class="admin-card">
-    <div class="toolbar">
-      <div class="admin-filters">
-        <el-input v-model="query.keyword" placeholder="搜索标题、摘要或内容" style="width: 240px" clearable @keyup.enter="search" @clear="search" />
-        <el-select v-model="query.status" placeholder="状态" clearable style="width: 150px" @change="search">
+    <div class="toolbar article-admin-toolbar">
+      <div>
+        <h2>内容管理</h2>
+        <p class="section-subtitle">管理员可以新增、编辑、发布、下架和审核文章。</p>
+      </div>
+      <div class="admin-filters article-admin-actions">
+        <el-input v-model="query.keyword" placeholder="搜索标题、摘要或内容" class="filter-input" clearable @keyup.enter="search" @clear="search" />
+        <el-select v-model="query.status" placeholder="状态" clearable class="filter-select" @change="search">
           <el-option v-for="item in statusOptions" :key="item.value" :label="item.label" :value="item.value" />
         </el-select>
         <button class="btn-ghost" :disabled="loading" @click="search">查询</button>
+        <button class="btn-primary" @click="openEditor()">新增文章</button>
+        <button class="btn-ghost danger-action" :disabled="!selected.length || loading" @click="removeSelected">批量删除</button>
       </div>
-      <button class="btn-ghost danger-action" :disabled="!selected.length || loading" @click="removeSelected">批量删除</button>
     </div>
 
     <div class="table-scroll">
-      <el-table v-loading="loading" :data="rows" border style="min-width: 1080px" @selection-change="selected = $event">
+      <el-table v-loading="loading" :data="rows" border style="min-width: 1120px" @selection-change="selected = $event">
         <el-table-column type="selection" width="48" />
         <el-table-column prop="title" label="标题" min-width="240" show-overflow-tooltip />
         <el-table-column label="状态" width="120">
@@ -25,11 +30,12 @@
         <el-table-column prop="likeCount" label="点赞" width="90" />
         <el-table-column prop="favoriteCount" label="收藏" width="90" />
         <el-table-column prop="createdAt" label="创建时间" width="180" />
-        <el-table-column label="操作" width="340" fixed="right">
+        <el-table-column label="操作" width="420" fixed="right">
           <template #default="{ row }">
             <div class="action-row">
               <el-button size="small" @click="openPreview(row)">预览</el-button>
-              <el-button v-if="canPublish(row.status)" size="small" type="success" @click="changeStatus(row, 'PUBLISHED')">通过发布</el-button>
+              <el-button size="small" type="primary" @click="openEditor(row)">编辑</el-button>
+              <el-button v-if="canPublish(row.status)" size="small" type="success" @click="changeStatus(row, 'PUBLISHED')">发布</el-button>
               <el-button v-if="row.status === 'PENDING'" size="small" type="warning" @click="changeStatus(row, 'REJECTED')">驳回</el-button>
               <el-button v-if="row.status === 'PUBLISHED'" size="small" type="warning" @click="changeStatus(row, 'OFFLINE')">下架</el-button>
               <el-button size="small" type="danger" @click="remove(row.id)">删除</el-button>
@@ -40,8 +46,80 @@
     </div>
 
     <div class="pager">
-      <el-pagination background layout="prev, pager, next" :total="total" :page-size="query.size" v-model:current-page="query.current" @current-change="load" />
+      <el-pagination background layout="total, prev, pager, next" :total="total" :page-size="query.size" v-model:current-page="query.current" @current-change="load" />
     </div>
+
+    <el-dialog v-model="editorVisible" :title="editingId ? '编辑文章' : '新增文章'" width="980px" class="article-editor-dialog" destroy-on-close>
+      <el-form label-position="top">
+        <el-form-item label="标题">
+          <el-input v-model="form.title" maxlength="180" show-word-limit placeholder="请输入文章标题" />
+        </el-form-item>
+        <el-form-item label="摘要">
+          <el-input v-model="form.summary" type="textarea" :rows="2" maxlength="500" show-word-limit placeholder="用于首页卡片和搜索结果展示" />
+        </el-form-item>
+
+        <div class="writer-meta-grid">
+          <el-form-item label="分类">
+            <el-select v-model="form.categoryId" placeholder="选择分类" clearable filterable>
+              <el-option v-for="item in categories" :key="item.id" :label="item.name" :value="item.id" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="标签">
+            <el-select v-model="form.tagIds" placeholder="选择标签" multiple clearable filterable collapse-tags collapse-tags-tooltip>
+              <el-option v-for="tag in tags" :key="tag.id" :label="tag.name" :value="tag.id" />
+            </el-select>
+          </el-form-item>
+        </div>
+
+        <el-form-item label="封面图">
+          <div class="cover-picker">
+            <img v-if="form.coverUrl" :src="coverPreviewSrc" alt="文章封面" />
+            <div v-else class="cover-empty">封面预览</div>
+            <div class="cover-fields">
+              <el-input v-model="form.coverUrl" placeholder="上传封面或粘贴图片地址" />
+              <el-upload :show-file-list="false" :http-request="(options) => uploadFile(options, 'cover')" accept="image/*">
+                <button class="btn-ghost" type="button">上传封面</button>
+              </el-upload>
+            </div>
+          </div>
+        </el-form-item>
+
+        <el-form-item label="正文">
+          <el-tabs v-model="editorMode" class="writer-mode-tabs">
+            <el-tab-pane label="编辑" name="edit">
+              <el-input v-model="form.content" type="textarea" :rows="16" placeholder="可以直接写普通文字，也可以用下方按钮插入图片、视频、附件、小标题和代码块。" />
+            </el-tab-pane>
+            <el-tab-pane label="预览" name="preview">
+              <div class="writer-preview-box markdown" v-html="editorHtml"></div>
+            </el-tab-pane>
+          </el-tabs>
+        </el-form-item>
+      </el-form>
+
+      <div class="upload-row writer-tools">
+        <button class="btn-ghost" type="button" @click="insertSnippet('**加粗文字**')">加粗</button>
+        <button class="btn-ghost" type="button" @click="insertSnippet('\n\n> 引用内容\n')">引用</button>
+        <el-upload :show-file-list="false" :http-request="(options) => uploadFile(options, 'image')" accept="image/*">
+          <button class="btn-ghost" type="button">插入图片</button>
+        </el-upload>
+        <el-upload :show-file-list="false" :http-request="(options) => uploadFile(options, 'video')" accept="video/*">
+          <button class="btn-ghost" type="button">插入视频</button>
+        </el-upload>
+        <el-upload :show-file-list="false" :http-request="(options) => uploadFile(options, 'file')">
+          <button class="btn-ghost" type="button">插入附件</button>
+        </el-upload>
+        <button class="btn-ghost" type="button" @click="insertSnippet('\n\n## 小标题\n')">小标题</button>
+        <button class="btn-ghost" type="button" @click="insertSnippet('\n\n- 列表项\n')">列表</button>
+        <button class="btn-ghost" type="button" @click="insertSnippet('\n\n```\n代码写在这里\n```\n')">代码块</button>
+      </div>
+
+      <template #footer>
+        <button class="btn-ghost" @click="editorVisible = false">取消</button>
+        <button class="btn-ghost" :disabled="saving" @click="saveArticle('DRAFT')">保存草稿</button>
+        <button class="btn-ghost" :disabled="saving" @click="saveArticle('PENDING')">设为待审核</button>
+        <button class="btn-primary" :disabled="saving" @click="saveArticle('PUBLISHED')">发布文章</button>
+      </template>
+    </el-dialog>
 
     <el-dialog v-model="previewVisible" title="文章预览" width="860px" class="article-preview-dialog">
       <div v-if="previewArticle.id" class="admin-preview">
@@ -67,7 +145,8 @@
       </div>
       <template #footer>
         <button class="btn-ghost" @click="previewVisible = false">关闭</button>
-        <button v-if="canPublish(previewArticle.status)" class="btn-primary" @click="changeStatus(previewArticle, 'PUBLISHED')">通过发布</button>
+        <button class="btn-ghost" @click="openEditor(previewArticle)">编辑</button>
+        <button v-if="canPublish(previewArticle.status)" class="btn-primary" @click="changeStatus(previewArticle, 'PUBLISHED')">发布</button>
         <button v-if="previewArticle.status === 'PENDING'" class="btn-ghost danger-action" @click="changeStatus(previewArticle, 'REJECTED')">驳回</button>
       </template>
     </el-dialog>
@@ -78,7 +157,7 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { marked } from 'marked'
-import { articleApi } from '../../api/blog'
+import { adminApi, articleApi, uploadApi } from '../../api/blog'
 import { normalizeAssetUrl } from '../../utils/assets'
 
 const statusOptions = [
@@ -89,15 +168,34 @@ const statusOptions = [
   { label: '已下架', value: 'OFFLINE' }
 ]
 
+const emptyForm = () => ({
+  title: '',
+  summary: '',
+  coverUrl: '',
+  content: '',
+  contentType: 'MARKDOWN',
+  categoryId: null,
+  tagIds: []
+})
+
 const rows = ref([])
 const selected = ref([])
 const total = ref(0)
 const loading = ref(false)
+const saving = ref(false)
 const previewVisible = ref(false)
+const editorVisible = ref(false)
+const editorMode = ref('edit')
 const previewArticle = ref({})
+const categories = ref([])
+const tags = ref([])
+const editingId = ref(null)
+const form = reactive(emptyForm())
 const query = reactive({ current: 1, size: 10, keyword: '', status: '' })
 const previewHtml = computed(() => marked(previewArticle.value.content || ''))
 const previewCoverSrc = computed(() => normalizeAssetUrl(previewArticle.value.coverUrl))
+const editorHtml = computed(() => marked(form.content || ''))
+const coverPreviewSrc = computed(() => normalizeAssetUrl(form.coverUrl))
 
 const load = async () => {
   loading.value = true
@@ -108,6 +206,15 @@ const load = async () => {
   } finally {
     loading.value = false
   }
+}
+
+const loadMeta = async () => {
+  const [categoryRes, tagRes] = await Promise.all([
+    adminApi.categories({ current: 1, size: 200 }),
+    adminApi.tags({ current: 1, size: 200 })
+  ])
+  categories.value = categoryRes.data.records || []
+  tags.value = tagRes.data.records || []
 }
 
 const search = () => {
@@ -121,7 +228,78 @@ const openPreview = async (row) => {
   previewVisible.value = true
 }
 
-const canPublish = (status) => ['PENDING', 'REJECTED', 'OFFLINE'].includes(status)
+const openEditor = async (row) => {
+  resetForm()
+  if (row?.id) {
+    const res = await articleApi.adminDetail(row.id)
+    const detail = res.data || row
+    editingId.value = detail.id
+    Object.assign(form, {
+      title: detail.title || '',
+      summary: detail.summary || '',
+      coverUrl: detail.coverUrl || '',
+      content: detail.content || '',
+      contentType: detail.contentType || 'MARKDOWN',
+      categoryId: detail.categoryId || null,
+      tagIds: detail.tags?.map((tag) => tag.id) || []
+    })
+  }
+  editorMode.value = 'edit'
+  previewVisible.value = false
+  editorVisible.value = true
+}
+
+const resetForm = () => {
+  editingId.value = null
+  Object.assign(form, emptyForm())
+}
+
+const saveArticle = async (status) => {
+  if (!form.title.trim()) {
+    ElMessage.warning('请填写文章标题')
+    return
+  }
+  if (['PENDING', 'PUBLISHED'].includes(status) && !form.content.trim()) {
+    ElMessage.warning('发布或提交前请先填写正文')
+    return
+  }
+  saving.value = true
+  try {
+    const payload = { ...form, status }
+    if (editingId.value) {
+      await articleApi.adminUpdate(editingId.value, payload)
+    } else {
+      await articleApi.adminSave(payload)
+    }
+    ElMessage.success(status === 'PUBLISHED' ? '文章已发布' : '文章已保存')
+    editorVisible.value = false
+    resetForm()
+    load()
+  } finally {
+    saving.value = false
+  }
+}
+
+const uploadFile = async (options, type) => {
+  const res = await uploadApi.file(options.file)
+  const { url, name } = res.data
+  if (type === 'cover') {
+    form.coverUrl = url
+  } else if (type === 'image') {
+    insertSnippet(`\n\n![${name}](${url})\n`)
+  } else if (type === 'video') {
+    insertSnippet(`\n\n<video src="${url}" controls style="max-width:100%"></video>\n`)
+  } else {
+    insertSnippet(`\n\n[${name}](${url})\n`)
+  }
+  ElMessage.success('上传成功')
+}
+
+const insertSnippet = (text) => {
+  form.content = `${form.content || ''}${text}`
+}
+
+const canPublish = (status) => ['PENDING', 'REJECTED', 'OFFLINE', 'DRAFT'].includes(status)
 
 const changeStatus = async (row, status) => {
   let reason = ''
@@ -175,5 +353,8 @@ const statusType = (status) => ({
   DRAFT: 'info'
 }[status] || 'info')
 
-onMounted(load)
+onMounted(() => {
+  loadMeta()
+  load()
+})
 </script>

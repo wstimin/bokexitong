@@ -1,7 +1,7 @@
 services:
   mysql:
     image: mysql:8.0
-    container_name: anime-blog-mysql
+    container_name: bokexitong-mysql
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD is required}
@@ -23,7 +23,7 @@ services:
   backend:
     build:
       context: ./backend
-    container_name: anime-blog-backend
+    container_name: bokexitong-backend
     restart: always
     depends_on:
       mysql:
@@ -50,7 +50,7 @@ services:
   frontend:
     build:
       context: ./frontend
-    container_name: anime-blog-frontend
+    container_name: bokexitong-frontend
     restart: always
     depends_on:
       - backend

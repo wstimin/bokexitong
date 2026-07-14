@@ -9,11 +9,14 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
+import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -41,6 +44,21 @@ public class EmailCodeService {
     @Value("${spring.mail.host:}")
     private String mailHost;
 
+    @Value("${spring.mail.port:587}")
+    private int mailPort;
+
+    @Value("${spring.mail.password:}")
+    private String mailPassword;
+
+    @Value("${spring.mail.properties.mail.smtp.auth:true}")
+    private boolean smtpAuth;
+
+    @Value("${spring.mail.properties.mail.smtp.starttls.enable:true}")
+    private boolean starttlsEnable;
+
+    @Value("${spring.mail.properties.mail.smtp.ssl.enable:false}")
+    private boolean sslEnable;
+
     @Value("${blog.mail.from-name:博客系统}")
     private String fromName;
 
@@ -63,7 +81,8 @@ public class EmailCodeService {
         }
         validateSceneTarget(email, scene);
         enforceSendInterval(email, scene);
-        JavaMailSender sender = requireMailSender();
+        MailConfig mailConfig = requireMailConfig();
+        JavaMailSender sender = mailConfig.sender();
 
         String code = String.format("%06d", RANDOM.nextInt(1_000_000));
         LocalDateTime now = LocalDateTime.now();
@@ -77,7 +96,7 @@ public class EmailCodeService {
         emailCodeMapper.insert(row);
 
         try {
-            sendMail(sender, email, scene, code);
+            sendMail(sender, mailConfig, email, scene, code);
         } catch (RuntimeException ex) {
             row.setUsed(1);
             row.setUsedAt(LocalDateTime.now());
@@ -109,6 +128,18 @@ public class EmailCodeService {
         emailCodeMapper.updateById(row);
     }
 
+    public void sendTestMail(String rawEmail) {
+        String email = clean(rawEmail);
+        validateEmail(email);
+        MailConfig mailConfig = requireMailConfig();
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(mailConfig.from());
+        message.setTo(email);
+        message.setSubject("邮箱配置测试");
+        message.setText("【" + mailConfig.fromName() + "】这是一封测试邮件。收到这封邮件说明后台 SMTP 配置已经生效。");
+        mailConfig.sender().send(message);
+    }
+
     private void validateSceneTarget(String email, String scene) {
         BlogUser user = userMapper.selectOne(new LambdaQueryWrapper<BlogUser>()
                 .eq(BlogUser::getEmail, email)
@@ -135,22 +166,64 @@ public class EmailCodeService {
         }
     }
 
-    private JavaMailSender requireMailSender() {
+    private MailConfig requireMailConfig() {
+        Map<String, String> settings = siteSettingService.mailSettings();
+        boolean dbEnabled = bool(settings.get(SiteSettingService.MAIL_ENABLED), false);
+        String dbHost = clean(settings.get(SiteSettingService.MAIL_HOST));
+        String dbUsername = clean(settings.get(SiteSettingService.MAIL_USERNAME));
+        String dbPassword = clean(settings.get(SiteSettingService.MAIL_PASSWORD));
+
+        if (dbEnabled) {
+            if (dbHost == null || dbUsername == null || dbPassword == null) {
+                throw new IllegalArgumentException("邮件服务未配置完整，无法发送验证码");
+            }
+            JavaMailSenderImpl sender = new JavaMailSenderImpl();
+            sender.setHost(dbHost);
+            sender.setPort(parsePort(settings.get(SiteSettingService.MAIL_PORT), 587));
+            sender.setUsername(dbUsername);
+            sender.setPassword(dbPassword);
+            Properties props = sender.getJavaMailProperties();
+            props.put("mail.smtp.auth", String.valueOf(bool(settings.get(SiteSettingService.MAIL_SMTP_AUTH), true)));
+            props.put("mail.smtp.starttls.enable", String.valueOf(bool(settings.get(SiteSettingService.MAIL_STARTTLS_ENABLE), true)));
+            props.put("mail.smtp.ssl.enable", String.valueOf(bool(settings.get(SiteSettingService.MAIL_SSL_ENABLE), false)));
+            return new MailConfig(sender, dbUsername, clean(settings.get(SiteSettingService.MAIL_FROM_NAME), fromName));
+        }
+
         JavaMailSender sender = mailSenderProvider.getIfAvailable();
         if (!mailEnabled || sender == null || clean(mailFrom) == null || clean(mailHost) == null) {
             throw new IllegalArgumentException("邮件服务未配置，无法发送验证码");
         }
-        return sender;
+        return new MailConfig(sender, mailFrom, fromName);
     }
 
-    private void sendMail(JavaMailSender sender, String email, String scene, String code) {
+    private void sendMail(JavaMailSender sender, MailConfig mailConfig, String email, String scene, String code) {
         SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom(mailFrom);
+        message.setFrom(mailConfig.from());
         message.setTo(email);
         message.setSubject(subject(scene));
-        message.setText("【" + fromName + "】您的验证码是：" + code + "，10 分钟内有效。如非本人操作，请忽略本邮件。");
+        message.setText("【" + mailConfig.fromName() + "】您的验证码是：" + code + "，10 分钟内有效。如非本人操作，请忽略本邮件。");
         sender.send(message);
     }
+
+    private boolean bool(String value, boolean fallback) {
+        String trimmed = clean(value);
+        return trimmed == null ? fallback : "true".equalsIgnoreCase(trimmed);
+    }
+
+    private int parsePort(String value, int fallback) {
+        try {
+            return Integer.parseInt(String.valueOf(value).trim());
+        } catch (Exception ignored) {
+            return fallback;
+        }
+    }
+
+    private String clean(String value, String fallback) {
+        String cleaned = clean(value);
+        return cleaned == null ? fallback : cleaned;
+    }
+
+    private record MailConfig(JavaMailSender sender, String from, String fromName) {}
 
     private String subject(String scene) {
         return SCENE_RESET_PASSWORD.equals(scene) ? "重置密码验证码" : "注册账号验证码";

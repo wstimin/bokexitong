@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-APP_NAME="anime-blog"
+APP_NAME="bokexitong"
 PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ENV_FILE="$PROJECT_DIR/.env"
 JWT_PLACEHOLDER_OLD="change-this-secret-to-a-long-random-value-for-production"

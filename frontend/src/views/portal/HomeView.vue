@@ -82,12 +82,14 @@
         </div>
       </aside>
     </main>
+    <PortalFooter />
   </div>
 </template>
 
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
 import PortalNav from '../../components/PortalNav.vue'
+import PortalFooter from '../../components/PortalFooter.vue'
 import ArticleCard from '../../components/ArticleCard.vue'
 import { portalApi } from '../../api/blog'
 import { useSiteStore } from '../../stores/site'
