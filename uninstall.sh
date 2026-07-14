@@ -1,7 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd 2>/dev/null || pwd)"
+SOURCE_PATH="${BASH_SOURCE[0]:-${0:-}}"
+if [ -n "$SOURCE_PATH" ] && [ -f "$SOURCE_PATH" ]; then
+  SCRIPT_DIR="$(cd "$(dirname "$SOURCE_PATH")" && pwd 2>/dev/null || pwd)"
+else
+  SCRIPT_DIR="$(pwd)"
+fi
 
 if [ -f "$SCRIPT_DIR/scripts/uninstall.sh" ]; then
   exec bash "$SCRIPT_DIR/scripts/uninstall.sh" "$@"

@@ -64,8 +64,14 @@ confirm() {
   if [ "$YES" = "1" ]; then
     return 0
   fi
-  printf '%s [y/N]: ' "$message"
-  read -r answer || true
+  answer=""
+  if [ -r /dev/tty ]; then
+    printf '%s [y/N]: ' "$message" > /dev/tty
+    read -r answer < /dev/tty || true
+  else
+    printf '%s [y/N]: ' "$message"
+    read -r answer || true
+  fi
   case "$answer" in
     y|Y|yes|YES) return 0 ;;
     *) fail "Cancelled." ;;

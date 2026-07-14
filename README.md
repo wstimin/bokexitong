@@ -130,6 +130,12 @@ curl -fsSL https://raw.githubusercontent.com/wstimin/bokexitong/main/uninstall.s
 curl -fsSL https://raw.githubusercontent.com/wstimin/bokexitong/main/uninstall.sh | bash -s -- --purge
 ```
 
+服务器没有交互输入或你已经确认要清空时，可以加 `-y` 跳过确认：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/wstimin/bokexitong/main/uninstall.sh | bash -s -- --purge -y
+```
+
 如果这台服务器只跑这个项目，还想连 Docker 一起卸载：
 
 ```bash
