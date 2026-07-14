@@ -12,6 +12,7 @@
           <el-option label="更新" value="UPDATE" />
           <el-option label="审核" value="AUDIT" />
           <el-option label="删除" value="DELETE" />
+          <el-option label="测试" value="TEST" />
           <el-option label="启用" value="ENABLE" />
           <el-option label="禁用" value="DISABLE" />
           <el-option label="重置密码" value="RESET_PASSWORD" />
@@ -24,6 +25,7 @@
           <el-option label="标签" value="TAG" />
           <el-option label="图片" value="IMAGE" />
           <el-option label="站点设置" value="SITE_SETTING" />
+          <el-option label="邮箱设置" value="MAIL_SETTING" />
         </el-select>
         <button class="btn-ghost" :disabled="loading" @click="search">查询</button>
       </div>
@@ -87,6 +89,7 @@ const actionText = (action) => ({
   UPDATE: '更新',
   AUDIT: '审核',
   DELETE: '删除',
+  TEST: '测试',
   ENABLE: '启用',
   DISABLE: '禁用',
   RESET_PASSWORD: '重置密码'
@@ -97,6 +100,7 @@ const actionType = (action) => ({
   UPDATE: 'primary',
   AUDIT: 'warning',
   DELETE: 'danger',
+  TEST: 'info',
   ENABLE: 'success',
   DISABLE: 'warning',
   RESET_PASSWORD: 'info'
@@ -109,7 +113,8 @@ const targetText = (targetType) => ({
   CATEGORY: '分类',
   TAG: '标签',
   IMAGE: '图片',
-  SITE_SETTING: '站点设置'
+  SITE_SETTING: '站点设置',
+  MAIL_SETTING: '邮箱设置'
 }[targetType] || targetType || '-')
 
 onMounted(load)

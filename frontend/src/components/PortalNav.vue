@@ -8,11 +8,11 @@
       </RouterLink>
       <nav class="nav-links">
         <RouterLink class="nav-link" to="/">首页</RouterLink>
-        <RouterLink v-if="auth.isLogin && !auth.isAdmin" class="nav-link" to="/user">用户中心</RouterLink>
-        <RouterLink v-if="auth.isAdmin" class="nav-link" to="/admin/dashboard">后台管理</RouterLink>
-        <RouterLink v-if="!auth.isLogin" class="nav-link" to="/login">登录</RouterLink>
-        <RouterLink v-if="!auth.isLogin" class="nav-link" to="/login?mode=register">注册</RouterLink>
-        <button v-else class="btn-ghost" @click="logout">退出</button>
+        <RouterLink v-if="auth.isUserLogin" class="nav-link" to="/user">用户中心</RouterLink>
+        <RouterLink v-if="auth.isAdminLogin" class="nav-link" to="/admin/dashboard">后台管理</RouterLink>
+        <RouterLink v-if="!auth.isUserLogin" class="nav-link" to="/login">登录</RouterLink>
+        <RouterLink v-if="!auth.isUserLogin" class="nav-link" to="/login?mode=register">注册</RouterLink>
+        <button v-else class="btn-ghost" @click="logout">退出用户</button>
       </nav>
     </div>
   </header>
@@ -31,7 +31,7 @@ const router = useRouter()
 onMounted(() => site.loadSite())
 
 const logout = () => {
-  auth.logout()
+  auth.logout('user')
   router.push('/')
 }
 </script>

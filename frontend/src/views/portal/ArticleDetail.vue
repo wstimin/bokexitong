@@ -91,7 +91,7 @@ const load = async () => {
 }
 
 const requireLogin = () => {
-  if (auth.isLogin) return true
+  if (auth.isUserLogin) return true
   router.push(`/login?redirect=/article/${route.params.id}`)
   return false
 }

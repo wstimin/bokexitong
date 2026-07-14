@@ -30,6 +30,7 @@ export const useSiteStore = defineStore('site', {
     seoKeywords: '',
     icpBeian: '',
     footerText: '',
+    contactHtml: '',
     loaded: false,
     loading: false
   }),
@@ -56,6 +57,7 @@ export const useSiteStore = defineStore('site', {
         this.seoKeywords = settings.seoKeywords || ''
         this.icpBeian = settings.icpBeian || ''
         this.footerText = settings.footerText || ''
+        this.contactHtml = settings.contactHtml || ''
         this.loaded = true
         this.applyHead()
       } catch (error) {

@@ -18,8 +18,9 @@ app.use(pinia).use(router).use(ElementPlus)
 setUnauthorizedHandler(() => {
   const auth = useAuthStore()
   const current = router.currentRoute.value
-  auth.logout()
-  const loginPath = current.path.startsWith('/admin') ? '/admin/login' : '/login'
+  const isAdminArea = current.path.startsWith('/admin')
+  auth.logout(isAdminArea ? 'admin' : 'user')
+  const loginPath = isAdminArea ? '/admin/login' : '/login'
   if (current.path !== '/login' && current.path !== '/admin/login') {
     router.push({ path: loginPath, query: { redirect: current.fullPath } })
   }

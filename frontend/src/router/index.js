@@ -16,6 +16,7 @@ const routes = [
       { path: '', redirect: '/admin/dashboard' },
       { path: 'dashboard', component: () => import('../views/admin/DashboardView.vue') },
       { path: 'settings', component: () => import('../views/admin/SiteSetting.vue') },
+      { path: 'mail-settings', component: () => import('../views/admin/MailSetting.vue') },
       { path: 'articles', component: () => import('../views/admin/ArticleManage.vue') },
       { path: 'taxonomies', component: () => import('../views/admin/TaxonomyManage.vue') },
       { path: 'images', component: () => import('../views/admin/ImageManage.vue') },
@@ -30,17 +31,17 @@ const router = createRouter({ history: createWebHistory(), routes })
 
 router.beforeEach((to) => {
   const auth = useAuthStore()
-  if ((to.path === '/login' || to.path === '/admin/login') && auth.isLogin) {
-    return auth.isAdmin ? '/admin/dashboard' : '/user'
+  if (to.path === '/login' && auth.isUserLogin) {
+    return '/user'
   }
-  if (to.meta.requiresAuth && !auth.isLogin) {
-    return { path: to.meta.requiresAdmin ? '/admin/login' : '/login', query: { redirect: to.fullPath } }
-  }
-  if (to.meta.requiresAdmin && !auth.isAdmin) {
-    return auth.isLogin ? '/' : { path: '/admin/login', query: { redirect: to.fullPath } }
-  }
-  if (to.meta.requiresUser && auth.isAdmin) {
+  if (to.path === '/admin/login' && auth.isAdminLogin) {
     return '/admin/dashboard'
+  }
+  if (to.meta.requiresAdmin && !auth.isAdminLogin) {
+    return { path: '/admin/login', query: { redirect: to.fullPath } }
+  }
+  if (to.meta.requiresUser && !auth.isUserLogin) {
+    return { path: '/login', query: { redirect: to.fullPath } }
   }
 })
 

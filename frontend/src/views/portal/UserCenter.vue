@@ -1,72 +1,104 @@
 <template>
   <div class="page">
     <PortalNav />
-    <main class="shell user-dashboard">
-      <section class="form-panel user-quick-panel">
-        <div class="section-title writer-title">
+    <main class="shell user-workbench">
+      <aside class="form-panel user-workbench-sidebar">
+        <div class="user-profile-card">
+          <img v-if="avatarPreviewSrc" class="user-avatar" :src="avatarPreviewSrc" alt="用户头像" />
+          <div v-else class="user-avatar user-avatar-empty">{{ profile.nickname?.slice(0, 1) || '用' }}</div>
           <div>
-            <h2>我的工作台</h2>
-            <p class="section-subtitle">常用操作都在这里，写作、管理内容和账户设置可以直接进入。</p>
+            <strong>{{ profile.nickname || '用户' }}</strong>
+            <span>{{ profile.email || '未填写邮箱' }}</span>
           </div>
-          <button class="btn-primary" type="button" @click="focusWriter">写新文章</button>
         </div>
-        <div class="user-action-grid">
-          <button class="shortcut-item user-action-card" type="button" @click="focusWriter">
-            <strong>写文章</strong>
-            <span>编辑正文、插入图片、视频和附件。</span>
+        <nav class="user-workbench-menu">
+          <button
+            v-for="item in workbenchMenus"
+            :key="item.key"
+            type="button"
+            :class="['user-menu-item', { active: activeSection === item.key }]"
+            @click="setSection(item.key)"
+          >
+            <strong>{{ item.title }}</strong>
+            <span>{{ item.desc }}</span>
           </button>
-          <button class="shortcut-item user-action-card" type="button" @click="switchActivity('articles')">
-            <strong>我的文章</strong>
-            <span>查看草稿、审核状态和发布记录。</span>
-          </button>
-          <button class="shortcut-item user-action-card" type="button" @click="switchActivity('favorites')">
-            <strong>我的收藏</strong>
-            <span>回看收藏过的公开文章。</span>
-          </button>
-          <button class="shortcut-item user-action-card" type="button" @click="switchActivity('comments')">
-            <strong>我的评论</strong>
-            <span>查看评论审核结果和关联文章。</span>
-          </button>
-          <button class="shortcut-item user-action-card" type="button" @click="switchAccount('profile')">
-            <strong>个人资料</strong>
-            <span>修改昵称、头像和邮箱。</span>
-          </button>
-          <button class="shortcut-item user-action-card" type="button" @click="switchAccount('password')">
-            <strong>修改密码</strong>
-            <span>定期更新登录密码。</span>
-          </button>
-        </div>
-      </section>
+        </nav>
+      </aside>
 
-      <section class="form-panel account-panel">
-        <div class="section-title"><h2>用户中心</h2></div>
-        <el-tabs v-model="accountTab">
-          <el-tab-pane label="资料" name="profile">
-            <el-form label-position="top">
-              <el-form-item label="昵称"><el-input v-model="profile.nickname" /></el-form-item>
-              <el-form-item label="头像 URL">
-                <div class="inline-field">
-                  <el-input v-model="profile.avatar" placeholder="上传头像或粘贴图片地址" />
-                  <el-upload :show-file-list="false" :http-request="(options) => uploadProfileFile(options, 'avatar')" accept="image/*">
-                    <button class="btn-ghost" type="button">上传</button>
-                  </el-upload>
-                </div>
-              </el-form-item>
-              <el-form-item label="邮箱"><el-input v-model="profile.email" /></el-form-item>
-            </el-form>
-            <button class="btn-primary" @click="saveProfile">保存资料</button>
-          </el-tab-pane>
-          <el-tab-pane label="密码" name="password">
-            <el-form label-position="top">
-              <el-form-item label="原密码"><el-input v-model="password.oldPassword" type="password" show-password /></el-form-item>
-              <el-form-item label="新密码"><el-input v-model="password.newPassword" type="password" show-password /></el-form-item>
-            </el-form>
-            <button class="btn-primary" @click="changePassword">修改密码</button>
-          </el-tab-pane>
-        </el-tabs>
-      </section>
+      <div class="user-workbench-main">
+        <section v-if="activeSection === 'dashboard'" class="form-panel user-section-panel">
+          <div class="section-title writer-title">
+            <div>
+              <h2>我的工作台</h2>
+              <p class="section-subtitle">选择左侧模块进行写作、内容管理和账户维护。</p>
+            </div>
+            <button class="btn-primary" type="button" @click="focusWriter">写新文章</button>
+          </div>
+          <div class="user-action-grid">
+            <button class="shortcut-item user-action-card" type="button" @click="focusWriter">
+              <strong>写文章</strong>
+              <span>编辑正文、插入图片、视频和附件。</span>
+            </button>
+            <button class="shortcut-item user-action-card" type="button" @click="setSection('articles')">
+              <strong>我的文章</strong>
+              <span>查看草稿、审核状态和发布记录。</span>
+            </button>
+            <button class="shortcut-item user-action-card" type="button" @click="setSection('favorites')">
+              <strong>我的收藏</strong>
+              <span>回看收藏过的公开文章。</span>
+            </button>
+            <button class="shortcut-item user-action-card" type="button" @click="setSection('comments')">
+              <strong>我的评论</strong>
+              <span>查看评论审核结果和关联文章。</span>
+            </button>
+            <button class="shortcut-item user-action-card" type="button" @click="setSection('profile')">
+              <strong>个人资料</strong>
+              <span>修改昵称、头像和邮箱。</span>
+            </button>
+            <button class="shortcut-item user-action-card" type="button" @click="setSection('password')">
+              <strong>修改密码</strong>
+              <span>定期更新登录密码。</span>
+            </button>
+          </div>
+        </section>
 
-      <section ref="writerPanel" class="form-panel writer-panel">
+        <section v-if="activeSection === 'profile'" class="form-panel user-section-panel account-panel">
+          <div class="section-title writer-title">
+            <div>
+              <h2>个人资料</h2>
+              <p class="section-subtitle">维护昵称、头像和邮箱信息。</p>
+            </div>
+          </div>
+          <el-form label-position="top" class="user-form-grid">
+            <el-form-item label="昵称"><el-input v-model="profile.nickname" /></el-form-item>
+            <el-form-item label="邮箱"><el-input v-model="profile.email" /></el-form-item>
+            <el-form-item label="头像 URL" class="field-full">
+              <div class="inline-field">
+                <el-input v-model="profile.avatar" placeholder="上传头像或粘贴图片地址" />
+                <el-upload :show-file-list="false" :http-request="(options) => uploadProfileFile(options, 'avatar')" accept="image/*">
+                  <button class="btn-ghost" type="button">上传头像</button>
+                </el-upload>
+              </div>
+            </el-form-item>
+          </el-form>
+          <button class="btn-primary" @click="saveProfile">保存资料</button>
+        </section>
+
+        <section v-if="activeSection === 'password'" class="form-panel user-section-panel account-panel">
+          <div class="section-title writer-title">
+            <div>
+              <h2>修改密码</h2>
+              <p class="section-subtitle">定期更换密码可以保护账号安全。</p>
+            </div>
+          </div>
+          <el-form label-position="top" class="user-form-grid">
+            <el-form-item label="原密码"><el-input v-model="password.oldPassword" type="password" show-password /></el-form-item>
+            <el-form-item label="新密码"><el-input v-model="password.newPassword" type="password" show-password /></el-form-item>
+          </el-form>
+          <button class="btn-primary" @click="changePassword">修改密码</button>
+        </section>
+
+        <section v-if="activeSection === 'write'" class="form-panel user-section-panel writer-panel">
         <div class="section-title writer-title">
           <div>
             <h2>{{ editingId ? '编辑文章' : '写新文章' }}</h2>
@@ -145,13 +177,14 @@
         </div>
       </section>
 
-      <section ref="activityPanel" class="form-panel my-articles">
+      <section v-if="activeSection === 'articles'" class="form-panel user-section-panel my-articles">
         <div class="toolbar">
-          <h2>我的内容</h2>
-          <button class="btn-ghost" @click="refreshActivity">刷新</button>
+          <div>
+            <h2>我的文章</h2>
+            <p class="section-subtitle">查看草稿、审核状态和发布记录。</p>
+          </div>
+          <button class="btn-ghost" @click="loadMine(articlePage.current)">刷新</button>
         </div>
-        <el-tabs v-model="activityTab" class="user-activity-tabs">
-          <el-tab-pane label="我的文章" name="articles">
             <div class="content-filters">
               <el-input v-model="articleQuery.keyword" class="filter-input" placeholder="搜索我的文章" clearable @keyup.enter="loadMine(1)" @clear="loadMine(1)" />
               <el-select v-model="articleQuery.status" class="filter-select" placeholder="全部状态" clearable @change="loadMine(1)">
@@ -199,9 +232,16 @@
                 @current-change="loadMine"
               />
             </div>
-          </el-tab-pane>
+      </section>
 
-          <el-tab-pane label="我的收藏" name="favorites">
+      <section v-if="activeSection === 'favorites'" class="form-panel user-section-panel my-articles">
+        <div class="toolbar">
+          <div>
+            <h2>我的收藏</h2>
+            <p class="section-subtitle">回看你收藏过的公开文章。</p>
+          </div>
+          <button class="btn-ghost" @click="loadFavorites(favoritePage.current)">刷新</button>
+        </div>
             <div class="table-scroll">
               <el-table :data="favoriteRows" border style="min-width: 860px">
                 <el-table-column prop="title" label="标题" min-width="220" show-overflow-tooltip />
@@ -233,9 +273,16 @@
                 @current-change="loadFavorites"
               />
             </div>
-          </el-tab-pane>
+      </section>
 
-          <el-tab-pane label="我的评论" name="comments">
+      <section v-if="activeSection === 'comments'" class="form-panel user-section-panel my-articles">
+        <div class="toolbar">
+          <div>
+            <h2>我的评论</h2>
+            <p class="section-subtitle">查看评论审核结果和关联文章。</p>
+          </div>
+          <button class="btn-ghost" @click="loadComments(commentPage.current)">刷新</button>
+        </div>
             <div class="table-scroll">
               <el-table :data="commentRows" border style="min-width: 1040px">
                 <el-table-column prop="content" label="评论内容" min-width="260" show-overflow-tooltip />
@@ -273,9 +320,8 @@
                 @current-change="loadComments"
               />
             </div>
-          </el-tab-pane>
-        </el-tabs>
       </section>
+      </div>
     </main>
     <PortalFooter />
   </div>
@@ -294,11 +340,8 @@ import { normalizeAssetUrl } from '../../utils/assets'
 
 const auth = useAuthStore()
 const router = useRouter()
-const accountTab = ref('profile')
-const activityTab = ref('articles')
+const activeSection = ref('dashboard')
 const writerMode = ref('edit')
-const writerPanel = ref(null)
-const activityPanel = ref(null)
 const profile = reactive({ nickname: '', avatar: '', email: '' })
 const password = reactive({ oldPassword: '', newPassword: '' })
 const articleForm = reactive({ title: '', summary: '', coverUrl: '', content: '', contentType: 'MARKDOWN', categoryId: null, tagIds: [] })
@@ -314,6 +357,16 @@ const tags = ref([])
 const editingId = ref(null)
 const previewHtml = computed(() => marked(articleForm.content || ''))
 const coverPreviewSrc = computed(() => normalizeAssetUrl(articleForm.coverUrl))
+const avatarPreviewSrc = computed(() => profile.avatar ? normalizeAssetUrl(profile.avatar) : '')
+const workbenchMenus = [
+  { key: 'dashboard', title: '工作台', desc: '常用入口和账户概览' },
+  { key: 'write', title: '写文章', desc: '创作、排版和插入素材' },
+  { key: 'articles', title: '我的文章', desc: '草稿、审核和发布记录' },
+  { key: 'favorites', title: '我的收藏', desc: '收藏过的公开文章' },
+  { key: 'comments', title: '我的评论', desc: '评论状态和关联文章' },
+  { key: 'profile', title: '个人资料', desc: '昵称、头像和邮箱' },
+  { key: 'password', title: '修改密码', desc: '更新账号登录密码' }
+]
 
 const loadProfile = async () => {
   const res = await userApi.me()
@@ -362,7 +415,8 @@ const saveArticle = async (status) => {
   }
   ElMessage.success(status === 'PENDING' ? '文章已提交审核' : '草稿已保存')
   resetArticleForm()
-  loadMine(1)
+  await loadMine(1)
+  activeSection.value = 'articles'
 }
 
 const resetArticleForm = () => {
@@ -381,7 +435,7 @@ const editArticle = (row) => {
     categoryId: row.categoryId || null,
     tagIds: row.tags?.map((tag) => tag.id) || []
   })
-  window.scrollTo({ top: 0, behavior: 'smooth' })
+  activeSection.value = 'write'
 }
 
 const removeArticle = async (row) => {
@@ -443,26 +497,16 @@ const loadComments = async (page = commentPage.current) => {
   commentPage.total = res.data.total || 0
 }
 
-const refreshActivity = () => {
-  loadMine(articlePage.current)
-  loadFavorites(favoritePage.current)
-  loadComments(commentPage.current)
-}
-
 const focusWriter = () => {
   resetArticleForm()
-  writerPanel.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  activeSection.value = 'write'
 }
 
-const switchActivity = (tab) => {
-  activityTab.value = tab
-  refreshActivity()
-  activityPanel.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-}
-
-const switchAccount = (tab) => {
-  accountTab.value = tab
-  window.scrollTo({ top: 0, behavior: 'smooth' })
+const setSection = (section) => {
+  activeSection.value = section
+  if (section === 'articles') loadMine(articlePage.current)
+  if (section === 'favorites') loadFavorites(favoritePage.current)
+  if (section === 'comments') loadComments(commentPage.current)
 }
 
 const pageCount = (total, size) => Math.max(1, Math.ceil(Math.max(total, 0) / size))
@@ -507,6 +551,6 @@ const commentStatusType = (status) => ({
 onMounted(() => {
   loadProfile()
   loadMeta()
-  refreshActivity()
+  loadMine()
 })
 </script>

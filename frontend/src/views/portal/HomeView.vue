@@ -136,6 +136,7 @@ const loadHomeMeta = async () => {
   site.heroSubtitle = settings.heroSubtitle || site.heroSubtitle
   site.heroBadge = settings.heroBadge || site.heroBadge
   site.backgroundUrl = settings.backgroundUrl || ''
+  site.contactHtml = settings.contactHtml || ''
   site.logoUrl = (Array.isArray(res.data.logo) ? res.data.logo[0] : res.data.logo)?.url || site.logoUrl
   site.loaded = true
   site.applyHead()

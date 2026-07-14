@@ -9,6 +9,7 @@
       <nav class="admin-menu">
         <RouterLink to="/admin/dashboard">数据看板</RouterLink>
         <RouterLink to="/admin/settings">站点设置</RouterLink>
+        <RouterLink to="/admin/mail-settings">邮箱设置</RouterLink>
         <RouterLink to="/admin/articles">内容管理</RouterLink>
         <RouterLink to="/admin/taxonomies">分类标签</RouterLink>
         <RouterLink to="/admin/images">图片资源</RouterLink>
@@ -62,6 +63,7 @@ const auth = useAuthStore()
 const names = {
   '/admin/dashboard': '数据看板',
   '/admin/settings': '站点设置',
+  '/admin/mail-settings': '邮箱设置',
   '/admin/articles': '内容管理',
   '/admin/taxonomies': '分类标签',
   '/admin/images': '图片资源管理',
@@ -89,7 +91,7 @@ const changePassword = async () => {
 }
 
 const logout = () => {
-  auth.logout()
+  auth.logout('admin')
   router.push('/admin/login')
 }
 </script>

@@ -14,7 +14,10 @@ const http = axios.create({
 })
 
 http.interceptors.request.use((config) => {
-  const token = localStorage.getItem('blog_token')
+  const currentPath = window.location.pathname || ''
+  const adminToken = localStorage.getItem('blog_admin_token') || ''
+  const userToken = localStorage.getItem('blog_user_token') || localStorage.getItem('blog_token') || ''
+  const token = currentPath.startsWith('/admin') ? adminToken : userToken
   if (token) config.headers.Authorization = `Bearer ${token}`
   return config
 })

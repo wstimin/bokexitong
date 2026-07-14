@@ -97,17 +97,51 @@ public class AdminController {
         return Result.ok(siteSettingService.adminSettings());
     }
 
+    @GetMapping("/site-settings")
+    public Result<Map<String, String>> siteSettings() {
+        return Result.ok(siteSettingService.adminSiteSettings());
+    }
+
+    @GetMapping("/mail-settings")
+    public Result<Map<String, String>> mailSettings() {
+        return Result.ok(siteSettingService.adminMailSettings());
+    }
+
     @PutMapping("/settings")
     public Result<Map<String, String>> saveSettings(@AuthenticationPrincipal BlogPrincipal principal,
                                                     @RequestBody Map<String, String> payload) {
         Map<String, String> settings = siteSettingService.save(payload);
-        operationLogService.record(principal, "UPDATE", "SITE_SETTING", null, "更新站点基础设置");
+        operationLogService.record(principal, "UPDATE", "SITE_SETTING", null, "更新站点设置");
+        return Result.ok(settings);
+    }
+
+    @PutMapping("/site-settings")
+    public Result<Map<String, String>> saveSiteSettings(@AuthenticationPrincipal BlogPrincipal principal,
+                                                        @RequestBody Map<String, String> payload) {
+        Map<String, String> settings = siteSettingService.saveSite(payload);
+        operationLogService.record(principal, "UPDATE", "SITE_SETTING", null, "更新站点设置");
+        return Result.ok(settings);
+    }
+
+    @PutMapping("/mail-settings")
+    public Result<Map<String, String>> saveMailSettings(@AuthenticationPrincipal BlogPrincipal principal,
+                                                        @RequestBody Map<String, String> payload) {
+        Map<String, String> settings = siteSettingService.saveMail(payload);
+        operationLogService.record(principal, "UPDATE", "MAIL_SETTING", null, "更新邮箱设置");
         return Result.ok(settings);
     }
 
     @PostMapping("/settings/test-mail")
     public Result<Void> testMail(@AuthenticationPrincipal BlogPrincipal principal,
                                  @RequestBody Map<String, String> payload) {
+        emailCodeService.sendTestMail(payload.get("email"));
+        operationLogService.record(principal, "TEST", "MAIL_SETTING", null, payload.get("email"));
+        return Result.ok();
+    }
+
+    @PostMapping("/mail-settings/test-mail")
+    public Result<Void> testMailFromMailSettings(@AuthenticationPrincipal BlogPrincipal principal,
+                                                 @RequestBody Map<String, String> payload) {
         emailCodeService.sendTestMail(payload.get("email"));
         operationLogService.record(principal, "TEST", "MAIL_SETTING", null, payload.get("email"));
         return Result.ok();

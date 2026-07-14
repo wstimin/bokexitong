@@ -2,7 +2,16 @@
 set -euo pipefail
 
 APP_NAME="bokexitong"
-PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+SOURCE_PATH="${0:-}"
+if [ "${BASH_SOURCE+x}" = "x" ] && [ "${#BASH_SOURCE[@]}" -gt 0 ]; then
+  SOURCE_PATH="${BASH_SOURCE[0]}"
+fi
+if [ -n "$SOURCE_PATH" ] && [ -f "$SOURCE_PATH" ]; then
+  SCRIPT_DIR="$(cd "$(dirname "$SOURCE_PATH")" && pwd 2>/dev/null || pwd)"
+else
+  SCRIPT_DIR="$(pwd)"
+fi
+PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 ENV_FILE="$PROJECT_DIR/.env"
 JWT_PLACEHOLDER_OLD="change-this-secret-to-a-long-random-value-for-production"
 JWT_PLACEHOLDER_COMPOSE="please-change-this-secret-to-at-least-32-characters"

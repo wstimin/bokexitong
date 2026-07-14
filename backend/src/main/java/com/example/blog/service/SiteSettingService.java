@@ -23,6 +23,7 @@ public class SiteSettingService {
     public static final String SEO_KEYWORDS = "seoKeywords";
     public static final String ICP_BEIAN = "icpBeian";
     public static final String FOOTER_TEXT = "footerText";
+    public static final String CONTACT_HTML = "contactHtml";
     public static final String ALLOW_REGISTER = "allowRegister";
     public static final String MAIL_ENABLED = "mailEnabled";
     public static final String MAIL_HOST = "mailHost";
@@ -36,7 +37,18 @@ public class SiteSettingService {
 
     private static final Set<String> PUBLIC_KEYS = Set.of(
             SITE_NAME, HERO_TITLE, HERO_SUBTITLE, HERO_BADGE, BACKGROUND_URL, LOGO_URL,
-            SEO_DESCRIPTION, SEO_KEYWORDS, ICP_BEIAN, FOOTER_TEXT, ALLOW_REGISTER
+            SEO_DESCRIPTION, SEO_KEYWORDS, ICP_BEIAN, FOOTER_TEXT, CONTACT_HTML, ALLOW_REGISTER
+    );
+    private static final Set<String> SITE_FORM_KEYS = Set.of(
+            SITE_NAME, HERO_TITLE, HERO_SUBTITLE, HERO_BADGE, BACKGROUND_URL, LOGO_URL,
+            SEO_DESCRIPTION, SEO_KEYWORDS, ICP_BEIAN, FOOTER_TEXT, CONTACT_HTML, ALLOW_REGISTER
+    );
+    private static final Set<String> MAIL_FORM_KEYS = Set.of(
+            MAIL_ENABLED, MAIL_HOST, MAIL_PORT, MAIL_USERNAME, MAIL_PASSWORD, MAIL_FROM_NAME,
+            MAIL_SMTP_AUTH, MAIL_STARTTLS_ENABLE, MAIL_SSL_ENABLE
+    );
+    private static final Set<String> REQUIRED_TEXT_KEYS = Set.of(
+            SITE_NAME, HERO_TITLE, HERO_SUBTITLE, HERO_BADGE, MAIL_PORT, MAIL_FROM_NAME
     );
 
     private final SiteSettingMapper siteSettingMapper;
@@ -51,6 +63,14 @@ public class SiteSettingService {
 
     public Map<String, String> adminSettings() {
         return loadSettings(defaults().keySet(), true);
+    }
+
+    public Map<String, String> adminSiteSettings() {
+        return loadSettings(SITE_FORM_KEYS, false);
+    }
+
+    public Map<String, String> adminMailSettings() {
+        return loadSettings(MAIL_FORM_KEYS, true);
     }
 
     public Map<String, String> mailSettings() {
@@ -71,7 +91,8 @@ public class SiteSettingService {
         }
         for (SiteSetting row : rows) {
             if (settings.containsKey(row.getSettingKey()) && row.getSettingValue() != null) {
-                settings.put(row.getSettingKey(), row.getSettingValue());
+                String value = row.getSettingValue();
+                settings.put(row.getSettingKey(), shouldUseDefault(row.getSettingKey(), value) ? source.get(row.getSettingKey()) : value);
             }
         }
         if (hideSecret && settings.containsKey(MAIL_PASSWORD)) {
@@ -81,7 +102,7 @@ public class SiteSettingService {
     }
 
     public Map<String, String> save(Map<String, String> payload) {
-        Map<String, String> next = defaults();
+        Map<String, String> next = mailSettings();
         Map<String, String> current = mailSettings();
         for (String key : next.keySet()) {
             if (payload.containsKey(key)) {
@@ -91,7 +112,7 @@ public class SiteSettingService {
                         || MAIL_STARTTLS_ENABLE.equals(key) || MAIL_SSL_ENABLE.equals(key)) {
                     next.put(key, normalizeBoolean(payload.get(key), next.get(key)));
                 } else {
-                    next.put(key, clean(payload.get(key), next.get(key)));
+                    next.put(key, clean(payload.get(key), next.get(key), REQUIRED_TEXT_KEYS.contains(key)));
                 }
             } else if (MAIL_PASSWORD.equals(key)) {
                 next.put(key, current.getOrDefault(key, ""));
@@ -99,6 +120,16 @@ public class SiteSettingService {
             upsert(key, next.get(key));
         }
         return adminSettings();
+    }
+
+    public Map<String, String> saveSite(Map<String, String> payload) {
+        save(filter(payload, SITE_FORM_KEYS));
+        return adminSiteSettings();
+    }
+
+    public Map<String, String> saveMail(Map<String, String> payload) {
+        save(filter(payload, MAIL_FORM_KEYS));
+        return adminMailSettings();
     }
 
     public boolean allowRegister() {
@@ -117,6 +148,7 @@ public class SiteSettingService {
         settings.put(SEO_KEYWORDS, "");
         settings.put(ICP_BEIAN, "");
         settings.put(FOOTER_TEXT, "");
+        settings.put(CONTACT_HTML, "");
         settings.put(ALLOW_REGISTER, "true");
         settings.put(MAIL_ENABLED, "false");
         settings.put(MAIL_HOST, "");
@@ -131,8 +163,12 @@ public class SiteSettingService {
     }
 
     private String clean(String value, String fallback) {
+        return clean(value, fallback, true);
+    }
+
+    private String clean(String value, String fallback, boolean required) {
         String trimmed = value == null ? "" : value.trim();
-        return trimmed.isEmpty() ? fallback : trimmed;
+        return required && trimmed.isEmpty() ? fallback : trimmed;
     }
 
     private String normalizeBoolean(String value, String fallback) {
@@ -141,6 +177,43 @@ public class SiteSettingService {
             return trimmed.toLowerCase();
         }
         return fallback;
+    }
+
+    private Map<String, String> filter(Map<String, String> payload, Set<String> allowedKeys) {
+        Map<String, String> filtered = new HashMap<>();
+        for (String key : allowedKeys) {
+            if (payload.containsKey(key)) {
+                filtered.put(key, payload.get(key));
+            }
+        }
+        return filtered;
+    }
+
+    private boolean shouldUseDefault(String key, String value) {
+        return Set.of(SITE_NAME, HERO_TITLE, HERO_SUBTITLE, HERO_BADGE, MAIL_FROM_NAME).contains(key)
+                && looksLikeMojibake(value);
+    }
+
+    private boolean looksLikeMojibake(String value) {
+        if (value == null) {
+            return false;
+        }
+        return value.contains("�")
+                || value.contains("å")
+                || value.contains("ã")
+                || value.contains("Ã")
+                || value.contains("Â")
+                || value.contains("鍗氬")
+                || value.contains("绯荤粺")
+                || value.contains("杩欐")
+                || value.contains("涓€")
+                || value.contains("銆")
+                || value.contains("鈥")
+                || value.codePoints().anyMatch(codePoint -> codePoint >= 0xE000 && codePoint <= 0xF8FF)
+                || value.contains("¢")
+                || value.contains("®")
+                || value.contains("»")
+                || value.contains("¿");
     }
 
     private void upsert(String key, String value) {

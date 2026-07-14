@@ -93,6 +93,7 @@ const statItems = computed(() => [
 
 const shortcuts = [
   { title: '站点设置', desc: '修改站点名称、首页文案和背景', to: '/admin/settings' },
+  { title: '邮箱设置', desc: '配置 SMTP、发件名称和测试验证码邮件', to: '/admin/mail-settings' },
   { title: '图片资源', desc: '维护 Logo、横幅、封面和素材', to: '/admin/images' },
   { title: '文章审核', desc: '审核、下架或删除用户文章', to: '/admin/articles' },
   { title: '分类标签', desc: '整理文章分类和标签体系', to: '/admin/taxonomies' },

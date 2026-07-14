@@ -163,6 +163,7 @@ INSERT INTO site_setting(setting_key, setting_value, description) VALUES
 ('seoKeywords', '', 'SEO 关键词'),
 ('icpBeian', '', '备案号'),
 ('footerText', '', '页脚文字'),
+('contactHtml', '', '前台联系信息 HTML'),
 ('allowRegister', 'true', '是否开放公开注册'),
 ('mailEnabled', 'false', '是否启用后台 SMTP 邮件服务'),
 ('mailHost', '', 'SMTP 服务器地址'),

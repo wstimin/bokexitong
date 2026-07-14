@@ -139,7 +139,7 @@ curl -fsSL https://raw.githubusercontent.com/wstimin/bokexitong/main/uninstall.s
 如果这台服务器只跑这个项目，还想连 Docker 一起卸载：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/wstimin/bokexitong/main/uninstall.sh | bash -s -- --purge --remove-docker
+curl -fsSL https://raw.githubusercontent.com/wstimin/bokexitong/main/uninstall.sh | bash -s -- --purge --remove-docker -y
 ```
 
 `--purge` 会删除博客数据库和上传资源，执行前请确认已经不需要这些数据。

@@ -5,7 +5,15 @@ APP_NAME="bokexitong"
 LEGACY_APP_NAME="anime-blog"
 DEFAULT_INSTALL_DIR="/opt/bokexitong"
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SOURCE_PATH="${0:-}"
+if [ "${BASH_SOURCE+x}" = "x" ] && [ "${#BASH_SOURCE[@]}" -gt 0 ]; then
+  SOURCE_PATH="${BASH_SOURCE[0]}"
+fi
+if [ -n "$SOURCE_PATH" ] && [ -f "$SOURCE_PATH" ]; then
+  SCRIPT_DIR="$(cd "$(dirname "$SOURCE_PATH")" && pwd 2>/dev/null || pwd)"
+else
+  SCRIPT_DIR="$(pwd)"
+fi
 if [ -f "$SCRIPT_DIR/../docker-compose.yml" ]; then
   PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 else

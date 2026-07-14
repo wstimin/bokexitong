@@ -1,4 +1,4 @@
-# 二次元博客系统部署文档
+# 博客系统部署文档
 
 本文档适用于将本项目部署到 Linux 服务器，数据库使用 **MySQL 8.x**。项目结构为前后端分离：
 
@@ -82,7 +82,7 @@ dnf install -y curl wget git vim unzip tar ca-certificates
 新服务器直接复制下面这一条命令执行即可：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/wstimin/bokexitong/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/wstimin/bokexitong/main/install.sh | bash
 ```
 
 这条命令会自动完成：
@@ -97,7 +97,7 @@ curl -fsSL https://raw.githubusercontent.com/wstimin/bokexitong/main/scripts/ins
 如果想指定安装目录，例如安装到宝塔站点目录：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/wstimin/bokexitong/main/scripts/install.sh | INSTALL_DIR=/www/wwwroot/bokexitong bash
+curl -fsSL https://raw.githubusercontent.com/wstimin/bokexitong/main/install.sh | INSTALL_DIR=/www/wwwroot/bokexitong bash
 ```
 
 如果服务器没有 `curl`，先执行：
@@ -249,12 +249,12 @@ mysql -uroot -p -e "SELECT VERSION();"
 
 ```bash
 docker run -d \
-  --name anime-blog-mysql \
+  --name bokexitong-mysql \
   --restart always \
   -e MYSQL_ROOT_PASSWORD=你的强密码 \
   -e MYSQL_DATABASE=personal_blog \
   -p 127.0.0.1:3306:3306 \
-  -v anime-blog-mysql-data:/var/lib/mysql \
+  -v bokexitong-mysql-data:/var/lib/mysql \
   mysql:8.0 \
   --character-set-server=utf8mb4 \
   --collation-server=utf8mb4_unicode_ci
@@ -407,7 +407,7 @@ Nginx 1.20+
 如果只是想快速跑起来，推荐在宝塔“终端”里执行一键拉取部署命令：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/wstimin/bokexitong/main/scripts/install.sh | INSTALL_DIR=/www/wwwroot/bokexitong bash
+curl -fsSL https://raw.githubusercontent.com/wstimin/bokexitong/main/install.sh | INSTALL_DIR=/www/wwwroot/bokexitong bash
 ```
 
 脚本会自动拉取 GitHub 仓库、安装 Docker、生成 `.env`，并启动 MySQL 8、后端和前端。管理员初始密码会在脚本结束时打印，也会保存在 `.env` 的 `BLOG_ADMIN_INITIAL_PASSWORD`。部署完成后直接访问：
@@ -617,16 +617,16 @@ http://你的域名/admin
 在 1Panel 服务器的 SSH 终端中执行：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/wstimin/bokexitong/main/scripts/install.sh | INSTALL_DIR=/opt/bokexitong bash
+curl -fsSL https://raw.githubusercontent.com/wstimin/bokexitong/main/install.sh | INSTALL_DIR=/opt/bokexitong bash
 ```
 
 脚本会自动拉取 GitHub 仓库、安装 Docker、生成 `.env`，并启动 MySQL 8、后端和前端。管理员初始密码会在脚本结束时打印，也会保存在 `.env`。
 
 部署完成后，在 1Panel 中进入“容器”即可看到：
 
-- `anime-blog-mysql`
-- `anime-blog-backend`
-- `anime-blog-frontend`
+- `bokexitong-mysql`
+- `bokexitong-backend`
+- `bokexitong-frontend`
 
 如果后续需要更新项目，继续执行同一条命令即可。
 
@@ -635,15 +635,15 @@ curl -fsSL https://raw.githubusercontent.com/wstimin/bokexitong/main/scripts/ins
 在 1Panel 中进入：文件，上传整个项目到服务器，例如：
 
 ```text
-/opt/anime-blog
+/opt/bokexitong
 ```
 
 也可以用 Git 拉取：
 
 ```bash
 cd /opt
-git clone https://github.com/wstimin/bokexitong.git anime-blog
-cd anime-blog
+git clone https://github.com/wstimin/bokexitong.git bokexitong
+cd bokexitong
 ```
 
 ### 3. 修改环境变量
@@ -683,9 +683,9 @@ docker-compose.yml
 
 点击启动。该编排会启动：
 
-- `anime-blog-mysql`：MySQL 8.0
-- `anime-blog-backend`：Spring Boot 后端
-- `anime-blog-frontend`：Nginx 前端
+- `bokexitong-mysql`：MySQL 8.0
+- `bokexitong-backend`：Spring Boot 后端
+- `bokexitong-frontend`：Nginx 前端
 
 MySQL 首次启动会自动执行：
 
@@ -745,7 +745,7 @@ http://你的域名/api/portal/home
 这是最推荐的服务器直接部署方式。登录服务器后执行：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/wstimin/bokexitong/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/wstimin/bokexitong/main/install.sh | bash
 ```
 
 脚本默认会把项目安装到：
@@ -764,7 +764,7 @@ http://服务器IP/
 更新部署会自动执行数据库升级脚本，旧版本更新时不需要手动补字段。
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/wstimin/bokexitong/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/wstimin/bokexitong/main/install.sh | bash
 ```
 
 常用目录：
@@ -800,7 +800,7 @@ docker compose down
 如果你要指定安装目录：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/wstimin/bokexitong/main/scripts/install.sh | INSTALL_DIR=/opt/anime-blog bash
+curl -fsSL https://raw.githubusercontent.com/wstimin/bokexitong/main/install.sh | INSTALL_DIR=/opt/bokexitong bash
 ```
 
 如果项目已经在服务器本地目录中，只想在项目目录内重新部署，可以执行：
@@ -836,8 +836,8 @@ docker compose version
 
 ```bash
 cd /opt
-git clone https://github.com/wstimin/bokexitong.git anime-blog
-cd /opt/anime-blog
+git clone https://github.com/wstimin/bokexitong.git bokexitong
+cd /opt/bokexitong
 cp .env.example .env
 vi .env
 ```
@@ -913,13 +913,13 @@ docker compose up -d --build
 备份 MySQL：
 
 ```bash
-docker exec anime-blog-mysql mysqldump -uroot -p personal_blog > personal_blog_backup.sql
+docker exec bokexitong-mysql mysqldump -uroot -p personal_blog > personal_blog_backup.sql
 ```
 
 恢复 MySQL：
 
 ```bash
-docker exec -i anime-blog-mysql mysql -uroot -p personal_blog < personal_blog_backup.sql
+docker exec -i bokexitong-mysql mysql -uroot -p personal_blog < personal_blog_backup.sql
 ```
 
 ### 方案 C：不使用 Docker 的手动部署
@@ -970,26 +970,26 @@ mvn clean package -DskipTests
 创建运行目录：
 
 ```bash
-mkdir -p /opt/anime-blog/backend
-cp target/*.jar /opt/anime-blog/backend/blog-backend.jar
+mkdir -p /opt/bokexitong/backend
+cp target/*.jar /opt/bokexitong/backend/blog-backend.jar
 ```
 
 创建 systemd 服务：
 
 ```bash
-vi /etc/systemd/system/anime-blog-backend.service
+vi /etc/systemd/system/bokexitong-backend.service
 ```
 
 写入：
 
 ```ini
 [Unit]
-Description=Anime Blog Backend
+Description=Bokexitong Backend
 After=network.target mysql.service
 
 [Service]
-WorkingDirectory=/opt/anime-blog/backend
-ExecStart=/usr/bin/java -jar /opt/anime-blog/backend/blog-backend.jar --spring.profiles.active=prod
+WorkingDirectory=/opt/bokexitong/backend
+ExecStart=/usr/bin/java -jar /opt/bokexitong/backend/blog-backend.jar --spring.profiles.active=prod
 Restart=always
 RestartSec=5
 Environment=SPRING_DATASOURCE_URL=jdbc:mysql://127.0.0.1:3306/personal_blog?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
@@ -1015,15 +1015,15 @@ WantedBy=multi-user.target
 
 ```bash
 systemctl daemon-reload
-systemctl enable anime-blog-backend
-systemctl start anime-blog-backend
-systemctl status anime-blog-backend
+systemctl enable bokexitong-backend
+systemctl start bokexitong-backend
+systemctl status bokexitong-backend
 ```
 
 查看日志：
 
 ```bash
-journalctl -u anime-blog-backend -f
+journalctl -u bokexitong-backend -f
 ```
 
 ### 4. 打包并部署前端
@@ -1037,14 +1037,14 @@ npm run build
 复制前端产物：
 
 ```bash
-mkdir -p /var/www/anime-blog
-cp -r dist/* /var/www/anime-blog/
+mkdir -p /var/www/bokexitong
+cp -r dist/* /var/www/bokexitong/
 ```
 
 配置 Nginx：
 
 ```bash
-vi /etc/nginx/conf.d/anime-blog.conf
+vi /etc/nginx/conf.d/bokexitong.conf
 ```
 
 写入：
@@ -1054,7 +1054,7 @@ server {
     listen 80;
     server_name 你的域名或服务器IP;
 
-    root /var/www/anime-blog;
+    root /var/www/bokexitong;
     index index.html;
 
     location / {
