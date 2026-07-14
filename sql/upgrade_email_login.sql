@@ -1,13 +1,13 @@
 USE personal_blog;
 
+ALTER TABLE blog_user
+  MODIFY email VARCHAR(120) NULL;
+
 UPDATE blog_user
 SET email = NULL
 WHERE email = ''
    OR email = 'admin@example.com'
    OR email = CONCAT(username, '@example.com');
-
-ALTER TABLE blog_user
-  MODIFY email VARCHAR(120) NULL;
 
 DROP PROCEDURE IF EXISTS add_blog_user_email_unique_index;
 DELIMITER //
