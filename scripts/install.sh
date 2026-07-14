@@ -26,17 +26,53 @@ detect_os() {
     . /etc/os-release
     OS_ID="${ID:-unknown}"
     OS_LIKE="${ID_LIKE:-}"
+    OS_CODENAME="${VERSION_CODENAME:-${UBUNTU_CODENAME:-}}"
   else
     OS_ID="unknown"
     OS_LIKE=""
+    OS_CODENAME=""
   fi
+}
+
+disable_stale_backports_source() {
+  codename="${OS_CODENAME:-}"
+  [ -n "$codename" ] || return 1
+  pattern="${codename}-backports"
+  changed=0
+
+  for file in /etc/apt/sources.list /etc/apt/sources.list.d/*.list; do
+    [ -f "$file" ] || continue
+    if sudo_cmd grep -qE "^[[:space:]]*deb(-src)?[[:space:]].*[[:space:]]${pattern}([[:space:]]|$)" "$file"; then
+      backup="${file}.bak.$(date +%Y%m%d%H%M%S)"
+      sudo_cmd cp "$file" "$backup"
+      sudo_cmd sed -i -E "/^[[:space:]]*deb(-src)?[[:space:]].*[[:space:]]${pattern}([[:space:]]|$)/ s/^/# disabled by bokexitong installer: /" "$file"
+      warn "Disabled stale APT backports source in $file (backup: $backup)."
+      changed=1
+    fi
+  done
+
+  [ "$changed" = "1" ]
+}
+
+apt_get_update() {
+  if sudo_cmd apt-get update; then
+    return
+  fi
+
+  warn "apt-get update failed. Checking for stale backports source..."
+  if disable_stale_backports_source; then
+    sudo_cmd apt-get update
+    return
+  fi
+
+  fail "apt-get update failed. Please fix APT sources and run the installer again."
 }
 
 install_base_tools() {
   detect_os
   info "Installing required base tools..."
   if [[ "$OS_ID" =~ (ubuntu|debian) || "$OS_LIKE" =~ debian ]]; then
-    sudo_cmd apt-get update
+    apt_get_update
     sudo_cmd apt-get install -y git curl ca-certificates openssl
   elif [[ "$OS_ID" =~ (centos|rocky|almalinux|rhel|fedora) || "$OS_LIKE" =~ (rhel|fedora) ]]; then
     if has_cmd dnf; then

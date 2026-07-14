@@ -29,16 +29,52 @@ detect_os() {
     . /etc/os-release
     OS_ID="${ID:-unknown}"
     OS_LIKE="${ID_LIKE:-}"
+    OS_CODENAME="${VERSION_CODENAME:-${UBUNTU_CODENAME:-}}"
   else
     OS_ID="unknown"
     OS_LIKE=""
+    OS_CODENAME=""
   fi
+}
+
+disable_stale_backports_source() {
+  codename="${OS_CODENAME:-}"
+  [ -n "$codename" ] || return 1
+  pattern="${codename}-backports"
+  changed=0
+
+  for file in /etc/apt/sources.list /etc/apt/sources.list.d/*.list; do
+    [ -f "$file" ] || continue
+    if sudo_cmd grep -qE "^[[:space:]]*deb(-src)?[[:space:]].*[[:space:]]${pattern}([[:space:]]|$)" "$file"; then
+      backup="${file}.bak.$(date +%Y%m%d%H%M%S)"
+      sudo_cmd cp "$file" "$backup"
+      sudo_cmd sed -i -E "/^[[:space:]]*deb(-src)?[[:space:]].*[[:space:]]${pattern}([[:space:]]|$)/ s/^/# disabled by bokexitong installer: /" "$file"
+      warn "Disabled stale APT backports source in $file (backup: $backup)."
+      changed=1
+    fi
+  done
+
+  [ "$changed" = "1" ]
+}
+
+apt_get_update() {
+  if sudo_cmd apt-get update; then
+    return
+  fi
+
+  warn "apt-get update failed. Checking for stale backports source..."
+  if disable_stale_backports_source; then
+    sudo_cmd apt-get update
+    return
+  fi
+
+  fail "apt-get update failed. Please fix APT sources and run the deploy script again."
 }
 
 install_base_tools() {
   detect_os
   if [[ "$OS_ID" =~ (ubuntu|debian) || "$OS_LIKE" =~ debian ]]; then
-    sudo_cmd apt-get update
+    apt_get_update
     sudo_cmd apt-get install -y curl ca-certificates gnupg lsb-release git openssl
   elif [[ "$OS_ID" =~ (centos|rocky|almalinux|rhel|fedora) || "$OS_LIKE" =~ (rhel|fedora) ]]; then
     if has_cmd dnf; then
@@ -250,10 +286,50 @@ compose_cmd() {
   sudo_cmd docker compose "$@"
 }
 
+wait_for_mysql() {
+  cd "$PROJECT_DIR"
+  info "Waiting for MySQL to be ready..."
+  for _ in $(seq 1 60); do
+    if compose_cmd exec -T mysql sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" personal_blog -e "SELECT 1"' >/dev/null 2>&1; then
+      ok "MySQL is ready."
+      return
+    fi
+    sleep 2
+  done
+  fail "MySQL did not become ready in time. Check logs with: docker compose logs -f mysql"
+}
+
+run_sql_file() {
+  sql_file="$1"
+  [ -f "$sql_file" ] || return 0
+  info "Applying database upgrade: $(basename "$sql_file")"
+  compose_cmd exec -T mysql sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" personal_blog' < "$sql_file"
+}
+
+run_database_upgrades() {
+  cd "$PROJECT_DIR"
+  if ! compgen -G "$PROJECT_DIR/sql/upgrade_*.sql" >/dev/null; then
+    ok "No database upgrade scripts found."
+    return
+  fi
+
+  run_sql_file "$PROJECT_DIR/sql/upgrade_site_setting.sql"
+  for upgrade_file in "$PROJECT_DIR"/sql/upgrade_*.sql; do
+    [ "$(basename "$upgrade_file")" = "upgrade_site_setting.sql" ] && continue
+    run_sql_file "$upgrade_file"
+  done
+  ok "Database upgrades applied."
+}
+
 deploy() {
   cd "$PROJECT_DIR"
-  info "Building and starting services..."
-  compose_cmd up -d --build
+  info "Building and starting database..."
+  compose_cmd up -d --build mysql
+  wait_for_mysql
+  run_database_upgrades
+
+  info "Building and starting application services..."
+  compose_cmd up -d --build backend frontend
   ok "Services started."
 }
 

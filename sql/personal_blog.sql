@@ -20,7 +20,7 @@ CREATE TABLE blog_user (
   nickname VARCHAR(80) NOT NULL,
   password VARCHAR(120) NOT NULL,
   avatar VARCHAR(500),
-  email VARCHAR(120) NOT NULL UNIQUE,
+  email VARCHAR(120) UNIQUE,
   role VARCHAR(20) NOT NULL DEFAULT 'USER',
   status TINYINT NOT NULL DEFAULT 1,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -150,7 +150,7 @@ CREATE TABLE email_code (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 INSERT INTO blog_user(username, nickname, password, avatar, email, role, status)
-VALUES ('admin', '站长', '{noop}123456', '', 'admin@example.com', 'ADMIN', 1);
+VALUES ('admin', '站长', '{noop}123456', '', NULL, 'ADMIN', 1);
 
 INSERT INTO site_setting(setting_key, setting_value, description) VALUES
 ('siteName', '博客系统', '站点名称'),

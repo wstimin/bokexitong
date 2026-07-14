@@ -55,6 +55,8 @@ git pull
 bash deploy.sh
 ```
 
+`deploy.sh` 会在启动应用前等待 MySQL 就绪，并自动执行 `sql/upgrade_*.sql` 数据库升级脚本，旧版本更新时不需要手动补字段。
+
 ## 手动 Docker 部署
 
 不使用一键脚本时，需要手动填写真实环境变量：

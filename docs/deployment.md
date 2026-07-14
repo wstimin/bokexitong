@@ -116,6 +116,7 @@ yum install -y curl
 ```
 
 后续更新项目，也执行同一条命令即可，脚本会进入安装目录自动 `git pull` 并重新部署。
+重新部署时会等待 MySQL 就绪，并自动执行 `sql/upgrade_*.sql` 数据库升级脚本，旧版本更新时不需要手动补字段。
 
 下面的 Docker 安装命令适合需要手动安装或排查环境时使用。
 
@@ -760,6 +761,7 @@ http://服务器IP/
 ```
 
 后续更新代码并重新部署，继续执行同一条命令：
+更新部署会自动执行数据库升级脚本，旧版本更新时不需要手动补字段。
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/wstimin/bokexitong/main/scripts/install.sh | bash
