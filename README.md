@@ -116,6 +116,28 @@ docker compose restart
 docker compose down
 ```
 
+## 一键卸载
+
+只停止并删除本项目容器和项目镜像，保留数据库和上传文件：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/wstimin/bokexitong/main/uninstall.sh | bash
+```
+
+彻底清空本项目，包括数据库卷、上传文件、`.env` 和 `/opt/bokexitong` 项目目录：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/wstimin/bokexitong/main/uninstall.sh | bash -s -- --purge
+```
+
+如果这台服务器只跑这个项目，还想连 Docker 一起卸载：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/wstimin/bokexitong/main/uninstall.sh | bash -s -- --purge --remove-docker
+```
+
+`--purge` 会删除博客数据库和上传资源，执行前请确认已经不需要这些数据。
+
 ## 项目结构
 
 ```text
