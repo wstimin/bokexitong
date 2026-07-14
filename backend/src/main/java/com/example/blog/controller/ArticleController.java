@@ -2,10 +2,12 @@ package com.example.blog.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.blog.common.Result;
+import com.example.blog.dto.ArticleDetailResponse;
 import com.example.blog.dto.ArticleRequest;
 import com.example.blog.entity.Article;
 import com.example.blog.security.BlogPrincipal;
 import com.example.blog.service.ArticleService;
+import com.example.blog.service.OperationLogService;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -16,9 +18,11 @@ import java.util.List;
 @RequestMapping("/articles")
 public class ArticleController {
     private final ArticleService articleService;
+    private final OperationLogService operationLogService;
 
-    public ArticleController(ArticleService articleService) {
+    public ArticleController(ArticleService articleService, OperationLogService operationLogService) {
         this.articleService = articleService;
+        this.operationLogService = operationLogService;
     }
 
     @GetMapping
@@ -32,12 +36,12 @@ public class ArticleController {
     }
 
     @GetMapping("/mine")
-    public Result<Page<Article>> mine(@AuthenticationPrincipal BlogPrincipal principal,
-                                      @RequestParam(defaultValue = "1") long current,
-                                      @RequestParam(defaultValue = "10") long size,
-                                      @RequestParam(required = false) String keyword,
-                                      @RequestParam(required = false) String status) {
-        return Result.ok(articleService.userPage(principal.userId(), current, size, keyword, status));
+    public Result<Page<ArticleDetailResponse>> mine(@AuthenticationPrincipal BlogPrincipal principal,
+                                                    @RequestParam(defaultValue = "1") long current,
+                                                    @RequestParam(defaultValue = "10") long size,
+                                                    @RequestParam(required = false) String keyword,
+                                                    @RequestParam(required = false) String status) {
+        return Result.ok(articleService.userDetailPage(principal.userId(), current, size, keyword, status));
     }
 
     @GetMapping("/{id}")
@@ -59,9 +63,20 @@ public class ArticleController {
 
     @DeleteMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public Result<Void> remove(@RequestBody List<Long> ids) {
+    public Result<Void> remove(@AuthenticationPrincipal BlogPrincipal principal, @RequestBody List<Long> ids) {
         articleService.removeBatch(ids);
+        operationLogService.record(principal, "DELETE", "ARTICLE", null, "批量删除文章：" + ids);
         return Result.ok();
+    }
+
+    @PutMapping("/{id}/status")
+    @PreAuthorize("hasRole('ADMIN')")
+    public Result<Article> updateStatus(@AuthenticationPrincipal BlogPrincipal principal,
+                                        @PathVariable Long id,
+                                        @RequestParam String status) {
+        Article article = articleService.updateStatusByAdmin(id, status);
+        operationLogService.record(principal, "AUDIT", "ARTICLE", id, status + " - " + article.getTitle());
+        return Result.ok(article);
     }
 
     @DeleteMapping("/{id}")

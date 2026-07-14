@@ -6,18 +6,43 @@ import com.example.blog.common.Result;
 import com.example.blog.dto.AdminUserRequest;
 import com.example.blog.dto.DashboardStats;
 import com.example.blog.dto.PasswordResetRequest;
-import com.example.blog.entity.*;
-import com.example.blog.mapper.*;
-import com.example.blog.service.DashboardService;
-import com.example.blog.service.InteractionService;
+import com.example.blog.entity.Article;
+import com.example.blog.entity.BlogUser;
+import com.example.blog.entity.Category;
+import com.example.blog.entity.Comment;
+import com.example.blog.entity.Favorite;
+import com.example.blog.entity.ImageResource;
+import com.example.blog.entity.LikeRecord;
+import com.example.blog.entity.Tag;
+import com.example.blog.mapper.ArticleMapper;
+import com.example.blog.mapper.BlogUserMapper;
+import com.example.blog.mapper.CategoryMapper;
+import com.example.blog.mapper.CommentMapper;
+import com.example.blog.mapper.FavoriteMapper;
+import com.example.blog.mapper.ImageResourceMapper;
+import com.example.blog.mapper.LikeRecordMapper;
+import com.example.blog.mapper.TagMapper;
+import com.example.blog.security.BlogPrincipal;
 import com.example.blog.service.ArticleService;
 import com.example.blog.service.AuthService;
-import com.example.blog.security.BlogPrincipal;
+import com.example.blog.service.DashboardService;
+import com.example.blog.service.InteractionService;
+import com.example.blog.service.OperationLogService;
+import com.example.blog.service.SiteSettingService;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/admin")
@@ -34,12 +59,14 @@ public class AdminController {
     private final InteractionService interactionService;
     private final ArticleService articleService;
     private final AuthService authService;
+    private final SiteSettingService siteSettingService;
+    private final OperationLogService operationLogService;
 
     public AdminController(DashboardService dashboardService, CategoryMapper categoryMapper, TagMapper tagMapper,
                            ImageResourceMapper imageResourceMapper, BlogUserMapper userMapper,
                            ArticleMapper articleMapper, CommentMapper commentMapper, LikeRecordMapper likeRecordMapper,
                            FavoriteMapper favoriteMapper, InteractionService interactionService, ArticleService articleService,
-                           AuthService authService) {
+                           AuthService authService, SiteSettingService siteSettingService, OperationLogService operationLogService) {
         this.dashboardService = dashboardService;
         this.categoryMapper = categoryMapper;
         this.tagMapper = tagMapper;
@@ -52,6 +79,8 @@ public class AdminController {
         this.interactionService = interactionService;
         this.articleService = articleService;
         this.authService = authService;
+        this.siteSettingService = siteSettingService;
+        this.operationLogService = operationLogService;
     }
 
     @GetMapping("/dashboard")
@@ -59,49 +88,79 @@ public class AdminController {
         return Result.ok(dashboardService.stats());
     }
 
+    @GetMapping("/settings")
+    public Result<Map<String, String>> settings() {
+        return Result.ok(siteSettingService.publicSettings());
+    }
+
+    @PutMapping("/settings")
+    public Result<Map<String, String>> saveSettings(@AuthenticationPrincipal BlogPrincipal principal,
+                                                    @RequestBody Map<String, String> payload) {
+        Map<String, String> settings = siteSettingService.save(payload);
+        operationLogService.record(principal, "UPDATE", "SITE_SETTING", null, "更新站点基础设置");
+        return Result.ok(settings);
+    }
+
+    @GetMapping("/operation-logs")
+    public Result<Page<com.example.blog.entity.OperationLog>> operationLogs(@RequestParam(defaultValue = "1") long current,
+                                                                           @RequestParam(defaultValue = "10") long size,
+                                                                           @RequestParam(required = false) String action,
+                                                                           @RequestParam(required = false) String targetType,
+                                                                           @RequestParam(required = false) String keyword) {
+        return Result.ok(operationLogService.page(current, size, action, targetType, keyword));
+    }
+
     @GetMapping("/categories")
     public Result<Page<Category>> categories(@RequestParam(defaultValue = "1") long current,
                                              @RequestParam(defaultValue = "10") long size) {
-        return Result.ok(categoryMapper.selectPage(new Page<>(current, size), new LambdaQueryWrapper<Category>().orderByAsc(Category::getSort)));
+        return Result.ok(categoryMapper.selectPage(new Page<>(current, size), new LambdaQueryWrapper<Category>()
+                .orderByAsc(Category::getSort)));
     }
 
     @PostMapping("/categories")
-    public Result<Category> saveCategory(@RequestBody Category category) {
+    public Result<Category> saveCategory(@AuthenticationPrincipal BlogPrincipal principal, @RequestBody Category category) {
+        boolean creating = category.getId() == null;
         if (category.getId() == null) {
             category.setCreatedAt(LocalDateTime.now());
             categoryMapper.insert(category);
         } else {
             categoryMapper.updateById(category);
         }
+        operationLogService.record(principal, creating ? "CREATE" : "UPDATE", "CATEGORY", category.getId(), category.getName());
         return Result.ok(category);
     }
 
     @DeleteMapping("/categories/{id}")
-    public Result<Void> deleteCategory(@PathVariable Long id) {
+    public Result<Void> deleteCategory(@AuthenticationPrincipal BlogPrincipal principal, @PathVariable Long id) {
         categoryMapper.deleteById(id);
+        operationLogService.record(principal, "DELETE", "CATEGORY", id, "删除分类");
         return Result.ok();
     }
 
     @GetMapping("/tags")
     public Result<Page<Tag>> tags(@RequestParam(defaultValue = "1") long current,
                                   @RequestParam(defaultValue = "10") long size) {
-        return Result.ok(tagMapper.selectPage(new Page<>(current, size), new LambdaQueryWrapper<Tag>().orderByDesc(Tag::getCreatedAt)));
+        return Result.ok(tagMapper.selectPage(new Page<>(current, size), new LambdaQueryWrapper<Tag>()
+                .orderByDesc(Tag::getCreatedAt)));
     }
 
     @PostMapping("/tags")
-    public Result<Tag> saveTag(@RequestBody Tag tag) {
+    public Result<Tag> saveTag(@AuthenticationPrincipal BlogPrincipal principal, @RequestBody Tag tag) {
+        boolean creating = tag.getId() == null;
         if (tag.getId() == null) {
             tag.setCreatedAt(LocalDateTime.now());
             tagMapper.insert(tag);
         } else {
             tagMapper.updateById(tag);
         }
+        operationLogService.record(principal, creating ? "CREATE" : "UPDATE", "TAG", tag.getId(), tag.getName());
         return Result.ok(tag);
     }
 
     @DeleteMapping("/tags/{id}")
-    public Result<Void> deleteTag(@PathVariable Long id) {
+    public Result<Void> deleteTag(@AuthenticationPrincipal BlogPrincipal principal, @PathVariable Long id) {
         tagMapper.deleteById(id);
+        operationLogService.record(principal, "DELETE", "TAG", id, "删除标签");
         return Result.ok();
     }
 
@@ -116,7 +175,8 @@ public class AdminController {
     }
 
     @PostMapping("/images")
-    public Result<ImageResource> saveImage(@RequestBody ImageResource image) {
+    public Result<ImageResource> saveImage(@AuthenticationPrincipal BlogPrincipal principal, @RequestBody ImageResource image) {
+        boolean creating = image.getId() == null;
         LocalDateTime now = LocalDateTime.now();
         image.setUpdatedAt(now);
         image.setEnabled(image.getEnabled() == null ? 1 : image.getEnabled());
@@ -126,12 +186,14 @@ public class AdminController {
         } else {
             imageResourceMapper.updateById(image);
         }
+        operationLogService.record(principal, creating ? "CREATE" : "UPDATE", "IMAGE", image.getId(), image.getTitle());
         return Result.ok(image);
     }
 
     @DeleteMapping("/images/{id}")
-    public Result<Void> deleteImage(@PathVariable Long id) {
+    public Result<Void> deleteImage(@AuthenticationPrincipal BlogPrincipal principal, @PathVariable Long id) {
         imageResourceMapper.deleteById(id);
+        operationLogService.record(principal, "DELETE", "IMAGE", id, "删除图片资源");
         return Result.ok();
     }
 
@@ -163,6 +225,7 @@ public class AdminController {
         user.setStatus(status);
         user.setUpdatedAt(LocalDateTime.now());
         userMapper.updateById(user);
+        operationLogService.record(principal, status == 1 ? "ENABLE" : "DISABLE", "USER", id, user.getUsername());
         return Result.ok();
     }
 
@@ -170,12 +233,15 @@ public class AdminController {
     public Result<BlogUser> updateUser(@AuthenticationPrincipal BlogPrincipal principal, @PathVariable Long id,
                                        @RequestBody AdminUserRequest request) {
         protectAdminAccess(principal == null ? null : principal.userId(), id, request.getRole(), request.getStatus());
-        return Result.ok(authService.updateUserByAdmin(id, request));
+        BlogUser user = authService.updateUserByAdmin(id, request);
+        operationLogService.record(principal, "UPDATE", "USER", id, user.getUsername());
+        return Result.ok(user);
     }
 
     @PutMapping("/users/{id}/password")
-    public Result<Void> resetPassword(@PathVariable Long id, @RequestBody PasswordResetRequest request) {
+    public Result<Void> resetPassword(@AuthenticationPrincipal BlogPrincipal principal, @PathVariable Long id, @RequestBody PasswordResetRequest request) {
         authService.resetPasswordByAdmin(id, request);
+        operationLogService.record(principal, "RESET_PASSWORD", "USER", id, "重置用户密码");
         return Result.ok();
     }
 
@@ -202,6 +268,7 @@ public class AdminController {
         likeRecordMapper.delete(new LambdaQueryWrapper<LikeRecord>().eq(LikeRecord::getUserId, id));
         favoriteMapper.delete(new LambdaQueryWrapper<Favorite>().eq(Favorite::getUserId, id));
         userMapper.deleteById(id);
+        operationLogService.record(principal, "DELETE", "USER", id, user.getUsername());
         return Result.ok();
     }
 
@@ -235,14 +302,16 @@ public class AdminController {
     }
 
     @PutMapping("/comments/{id}/status")
-    public Result<Void> auditComment(@PathVariable Long id, @RequestParam String status) {
+    public Result<Void> auditComment(@AuthenticationPrincipal BlogPrincipal principal, @PathVariable Long id, @RequestParam String status) {
         interactionService.auditComment(id, status);
+        operationLogService.record(principal, "AUDIT", "COMMENT", id, status);
         return Result.ok();
     }
 
     @DeleteMapping("/comments/{id}")
-    public Result<Void> deleteComment(@PathVariable Long id) {
+    public Result<Void> deleteComment(@AuthenticationPrincipal BlogPrincipal principal, @PathVariable Long id) {
         interactionService.deleteComment(id);
+        operationLogService.record(principal, "DELETE", "COMMENT", id, "删除评论");
         return Result.ok();
     }
 }

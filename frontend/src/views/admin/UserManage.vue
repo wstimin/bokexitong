@@ -3,17 +3,10 @@
     <div class="toolbar user-toolbar">
       <div>
         <h2>用户权限管理</h2>
-        <p class="section-subtitle">管理用户资料、角色、状态和登录密码</p>
+        <p class="section-subtitle">管理用户资料、角色、状态和登录密码。</p>
       </div>
       <div class="admin-filters">
-        <el-input
-          v-model="query.keyword"
-          placeholder="搜索用户名 / 昵称 / 邮箱"
-          class="filter-input"
-          clearable
-          @keyup.enter="searchUsers"
-          @clear="searchUsers"
-        />
+        <el-input v-model="query.keyword" placeholder="搜索用户名 / 昵称 / 邮箱" class="filter-input" clearable @keyup.enter="searchUsers" @clear="searchUsers" />
         <el-select v-model="query.role" placeholder="角色" clearable class="filter-select" @change="searchUsers">
           <el-option label="管理员" value="ADMIN" />
           <el-option label="普通用户" value="USER" />
@@ -42,7 +35,7 @@
           </template>
         </el-table-column>
         <el-table-column prop="createdAt" label="创建时间" width="180" />
-        <el-table-column label="操作" width="280">
+        <el-table-column label="操作" width="300" fixed="right">
           <template #default="{ row }">
             <div class="action-row">
               <el-button size="small" :disabled="actionLoading" @click="openEdit(row)">编辑</el-button>
@@ -58,14 +51,7 @@
     </div>
 
     <div class="pager">
-      <el-pagination
-        background
-        layout="prev, pager, next"
-        :total="total"
-        :page-size="query.size"
-        v-model:current-page="query.current"
-        @current-change="load"
-      />
+      <el-pagination background layout="prev, pager, next" :total="total" :page-size="query.size" v-model:current-page="query.current" @current-change="load" />
     </div>
 
     <el-dialog v-model="editVisible" title="编辑用户" width="520px">
@@ -192,6 +178,7 @@ const setStatus = async (id, status) => {
   actionLoading.value = true
   try {
     await adminApi.userStatus(id, status)
+    ElMessage.success(status === 1 ? '用户已解封' : '用户已封禁')
     await load()
   } finally {
     actionLoading.value = false

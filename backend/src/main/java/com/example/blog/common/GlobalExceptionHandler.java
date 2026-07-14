@@ -11,18 +11,18 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public Result<Void> badRequest(IllegalArgumentException ex) {
-        return Result.fail(ex.getMessage());
+        return Result.fail(HttpStatus.BAD_REQUEST.value(), ex.getMessage());
     }
 
     @ExceptionHandler(AccessDeniedException.class)
     @ResponseStatus(HttpStatus.FORBIDDEN)
     public Result<Void> forbidden(AccessDeniedException ex) {
-        return Result.fail("没有访问权限");
+        return Result.fail(HttpStatus.FORBIDDEN.value(), "没有访问权限");
     }
 
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public Result<Void> error(Exception ex) {
-        return Result.fail(ex.getMessage());
+        return Result.fail(HttpStatus.INTERNAL_SERVER_ERROR.value(), ex.getMessage());
     }
 }

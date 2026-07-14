@@ -3,13 +3,17 @@
     <PortalNav />
     <section class="hero" :class="{ 'hero-fallback': !heroUrl }" :style="heroStyle">
       <div class="shell hero-content">
-        <span class="eyebrow">Anime Style Personal Blog</span>
-        <h1>星绘 Blog</h1>
-        <p>这里展示最新发布的文章。登录后可以进入用户中心创作内容、维护资料和修改密码。</p>
+        <span class="eyebrow">{{ site.heroBadge }}</span>
+        <h1>{{ site.heroTitle }}</h1>
+        <p>{{ site.heroSubtitle }}</p>
+        <div class="hero-actions">
+          <RouterLink class="btn-primary" to="/user">开始创作</RouterLink>
+          <a class="btn-ghost" href="#articles">浏览文章</a>
+        </div>
       </div>
     </section>
 
-    <main class="shell main-grid">
+    <main id="articles" class="shell main-grid">
       <section>
         <div class="section-title article-toolbar">
           <div>
@@ -19,7 +23,7 @@
           <div class="article-search">
             <el-input
               v-model="keyword"
-              placeholder="搜索文章标题"
+              placeholder="搜索标题、摘要或正文"
               clearable
               @keyup.enter="searchArticles"
               @clear="searchArticles"
@@ -47,11 +51,11 @@
 
       <aside>
         <div class="side-panel">
-          <h3>分类频道</h3>
+          <h3>分类</h3>
           <el-input v-model="categoryKeyword" placeholder="搜索分类" clearable size="small" class="category-search" />
           <div class="category-list category-scroll">
             <button class="category-item category-button" :class="{ active: selectedCategoryId === null }" @click="selectCategory(null)">
-              <span>全部文章</span><span>全部</span>
+              <span>全部文章</span><span>{{ articlePage.total }}</span>
             </button>
             <button
               v-for="item in filteredCategories"
@@ -66,7 +70,7 @@
           <el-empty v-if="filteredCategories.length === 0" description="暂无匹配分类" :image-size="72" />
         </div>
         <div class="side-panel">
-          <h3>标签墙</h3>
+          <h3>标签</h3>
           <div class="tag-row">
             <button
               v-for="tag in tags"
@@ -90,11 +94,14 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import PortalNav from '../../components/PortalNav.vue'
 import ArticleCard from '../../components/ArticleCard.vue'
 import { portalApi } from '../../api/blog'
+import { useSiteStore } from '../../stores/site'
+import { normalizeAssetUrl } from '../../utils/assets'
 
 const articles = ref([])
 const categories = ref([])
 const tags = ref([])
 const hero = ref([])
+const site = useSiteStore()
 const keyword = ref('')
 const categoryKeyword = ref('')
 const selectedCategoryId = ref(null)
@@ -102,7 +109,7 @@ const selectedTagId = ref(null)
 const articleLoading = ref(false)
 const articlePage = reactive({ current: 1, size: 9, total: 0 })
 
-const heroUrl = computed(() => hero.value[0]?.url || '')
+const heroUrl = computed(() => normalizeAssetUrl(hero.value[0]?.url))
 const heroStyle = computed(() => heroUrl.value ? { backgroundImage: `url(${heroUrl.value})` } : {})
 const filteredCategories = computed(() => {
   const key = categoryKeyword.value.trim().toLowerCase()
@@ -125,6 +132,15 @@ const filterSummary = computed(() => {
 
 const loadHomeMeta = async () => {
   const res = await portalApi.home()
+  const settings = res.data.settings || {}
+  site.name = settings.siteName || site.name
+  site.heroTitle = settings.heroTitle || site.name
+  site.heroSubtitle = settings.heroSubtitle || site.heroSubtitle
+  site.heroBadge = settings.heroBadge || site.heroBadge
+  site.backgroundUrl = settings.backgroundUrl || ''
+  site.logoUrl = (Array.isArray(res.data.logo) ? res.data.logo[0] : res.data.logo)?.url || site.logoUrl
+  site.loaded = true
+  site.applyHead()
   categories.value = res.data.categories || []
   tags.value = res.data.tags || []
   hero.value = res.data.hero || []

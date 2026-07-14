@@ -2,13 +2,17 @@ import http from './http'
 
 export const authApi = {
   login: (data) => http.post('/auth/login', data),
-  register: (data) => http.post('/auth/register', data)
+  register: (data) => http.post('/auth/register', data),
+  sendEmailCode: (data) => http.post('/auth/email-code', data),
+  resetPassword: (data) => http.post('/auth/reset-password', data)
 }
 
 export const userApi = {
   me: () => http.get('/users/me'),
   updateProfile: (data) => http.put('/users/me', data),
-  changePassword: (data) => http.put('/users/me/password', data)
+  changePassword: (data) => http.put('/users/me/password', data),
+  favorites: (params) => http.get('/users/me/favorites', { params }),
+  comments: (params) => http.get('/users/me/comments', { params })
 }
 
 export const portalApi = {
@@ -19,17 +23,22 @@ export const portalApi = {
 
 export const articleApi = {
   page: (params) => http.get('/articles', { params }),
+  adminDetail: (id) => http.get(`/articles/${id}`),
   mine: (params) => http.get('/articles/mine', { params }),
   save: (data) => http.post('/articles', data),
   update: (id, data) => http.put(`/articles/${id}`, data),
   removeMine: (id) => http.delete(`/articles/${id}`),
   remove: (ids) => http.delete('/articles', { data: ids }),
+  updateStatus: (id, status) => http.put(`/articles/${id}/status`, null, { params: { status } }),
   like: (id) => http.post(`/articles/${id}/like`),
   favorite: (id) => http.post(`/articles/${id}/favorite`)
 }
 
 export const adminApi = {
   dashboard: () => http.get('/admin/dashboard'),
+  settings: () => http.get('/admin/settings'),
+  saveSettings: (data) => http.put('/admin/settings', data),
+  operationLogs: (params) => http.get('/admin/operation-logs', { params }),
   categories: (params) => http.get('/admin/categories', { params }),
   saveCategory: (data) => http.post('/admin/categories', data),
   deleteCategory: (id) => http.delete(`/admin/categories/${id}`),

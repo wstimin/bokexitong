@@ -15,6 +15,14 @@ public class DashboardStats {
     private Long imageCount;
     private Long likeCount;
     private Long favoriteCount;
+    private Long pendingArticleCount;
+    private Long publishedArticleCount;
+    private Long rejectedArticleCount;
+    private Long offlineArticleCount;
+    private Long pendingCommentCount;
+    private Long approvedCommentCount;
+    private Long rejectedCommentCount;
     private List<Map<String, Object>> publishTrend;
     private List<Map<String, Object>> categoryPie;
+    private List<Map<String, Object>> statusPie;
 }

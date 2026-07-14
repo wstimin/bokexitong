@@ -1,43 +1,59 @@
-# 系统设计文档
+# 系统设计
 
 ## 架构
 
-系统采用前后端分离架构。Vue 3 负责前台门户、用户中心和后台管理界面，Spring Boot 3 提供 REST API。登录使用 JWT，无状态认证，后台接口通过 `ROLE_ADMIN` 保护。
+系统采用前后端分离架构。Vue 负责页面和交互，Spring Boot 负责业务规则、权限校验和数据访问。前端通过 `/api` 访问后端，生产环境由 Nginx 托管前端构建产物并反向代理 API。
 
-## 数据模型
+```mermaid
+flowchart LR
+  Browser[浏览器] --> Frontend[Vue 前端]
+  Frontend --> Api[Spring Boot REST API]
+  Api --> MySQL[(MySQL 8)]
+  Api --> Uploads[本地上传目录]
+```
 
-- `blog_user`：用户、角色、状态、头像 URL
-- `article`：文章标题、摘要、封面 URL、Markdown 内容、状态、浏览/点赞/收藏统计
-- `category`：文章分类
-- `tag` 与 `article_tag`：标签与文章多对多关系
-- `comment`：评论与回复审核
-- `like_record`：点赞记录
-- `favorite`：收藏记录
-- `image_resource`：后台图片 URL 资源库
+## 前端分区
 
-## 图片资源设计
+- 门户区：`frontend/src/views/portal`，公开文章浏览与详情阅读。
+- 用户区：`frontend/src/views/portal/UserCenter.vue`，登录用户创作和资料维护。
+- 管理区：`frontend/src/views/admin`，管理员后台。
+- API 封装：`frontend/src/api/blog.js`。
+- 登录态：`frontend/src/stores/auth.js`。
 
-系统支持登录用户上传图片、视频和附件，并将文件保存到后端上传目录；后台图片链接管理仍可维护外部 URL，用于首页横幅等站点素材。
+## 后端分层
 
-`image_resource.type` 的推荐取值：
+- Controller：接收 HTTP 请求，做接口分组。
+- Service：承载业务规则，例如文章发布、公开详情、点赞收藏、评论审核。
+- Mapper：MyBatis-Plus 数据访问。
+- Entity：数据库表映射。
+- DTO：前端展示或提交数据模型，避免直接暴露完整实体。
 
-- `HERO`：首页横幅
-- `COVER`：文章封面
-- `AVATAR`：头像
-- `RECOMMEND`：推荐位图片
+## 核心数据模型
 
-首页读取启用状态下排序最靠前的 `HERO` 图片作为背景。如果没有可用 URL，前端使用 CSS 兜底背景。
+- `blog_user`：用户、角色、状态、头像和邮箱。
+- `article`：文章标题、摘要、封面、正文、状态、浏览量、点赞数、收藏数。
+- `category`：文章分类。
+- `tag` 与 `article_tag`：文章标签和多对多关系。
+- `comment`：文章评论。
+- `like_record`：用户点赞记录。
+- `favorite`：用户收藏记录。
+- `image_resource`：站点图片资源。
 
-## 权限设计
+## 文章展示模型
 
-- 游客：访问首页、文章列表、文章详情
-- 登录用户：发布、编辑、删除自己的文章，上传图片/视频/附件，评论、点赞、收藏、维护个人资料、修改密码
-- 管理员：通过 `/admin` 进入后台，管理仪表盘、文章、分类标签、图片 URL、评论审核、用户资料、角色、状态和密码
+前台列表使用 `ArticleCardResponse`，只返回卡片需要的数据，不返回正文。前台详情使用 `ArticleDetailResponse`，在卡片字段基础上增加 `content` 和 `contentType`。
 
-## 可扩展方向
+这样可以保持首页轻量，也让“卡片浏览，点开后显示内容”的产品逻辑更加明确。
 
-- 接入对象存储上传，将图片 URL 自动回填到 `image_resource`
-- 增加文章审核流程
-- 增加用户关注、专题、归档时间轴
-- 将仪表盘统计改为真实 SQL 聚合趋势
-- 增加 Markdown 编辑器工具栏或 WangEditor 富文本模式
+## 权限规则
+
+- 游客：访问首页、公开文章列表、文章详情和已审核评论。
+- 登录用户：发布文章、编辑本人文章、删除本人文章、评论、点赞、收藏、维护个人资料。
+- 管理员：访问 `/admin`，管理文章、评论、分类、标签、用户和图片资源。
+
+## 待增强点
+
+- 点赞/收藏已支持 toggle 和计数同步，但详情页暂未初始化“当前用户是否已点赞/收藏”的状态。
+- 评论目前公开列表只展示已审核评论，可继续补充回复、删除本人评论和敏感词审核。
+- 后台可增加文章审核状态，例如 `PENDING`、`REJECTED`。
+- 前端可继续抽取通用列表、表单和上传组件。

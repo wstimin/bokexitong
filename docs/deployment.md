@@ -7,9 +7,11 @@
 - 数据库：MySQL 8，数据库名 `personal_blog`
 - 初始化脚本：`sql/personal_blog.sql`
 
-默认账号：
+初始管理员：
 
-- 管理员：`admin / 123456`
+- 用户名：`admin`
+- 一键部署会生成初始密码并写入 `.env` 的 `BLOG_ADMIN_INITIAL_PASSWORD`
+- 手动部署时必须自行设置 `BLOG_ADMIN_INITIAL_PASSWORD`，生产环境不会允许继续使用默认密码
 
 纯净安装只初始化管理员账号，分类、标签、图片和文章请在后台自行创建。
 
@@ -28,7 +30,8 @@
 - 使用域名绑定前端站点
 - 后端只允许本机或内网访问，由 Nginx 反向代理 `/api/`
 - 修改 `.env` 或后端配置中的 JWT 密钥
-- 修改默认管理员密码
+- 保存好一键部署生成的管理员初始密码，首次登录后及时修改
+- 注册和找回密码依赖真实 SMTP 配置
 - MySQL 8 密码使用强密码
 
 ## 二、服务器命令行环境安装
@@ -88,7 +91,7 @@ curl -fsSL https://raw.githubusercontent.com/wstimin/bokexitong/main/scripts/ins
 - 拉取 GitHub 仓库：`https://github.com/wstimin/bokexitong.git`
 - 默认安装到：`/opt/bokexitong`
 - 安装 Docker 和 Docker Compose 插件
-- 自动生成 `.env`，包含 MySQL 8 密码和 JWT 密钥
+- 自动生成 `.env`，包含 MySQL 8 密码、JWT 密钥、管理员初始密码和邮件配置占位项
 - 构建并启动 MySQL 8、Spring Boot 后端、Vue 前端
 
 如果想指定安装目录，例如安装到宝塔站点目录：
@@ -406,7 +409,9 @@ Nginx 1.20+
 curl -fsSL https://raw.githubusercontent.com/wstimin/bokexitong/main/scripts/install.sh | INSTALL_DIR=/www/wwwroot/bokexitong bash
 ```
 
-脚本会自动拉取 GitHub 仓库、安装 Docker、生成 `.env`，并启动 MySQL 8、后端和前端。部署完成后直接访问：
+脚本会自动拉取 GitHub 仓库、安装 Docker、生成 `.env`，并启动 MySQL 8、后端和前端。管理员初始密码会在脚本结束时打印，也会保存在 `.env` 的 `BLOG_ADMIN_INITIAL_PASSWORD`。部署完成后直接访问：
+
+一键部署默认只对外开放前端 `80` 端口；MySQL 和后端 API 只在 Docker 内部网络中访问，前端 Nginx 会把 `/api/` 转发到后端容器。
 
 ```text
 http://服务器IP/
@@ -470,6 +475,16 @@ SPRING_DATASOURCE_URL=jdbc:mysql://127.0.0.1:3306/personal_blog?useUnicode=true&
 SPRING_DATASOURCE_USERNAME=personal_blog
 SPRING_DATASOURCE_PASSWORD=你的数据库密码
 BLOG_JWT_SECRET=请改成至少32位的随机字符串
+BLOG_ADMIN_INITIAL_PASSWORD=请改成至少8位的管理员初始密码
+BLOG_MAIL_ENABLED=true
+BLOG_MAIL_FROM_NAME=博客系统
+SPRING_MAIL_HOST=smtp.example.com
+SPRING_MAIL_PORT=587
+SPRING_MAIL_USERNAME=你的SMTP账号
+SPRING_MAIL_PASSWORD=你的SMTP密码或授权码
+SPRING_MAIL_SMTP_AUTH=true
+SPRING_MAIL_STARTTLS_ENABLE=true
+SPRING_MAIL_SSL_ENABLE=false
 ```
 
 ### 4. 打包后端
@@ -512,6 +527,16 @@ SPRING_DATASOURCE_URL=jdbc:mysql://127.0.0.1:3306/personal_blog?useUnicode=true&
 SPRING_DATASOURCE_USERNAME=personal_blog
 SPRING_DATASOURCE_PASSWORD=你的数据库密码
 BLOG_JWT_SECRET=请改成至少32位的随机字符串
+BLOG_ADMIN_INITIAL_PASSWORD=请改成至少8位的管理员初始密码
+BLOG_MAIL_ENABLED=true
+BLOG_MAIL_FROM_NAME=博客系统
+SPRING_MAIL_HOST=smtp.example.com
+SPRING_MAIL_PORT=587
+SPRING_MAIL_USERNAME=你的SMTP账号
+SPRING_MAIL_PASSWORD=你的SMTP密码或授权码
+SPRING_MAIL_SMTP_AUTH=true
+SPRING_MAIL_STARTTLS_ENABLE=true
+SPRING_MAIL_SSL_ENABLE=false
 ```
 
 启动后访问测试：
@@ -578,7 +603,7 @@ http://你的域名/
 http://你的域名/admin
 ```
 
-默认管理员：`admin / 123456`。
+管理员用户名为 `admin`。生产环境初始密码来自 `BLOG_ADMIN_INITIAL_PASSWORD`，一键部署时可在 `.env` 中查看。
 
 进入后台“图片链接”页面，新增 `HERO` 类型图片 URL，首页会自动使用。
 
@@ -594,7 +619,7 @@ http://你的域名/admin
 curl -fsSL https://raw.githubusercontent.com/wstimin/bokexitong/main/scripts/install.sh | INSTALL_DIR=/opt/bokexitong bash
 ```
 
-脚本会自动拉取 GitHub 仓库、安装 Docker、生成 `.env`，并启动 MySQL 8、后端和前端。
+脚本会自动拉取 GitHub 仓库、安装 Docker、生成 `.env`，并启动 MySQL 8、后端和前端。管理员初始密码会在脚本结束时打印，也会保存在 `.env`。
 
 部署完成后，在 1Panel 中进入“容器”即可看到：
 
@@ -631,8 +656,18 @@ cp .env.example .env
 编辑 `.env`：
 
 ```env
-MYSQL_ROOT_PASSWORD=请改成强密码
-BLOG_JWT_SECRET=请改成至少32位的随机字符串
+MYSQL_ROOT_PASSWORD=填写真实强密码
+BLOG_JWT_SECRET=填写至少32位的随机字符串
+BLOG_ADMIN_INITIAL_PASSWORD=填写至少8位的管理员初始密码
+BLOG_MAIL_ENABLED=false
+BLOG_MAIL_FROM_NAME=博客系统
+SPRING_MAIL_HOST=
+SPRING_MAIL_PORT=587
+SPRING_MAIL_USERNAME=
+SPRING_MAIL_PASSWORD=
+SPRING_MAIL_SMTP_AUTH=true
+SPRING_MAIL_STARTTLS_ENABLE=true
+SPRING_MAIL_SSL_ENABLE=false
 ```
 
 ### 4. 使用 1Panel 编排部署
@@ -810,6 +845,16 @@ vi .env
 ```env
 MYSQL_ROOT_PASSWORD=请改成强密码
 BLOG_JWT_SECRET=请改成至少32位的随机字符串
+BLOG_ADMIN_INITIAL_PASSWORD=请改成至少8位的管理员初始密码
+BLOG_MAIL_ENABLED=false
+BLOG_MAIL_FROM_NAME=博客系统
+SPRING_MAIL_HOST=
+SPRING_MAIL_PORT=587
+SPRING_MAIL_USERNAME=
+SPRING_MAIL_PASSWORD=
+SPRING_MAIL_SMTP_AUTH=true
+SPRING_MAIL_STARTTLS_ENABLE=true
+SPRING_MAIL_SSL_ENABLE=false
 ```
 
 ### 3. 启动服务
@@ -949,6 +994,16 @@ Environment=SPRING_DATASOURCE_URL=jdbc:mysql://127.0.0.1:3306/personal_blog?useU
 Environment=SPRING_DATASOURCE_USERNAME=personal_blog
 Environment=SPRING_DATASOURCE_PASSWORD=你的数据库密码
 Environment=BLOG_JWT_SECRET=请改成至少32位的随机字符串
+Environment=BLOG_ADMIN_INITIAL_PASSWORD=请改成至少8位的管理员初始密码
+Environment=BLOG_MAIL_ENABLED=true
+Environment=BLOG_MAIL_FROM_NAME=博客系统
+Environment=SPRING_MAIL_HOST=smtp.example.com
+Environment=SPRING_MAIL_PORT=587
+Environment=SPRING_MAIL_USERNAME=你的SMTP账号
+Environment=SPRING_MAIL_PASSWORD=你的SMTP密码或授权码
+Environment=SPRING_MAIL_SMTP_AUTH=true
+Environment=SPRING_MAIL_STARTTLS_ENABLE=true
+Environment=SPRING_MAIL_SSL_ENABLE=false
 
 [Install]
 WantedBy=multi-user.target
@@ -1036,11 +1091,33 @@ certbot --nginx -d 你的域名
 
 ## 六、部署后必做事项
 
-### 1. 修改默认密码
+### 1. 修改管理员初始密码
 
-登录后台后，建议尽快在后台右上角“修改密码”中修改管理员密码。
+登录后台后，建议尽快在后台右上角“修改密码”中修改管理员密码。一键部署生成的初始密码只用于首次登录。
 
-### 2. 配置图片链接
+### 2. 配置 SMTP 邮件
+
+注册和找回密码会发送真实邮箱验证码，不提供假验证码。需要编辑 `.env` 并设置：
+
+```env
+BLOG_MAIL_ENABLED=true
+BLOG_MAIL_FROM_NAME=博客系统
+SPRING_MAIL_HOST=smtp.example.com
+SPRING_MAIL_PORT=587
+SPRING_MAIL_USERNAME=你的SMTP账号
+SPRING_MAIL_PASSWORD=你的SMTP密码或授权码
+SPRING_MAIL_SMTP_AUTH=true
+SPRING_MAIL_STARTTLS_ENABLE=true
+SPRING_MAIL_SSL_ENABLE=false
+```
+
+保存后执行：
+
+```bash
+docker compose up -d
+```
+
+### 3. 配置图片链接
 
 进入后台：图片链接管理。
 
@@ -1054,18 +1131,18 @@ certbot --nginx -d 你的域名
 
 文章封面可以在用户中心上传，也可以直接填写图片 URL；后台图片链接管理用于维护首页横幅等站点素材。
 
-### 3. 不要开放 MySQL 公网端口
+### 4. 不要开放 MySQL 公网端口
 
-如果使用 Docker Compose，`docker-compose.yml` 默认映射了 `3306:3306`，方便调试。正式生产环境建议删除或注释这段：
+当前 `docker-compose.yml` 默认不映射 MySQL 端口。后端容器会通过 Docker 内部网络访问 MySQL，不需要公网开放 3306。
+
+只有在临时排查数据库问题时，才建议绑定到本机回环地址，例如：
 
 ```yaml
 ports:
-  - "3306:3306"
+  - "127.0.0.1:3306:3306"
 ```
 
-后端容器可以通过 Docker 内部网络访问 MySQL，不需要公网开放 3306。
-
-### 4. 设置防火墙
+### 5. 设置防火墙
 
 只开放必要端口：
 
@@ -1076,7 +1153,7 @@ ufw allow 22
 ufw enable
 ```
 
-如果后端不需要公网直接访问，可以不开放 `8080`。
+默认部署不开放 `8080`。前端 Nginx 会转发 API 请求，公网只需要访问 `80` 或 `443`。
 
 ## 七、常见问题
 
@@ -1114,11 +1191,7 @@ proxy_pass http://backend:8080/api/;
 mysql -uroot -p personal_blog < sql/personal_blog.sql
 ```
 
-默认管理员为：
-
-```text
-admin / 123456
-```
+管理员用户名为 `admin`。Docker 一键部署的初始密码在 `.env` 的 `BLOG_ADMIN_INITIAL_PASSWORD` 中；手动部署则使用你设置的 `BLOG_ADMIN_INITIAL_PASSWORD`。
 
 ### 4. 刷新前端页面 404
 

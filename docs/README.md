@@ -1,120 +1,55 @@
-# 二次元风格个人博客系统
+# 个人博客系统
 
-这是一个基于 Spring Boot 3 + Vue 3 + MySQL 8 的前后端分离个人博客系统，按“前台门户 + 用户中心 + 后台管理”的结构实现。前台只展示公开文章，登录用户在用户中心发布和管理自己的文章，后台管理通过 `/admin` 路径进入。
+这是一个前后端分离的个人博客系统：后端使用 Spring Boot 3 提供 REST API，前端使用 Vue 3 + Vite 构建门户、用户中心和后台管理页面，数据库使用 MySQL 8。
+
+## 模块边界
+
+- 前台门户：公开访问，负责文章卡片浏览、分类筛选、标签筛选、搜索、文章详情、评论展示。
+- 用户中心：登录用户访问，负责个人资料维护、密码修改、文章发布、草稿和本人文章管理。
+- 后台管理：管理员访问，负责文章、分类、标签、评论、用户和图片资源管理。
 
 ## 技术栈
 
-- 后端：Spring Boot 3.2.0、Spring Security、JWT、MyBatis-Plus 3.5.7、Hutool、Lombok
-- 数据库：MySQL 8.x。`sql/personal_blog.sql` 是 MySQL 建库建表脚本文件，不是 SQL Server 数据库。
-- 前端：Vue 3、Vite、Pinia、Vue Router、Element Plus、ECharts 6、Marked、Highlight.js
-- 运行环境：Java 17、Node.js 18+、MySQL 8
+- 后端：Spring Boot 3.2、Spring Security、JWT、MyBatis-Plus、Lombok
+- 前端：Vue 3、Vite、Vue Router、Pinia、Element Plus、marked、highlight.js
+- 数据库：MySQL 8
+- 部署：Docker Compose、Nginx
 
-## 功能模块
+## 目录结构
 
-- 前台门户：首页横幅、文章列表、分类、标签云、文章详情、Markdown 渲染、代码高亮
-- 互动社区：登录后评论、点赞、收藏
-- 用户中心：维护个人资料、修改密码、发布文章、草稿、编辑/删除自己的文章，支持上传图片、视频和附件
-- 后台管理：仪表盘、文章管理、分类标签、评论审核、用户资料/角色/状态/密码管理
-- 图片链接管理：后台新增、编辑、删除图片 URL，支持 HERO、COVER、AVATAR、RECOMMEND 用途和预览
+```text
+backend/   Spring Boot 后端服务
+frontend/  Vue/Vite 前端应用
+sql/       MySQL 初始化脚本
+docs/      项目说明和设计文档
+scripts/   部署脚本
+```
 
-## 图片 URL 使用方式
+## 接口分组
 
-后台进入“图片链接”页面，新增图片 URL：
+- `/api/auth/**`：登录、邮箱验证码注册、邮箱验证码重置密码。
+- `/api/portal/**`：公开门户接口，只返回公开文章和公开展示数据。
+- `/api/users/**`：当前登录用户资料。
+- `/api/articles/**`：用户文章操作和管理员文章管理。
+- `/api/comments/**`：评论列表与评论发布。
+- `/api/admin/**`：后台管理接口，只允许管理员访问。
+- `/api/uploads/**`：登录用户上传文件，公开读取上传资源。
 
-- `HERO`：首页横幅背景，前台首页自动读取第一条启用数据
-- `COVER`：可作为文章封面素材
-- `AVATAR`：可作为用户头像素材
-- `RECOMMEND`：可作为推荐位图片素材
+## 当前前台文章体验
 
-用户中心发布文章时支持上传封面图片，也支持直接输入封面图片 URL。
+首页采用卡片浏览方式。文章列表接口返回轻量卡片数据，包括标题、摘要、封面、分类、标签、作者、浏览量、点赞数和收藏数，不返回正文。用户点击卡片进入详情页后，才加载 Markdown 正文和评论区。
 
-## 本地启动步骤
+## 本地启动
 
 1. 导入数据库脚本：`sql/personal_blog.sql`
 2. 修改后端数据库配置：`backend/src/main/resources/application.yml`
 3. 启动后端：在 `backend` 目录执行 `mvn spring-boot:run`
-4. 启动前端：在 `frontend` 目录执行 `npm install`，再执行 `npm run dev`
+4. 启动前端：在 `frontend` 目录执行 `npm install`，然后执行 `npm run dev`
 5. 访问前端：`http://localhost:5173`
 
-## 服务器一键拉取部署
+本地初始化管理员用户名为 `admin`。首次部署到生产环境时，一键部署脚本会生成初始管理员密码并写入 `.env` 的 `BLOG_ADMIN_INITIAL_PASSWORD`；手动部署时请自行设置该环境变量，生产环境不会允许继续使用默认密码。
 
-新服务器推荐直接执行下面这一条命令，脚本会自动安装基础工具、拉取 GitHub 项目、安装 Docker、生成 `.env`，并启动 MySQL 8、后端和前端：
+## 后续建议
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/wstimin/bokexitong/main/scripts/install.sh | bash
-```
-
-默认安装目录是 `/opt/bokexitong`。如果想安装到指定目录，例如宝塔常用目录，可以这样执行：
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/wstimin/bokexitong/main/scripts/install.sh | INSTALL_DIR=/www/wwwroot/bokexitong bash
-```
-
-如果服务器提示 `curl: command not found`，先安装 curl：
-
-```bash
-apt update && apt install -y curl
-```
-
-如果项目已经下载到服务器，也可以在项目根目录执行：
-
-```bash
-chmod +x scripts/deploy.sh
-bash scripts/deploy.sh
-```
-
-部署后访问：
-
-- 前端：`http://服务器IP/`
-- 后端 API：`http://服务器IP/api/`
-- MySQL 8：容器服务名 `mysql`，端口 `3306`
-
-`.env` 中建议修改：
-
-- `MYSQL_ROOT_PASSWORD`：MySQL 8 root 密码
-- `BLOG_JWT_SECRET`：JWT 密钥，生产环境请改成长随机字符串
-
-Docker Compose 会启动三个服务：
-
-- `mysql`：使用官方 `mysql:8.0` 镜像，并自动导入 `sql/personal_blog.sql`
-- `backend`：Spring Boot 3 后端，连接 MySQL 8
-- `frontend`：Nginx 托管 Vue 构建产物，并反向代理 `/api/` 到后端
-
-如果服务器已有 MySQL 8，不想用容器 MySQL，可以只部署后端和前端，并把后端环境变量改成你的 MySQL 8 地址：
-
-```bash
-SPRING_DATASOURCE_URL=jdbc:mysql://你的MySQL地址:3306/personal_blog?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
-SPRING_DATASOURCE_USERNAME=root
-SPRING_DATASOURCE_PASSWORD=你的密码
-```
-
-完整部署教程请查看：`docs/deployment.md`，其中包含宝塔部署、1Panel 部署和服务器直接部署三种方式。
-
-默认账号：
-
-- 管理员：`admin / 123456`
-
-纯净安装只初始化管理员账号，分类、标签、图片和文章请在后台自行创建。
-
-## 后端接口简表
-
-- `POST /api/auth/login`：登录
-- `GET /api/users/me`：当前用户资料
-- `PUT /api/users/me`：修改当前用户资料
-- `PUT /api/users/me/password`：修改当前用户密码
-- `GET /api/portal/home`：首页数据
-- `GET /api/portal/articles`：公开文章分页
-- `GET /api/portal/articles/{id}`：文章详情
-- `GET /api/articles/mine`：我的文章分页
-- `POST /api/articles`：发布/保存文章
-- `PUT /api/articles/{id}`：修改自己的文章
-- `DELETE /api/articles/{id}`：删除自己的文章
-- `POST /api/uploads`：登录后上传文件、图片或视频
-- `GET /api/admin/dashboard`：后台统计
-- `GET|POST|DELETE /api/admin/images`：图片 URL 管理
-- `GET|POST|DELETE /api/admin/categories`：分类管理
-- `GET|POST|DELETE /api/admin/tags`：标签管理
-
-## 说明
-
-本项目适合课程设计、毕业设计雏形、个人博客二次开发。图片素材由你自己提供 URL，系统只负责保存、预览和引用。
+- 将上传文件迁移到对象存储，并在后台图片资源中统一管理。
+- 补充后端单元测试和前端页面级测试。

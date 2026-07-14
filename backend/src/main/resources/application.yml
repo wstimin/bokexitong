@@ -14,10 +14,21 @@ spring:
   jackson:
     date-format: yyyy-MM-dd HH:mm:ss
     time-zone: Asia/Shanghai
+  mail:
+    host:
+    port: 587
+    username:
+    password:
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
   servlet:
     multipart:
-      max-file-size: 200MB
-      max-request-size: 220MB
+      max-file-size: 50MB
+      max-request-size: 55MB
 
 mybatis-plus:
   configuration:
@@ -34,3 +45,8 @@ blog:
     secret: change-this-secret-to-a-long-random-value-for-production
     expiration-minutes: 1440
   upload-dir: uploads
+  admin:
+    initial-password:
+  mail:
+    enabled: false
+    from-name: 博客系统

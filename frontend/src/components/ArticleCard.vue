@@ -1,22 +1,44 @@
 <template>
   <RouterLink class="article-card" :to="`/article/${article.id}`">
-    <img v-if="article.coverUrl" class="cover" :src="article.coverUrl" :alt="article.title" />
-    <div v-else class="cover"></div>
+    <img v-if="article.coverUrl" class="cover" :src="coverSrc" :alt="article.title" />
+    <div v-else class="cover cover-placeholder">{{ article.categoryName || 'Blog' }}</div>
+
     <div class="card-body">
-      <div class="meta">
-        <span>{{ article.publishedAt || article.createdAt || '未发布' }}</span>
-        <span>{{ article.viewCount || 0 }} 浏览</span>
+      <div class="card-kicker">
+        <span>{{ article.categoryName || '未分类' }}</span>
+        <span>{{ displayDate }}</span>
       </div>
+
       <h3>{{ article.title }}</h3>
-      <p>{{ article.summary || '这个作者很神秘，还没有写摘要。' }}</p>
-      <div class="tag-row">
-        <span class="anime-tag">Markdown</span>
-        <span class="anime-tag">创作日记</span>
+      <p>{{ article.summary || '作者还没有填写摘要，点开看看完整内容。' }}</p>
+
+      <div class="meta card-stats">
+        <span>{{ article.authorName || '匿名作者' }}</span>
+        <span>{{ article.viewCount || 0 }} 阅读</span>
+        <span>{{ article.likeCount || 0 }} 点赞</span>
+        <span>{{ article.favoriteCount || 0 }} 收藏</span>
+      </div>
+
+      <div v-if="article.tags?.length" class="tag-row">
+        <span v-for="tag in article.tags" :key="tag.id" class="anime-tag" :style="{ color: tag.color }">
+          {{ tag.name }}
+        </span>
       </div>
     </div>
   </RouterLink>
 </template>
 
 <script setup>
-defineProps({ article: { type: Object, required: true } })
+import { computed } from 'vue'
+import { normalizeAssetUrl } from '../utils/assets'
+
+const props = defineProps({ article: { type: Object, required: true } })
+
+const coverSrc = computed(() => normalizeAssetUrl(props.article.coverUrl))
+
+const displayDate = computed(() => {
+  const raw = props.article.publishedAt || props.article.createdAt
+  if (!raw) return '未发布'
+  return String(raw).slice(0, 10)
+})
 </script>

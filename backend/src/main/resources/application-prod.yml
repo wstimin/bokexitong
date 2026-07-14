@@ -9,10 +9,23 @@ spring:
     url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/personal_blog?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true}
     username: ${SPRING_DATASOURCE_USERNAME:root}
     password: ${SPRING_DATASOURCE_PASSWORD:root}
+  mail:
+    host: ${SPRING_MAIL_HOST:}
+    port: ${SPRING_MAIL_PORT:587}
+    username: ${SPRING_MAIL_USERNAME:}
+    password: ${SPRING_MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: ${SPRING_MAIL_SMTP_AUTH:true}
+          starttls:
+            enable: ${SPRING_MAIL_STARTTLS_ENABLE:true}
+          ssl:
+            enable: ${SPRING_MAIL_SSL_ENABLE:false}
   servlet:
     multipart:
-      max-file-size: ${BLOG_MAX_FILE_SIZE:200MB}
-      max-request-size: ${BLOG_MAX_REQUEST_SIZE:220MB}
+      max-file-size: ${BLOG_MAX_FILE_SIZE:50MB}
+      max-request-size: ${BLOG_MAX_REQUEST_SIZE:55MB}
 
 mybatis-plus:
   configuration:
@@ -29,3 +42,8 @@ blog:
     secret: ${BLOG_JWT_SECRET:change-this-secret-to-a-long-random-value-for-production}
     expiration-minutes: ${BLOG_JWT_EXPIRATION_MINUTES:1440}
   upload-dir: ${BLOG_UPLOAD_DIR:/app/uploads}
+  admin:
+    initial-password: ${BLOG_ADMIN_INITIAL_PASSWORD:}
+  mail:
+    enabled: ${BLOG_MAIL_ENABLED:false}
+    from-name: ${BLOG_MAIL_FROM_NAME:博客系统}

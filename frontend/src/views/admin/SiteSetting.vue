@@ -1,0 +1,105 @@
+<template>
+  <section class="admin-card settings-panel">
+    <div class="toolbar user-toolbar">
+      <div>
+        <h2>站点设置</h2>
+        <p class="section-subtitle">配置站点名称、首页首屏文案、浏览器标题和全站背景。Logo 在图片资源中配置为 LOGO 类型。</p>
+      </div>
+      <button class="btn-primary" :disabled="loading" @click="save">保存设置</button>
+    </div>
+
+    <el-form label-position="top" class="settings-form">
+      <el-form-item label="站点名称">
+        <el-input v-model="form.siteName" maxlength="40" show-word-limit placeholder="例如：小鹿的技术博客" />
+      </el-form-item>
+      <el-form-item label="首页徽标文字">
+        <el-input v-model="form.heroBadge" maxlength="40" show-word-limit placeholder="例如：Personal Blog" />
+      </el-form-item>
+      <el-form-item label="首页大标题">
+        <el-input v-model="form.heroTitle" maxlength="80" show-word-limit placeholder="例如：小鹿的技术博客" />
+      </el-form-item>
+      <el-form-item label="首页说明">
+        <el-input v-model="form.heroSubtitle" type="textarea" :rows="4" maxlength="220" show-word-limit placeholder="写一段给访客看的介绍" />
+      </el-form-item>
+      <el-form-item label="全站背景图 URL">
+        <div class="inline-field">
+          <el-input v-model="form.backgroundUrl" placeholder="上传背景图或粘贴图片地址；留空使用默认背景" />
+          <el-upload :show-file-list="false" :http-request="uploadBackground" accept="image/*">
+            <button class="btn-ghost" type="button">上传</button>
+          </el-upload>
+        </div>
+      </el-form-item>
+      <el-form-item label="开放注册">
+        <el-switch v-model="form.allowRegister" active-text="允许新用户注册" inactive-text="关闭公开注册" />
+      </el-form-item>
+    </el-form>
+
+    <div class="settings-preview" :style="previewStyle">
+      <span class="eyebrow">{{ form.heroBadge || 'Personal Blog' }}</span>
+      <h1>{{ form.heroTitle || form.siteName || '博客系统' }}</h1>
+      <p>{{ form.heroSubtitle || '用卡片浏览公开文章，点开后再阅读完整内容。' }}</p>
+    </div>
+  </section>
+</template>
+
+<script setup>
+import { computed, onMounted, reactive, ref } from 'vue'
+import { ElMessage } from 'element-plus'
+import { adminApi, uploadApi } from '../../api/blog'
+import { useSiteStore } from '../../stores/site'
+import { normalizeAssetUrl } from '../../utils/assets'
+
+const site = useSiteStore()
+const loading = ref(false)
+const form = reactive({
+  siteName: '',
+  heroTitle: '',
+  heroSubtitle: '',
+  heroBadge: '',
+  backgroundUrl: '',
+  allowRegister: true
+})
+
+const previewStyle = computed(() => form.backgroundUrl
+  ? { backgroundImage: `linear-gradient(120deg, rgba(38, 29, 57, .78), rgba(70, 50, 94, .42)), url("${normalizeAssetUrl(form.backgroundUrl)}")` }
+  : {})
+
+const apply = (settings = {}) => {
+  form.siteName = settings.siteName || '博客系统'
+  form.heroTitle = settings.heroTitle || form.siteName
+  form.heroSubtitle = settings.heroSubtitle || '用卡片浏览公开文章，点开后再阅读完整内容。登录后可以进入用户中心创作、管理自己的文章。'
+  form.heroBadge = settings.heroBadge || 'Personal Blog'
+  form.backgroundUrl = settings.backgroundUrl || ''
+  form.allowRegister = settings.allowRegister !== 'false'
+}
+
+const load = async () => {
+  loading.value = true
+  try {
+    const res = await adminApi.settings()
+    apply(res.data)
+  } finally {
+    loading.value = false
+  }
+}
+
+const save = async () => {
+  loading.value = true
+  try {
+    const res = await adminApi.saveSettings({ ...form, allowRegister: String(form.allowRegister) })
+    apply(res.data)
+    await site.loadSite(true)
+    ElMessage.success('站点设置已保存')
+  } finally {
+    loading.value = false
+  }
+}
+
+const uploadBackground = async (options) => {
+  const res = await uploadApi.file(options.file)
+  form.backgroundUrl = res.data.url
+  ElMessage.success('背景图已上传')
+}
+
+onMounted(load)
+</script>

@@ -1,39 +1,127 @@
 <template>
   <section>
-    <div class="stats">
+    <div class="stats dashboard-stats">
       <div v-for="item in statItems" :key="item.label" class="stat-card">
-        <span>{{ item.label }}</span><strong>{{ item.value }}</strong>
+        <span>{{ item.label }}</span>
+        <strong>{{ item.value }}</strong>
       </div>
     </div>
-    <div class="admin-card">
-      <div ref="trendRef" style="height: 320px"></div>
+
+    <div class="dashboard-grid">
+      <section class="admin-card">
+        <div class="chart-title">
+          <h2>近 7 天发布趋势</h2>
+        </div>
+        <div ref="trendRef" class="chart-box"></div>
+      </section>
+
+      <section class="admin-card">
+        <div class="chart-title">
+          <h2>文章状态分布</h2>
+        </div>
+        <div ref="statusRef" class="chart-box"></div>
+      </section>
+
+      <section class="admin-card">
+        <div class="chart-title">
+          <h2>分类文章占比</h2>
+        </div>
+        <div ref="categoryRef" class="chart-box"></div>
+      </section>
+
+      <section class="admin-card dashboard-alerts">
+        <div class="chart-title">
+          <h2>待处理事项</h2>
+        </div>
+        <div class="todo-list">
+          <RouterLink to="/admin/articles" class="todo-item">
+            <span>待审核文章</span>
+            <strong>{{ stats.pendingArticleCount || 0 }}</strong>
+          </RouterLink>
+          <RouterLink to="/admin/comments" class="todo-item">
+            <span>待审核评论</span>
+            <strong>{{ stats.pendingCommentCount || 0 }}</strong>
+          </RouterLink>
+          <RouterLink to="/admin/articles" class="todo-item">
+            <span>已驳回文章</span>
+            <strong>{{ stats.rejectedArticleCount || 0 }}</strong>
+          </RouterLink>
+        </div>
+      </section>
     </div>
   </section>
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
-import * as echarts from 'echarts'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
+import { LineChart, PieChart } from 'echarts/charts'
+import { GridComponent, TooltipComponent } from 'echarts/components'
+import { init, use } from 'echarts/core'
+import { CanvasRenderer } from 'echarts/renderers'
 import { adminApi } from '../../api/blog'
+
+use([LineChart, PieChart, GridComponent, TooltipComponent, CanvasRenderer])
 
 const stats = ref({})
 const trendRef = ref()
+const statusRef = ref()
+const categoryRef = ref()
+const charts = []
+
 const statItems = computed(() => [
-  { label: '文章', value: stats.value.articleCount || 0 },
-  { label: '用户', value: stats.value.userCount || 0 },
-  { label: '评论', value: stats.value.commentCount || 0 },
-  { label: '图片链接', value: stats.value.imageCount || 0 }
+  { label: '文章总数', value: stats.value.articleCount || 0 },
+  { label: '用户总数', value: stats.value.userCount || 0 },
+  { label: '评论总数', value: stats.value.commentCount || 0 },
+  { label: '图片资源', value: stats.value.imageCount || 0 },
+  { label: '点赞总数', value: stats.value.likeCount || 0 },
+  { label: '收藏总数', value: stats.value.favoriteCount || 0 },
+  { label: '待审文章', value: stats.value.pendingArticleCount || 0 },
+  { label: '已发布文章', value: stats.value.publishedArticleCount || 0 }
 ])
+
+const initChart = (el, option) => {
+  if (!el) return
+  const chart = init(el)
+  chart.setOption(option)
+  charts.push(chart)
+}
+
+const renderCharts = () => {
+  const trend = stats.value.publishTrend || []
+  const statusPie = stats.value.statusPie || []
+  const categoryPie = stats.value.categoryPie || []
+
+  initChart(trendRef.value, {
+    tooltip: { trigger: 'axis' },
+    grid: { left: 36, right: 18, top: 28, bottom: 34 },
+    xAxis: { type: 'category', data: trend.map((item) => item.date), boundaryGap: false },
+    yAxis: { type: 'value', minInterval: 1 },
+    series: [{ name: '发布数', type: 'line', smooth: true, areaStyle: {}, data: trend.map((item) => item.count), color: '#2f80ed' }]
+  })
+
+  initChart(statusRef.value, {
+    tooltip: { trigger: 'item' },
+    series: [{ type: 'pie', radius: ['48%', '72%'], data: statusPie, label: { formatter: '{b}: {c}' } }]
+  })
+
+  initChart(categoryRef.value, {
+    tooltip: { trigger: 'item' },
+    series: [{ type: 'pie', radius: '70%', data: categoryPie, label: { formatter: '{b}: {c}' } }]
+  })
+}
+
+const resizeCharts = () => charts.forEach((chart) => chart.resize())
 
 onMounted(async () => {
   const res = await adminApi.dashboard()
-  stats.value = res.data
-  const chart = echarts.init(trendRef.value)
-  chart.setOption({
-    tooltip: {},
-    xAxis: { type: 'category', data: (stats.value.publishTrend || []).map((i) => i.date) },
-    yAxis: { type: 'value' },
-    series: [{ type: 'line', smooth: true, areaStyle: {}, data: (stats.value.publishTrend || []).map((i) => i.count), color: '#ff77b7' }]
-  })
+  stats.value = res.data || {}
+  await nextTick()
+  renderCharts()
+  window.addEventListener('resize', resizeCharts)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', resizeCharts)
+  charts.forEach((chart) => chart.dispose())
 })
 </script>

@@ -1,5 +1,7 @@
 package com.example.blog.security;
 
+import com.example.blog.entity.BlogUser;
+import com.example.blog.mapper.BlogUserMapper;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -17,9 +19,11 @@ import java.util.List;
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtTokenProvider jwtTokenProvider;
+    private final BlogUserMapper userMapper;
 
-    public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider) {
+    public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider, BlogUserMapper userMapper) {
         this.jwtTokenProvider = jwtTokenProvider;
+        this.userMapper = userMapper;
     }
 
     @Override
@@ -29,13 +33,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (auth != null && auth.startsWith("Bearer ")) {
             try {
                 Claims claims = jwtTokenProvider.parse(auth.substring(7));
-                String role = String.valueOf(claims.get("role"));
                 Long userId = ((Number) claims.get("userId")).longValue();
-                BlogPrincipal principal = new BlogPrincipal(userId, claims.getSubject(), role);
+                BlogUser user = userMapper.selectById(userId);
+                if (user == null || (user.getStatus() != null && user.getStatus() == 0)) {
+                    SecurityContextHolder.clearContext();
+                    filterChain.doFilter(request, response);
+                    return;
+                }
+                BlogPrincipal principal = new BlogPrincipal(userId, user.getUsername(), user.getRole());
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                         principal,
                         null,
-                        List.of(new SimpleGrantedAuthority("ROLE_" + role))
+                        List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole()))
                 );
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             } catch (Exception ignored) {
