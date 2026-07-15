@@ -26,6 +26,7 @@ export const articleApi = {
   adminDetail: (id) => http.get(`/articles/${id}`),
   adminSave: (data) => http.post('/articles/admin', data),
   adminUpdate: (id, data) => http.put(`/articles/admin/${id}`, data),
+  updateRecommendation: (id, recommended, recommendSort) => http.put(`/articles/${id}/recommendation`, null, { params: { recommended, recommendSort } }),
   mine: (params) => http.get('/articles/mine', { params }),
   save: (data) => http.post('/articles', data),
   update: (id, data) => http.put(`/articles/${id}`, data),

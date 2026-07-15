@@ -52,6 +52,8 @@ CREATE TABLE article (
   content LONGTEXT,
   content_type VARCHAR(20) DEFAULT 'MARKDOWN',
   status VARCHAR(20) DEFAULT 'DRAFT',
+  recommended TINYINT DEFAULT 0,
+  recommend_sort INT DEFAULT 0,
   view_count INT DEFAULT 0,
   like_count INT DEFAULT 0,
   favorite_count INT DEFAULT 0,
@@ -62,6 +64,7 @@ CREATE TABLE article (
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   deleted TINYINT DEFAULT 0,
   INDEX idx_article_status(status),
+  INDEX idx_article_recommend(recommended, recommend_sort),
   INDEX idx_article_category(category_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -165,6 +168,7 @@ INSERT INTO site_setting(setting_key, setting_value, description) VALUES
 ('footerText', '', '页脚文字'),
 ('contactHtml', '', '前台联系信息 HTML'),
 ('allowRegister', 'true', '是否开放公开注册'),
+('adminLoginPath', '/admin/login', '后台登录路径'),
 ('mailEnabled', 'false', '是否启用后台 SMTP 邮件服务'),
 ('mailHost', '', 'SMTP 服务器地址'),
 ('mailPort', '587', 'SMTP 端口'),

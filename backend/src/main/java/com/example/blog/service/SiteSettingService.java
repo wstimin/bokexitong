@@ -25,6 +25,7 @@ public class SiteSettingService {
     public static final String FOOTER_TEXT = "footerText";
     public static final String CONTACT_HTML = "contactHtml";
     public static final String ALLOW_REGISTER = "allowRegister";
+    public static final String ADMIN_LOGIN_PATH = "adminLoginPath";
     public static final String MAIL_ENABLED = "mailEnabled";
     public static final String MAIL_HOST = "mailHost";
     public static final String MAIL_PORT = "mailPort";
@@ -37,18 +38,18 @@ public class SiteSettingService {
 
     private static final Set<String> PUBLIC_KEYS = Set.of(
             SITE_NAME, HERO_TITLE, HERO_SUBTITLE, HERO_BADGE, BACKGROUND_URL, LOGO_URL,
-            SEO_DESCRIPTION, SEO_KEYWORDS, ICP_BEIAN, FOOTER_TEXT, CONTACT_HTML, ALLOW_REGISTER
+            SEO_DESCRIPTION, SEO_KEYWORDS, ICP_BEIAN, FOOTER_TEXT, CONTACT_HTML, ALLOW_REGISTER, ADMIN_LOGIN_PATH
     );
     private static final Set<String> SITE_FORM_KEYS = Set.of(
             SITE_NAME, HERO_TITLE, HERO_SUBTITLE, HERO_BADGE, BACKGROUND_URL, LOGO_URL,
-            SEO_DESCRIPTION, SEO_KEYWORDS, ICP_BEIAN, FOOTER_TEXT, CONTACT_HTML, ALLOW_REGISTER
+            SEO_DESCRIPTION, SEO_KEYWORDS, ICP_BEIAN, FOOTER_TEXT, CONTACT_HTML, ALLOW_REGISTER, ADMIN_LOGIN_PATH
     );
     private static final Set<String> MAIL_FORM_KEYS = Set.of(
             MAIL_ENABLED, MAIL_HOST, MAIL_PORT, MAIL_USERNAME, MAIL_PASSWORD, MAIL_FROM_NAME,
             MAIL_SMTP_AUTH, MAIL_STARTTLS_ENABLE, MAIL_SSL_ENABLE
     );
     private static final Set<String> REQUIRED_TEXT_KEYS = Set.of(
-            SITE_NAME, HERO_TITLE, HERO_SUBTITLE, HERO_BADGE, MAIL_PORT, MAIL_FROM_NAME
+            SITE_NAME, HERO_TITLE, HERO_SUBTITLE, HERO_BADGE, MAIL_PORT, MAIL_FROM_NAME, ADMIN_LOGIN_PATH
     );
 
     private final SiteSettingMapper siteSettingMapper;
@@ -111,6 +112,8 @@ public class SiteSettingService {
                 } else if (ALLOW_REGISTER.equals(key) || MAIL_ENABLED.equals(key) || MAIL_SMTP_AUTH.equals(key)
                         || MAIL_STARTTLS_ENABLE.equals(key) || MAIL_SSL_ENABLE.equals(key)) {
                     next.put(key, normalizeBoolean(payload.get(key), next.get(key)));
+                } else if (ADMIN_LOGIN_PATH.equals(key)) {
+                    next.put(key, normalizeAdminLoginPath(payload.get(key), next.get(key)));
                 } else {
                     next.put(key, clean(payload.get(key), next.get(key), REQUIRED_TEXT_KEYS.contains(key)));
                 }
@@ -150,6 +153,7 @@ public class SiteSettingService {
         settings.put(FOOTER_TEXT, "");
         settings.put(CONTACT_HTML, "");
         settings.put(ALLOW_REGISTER, "true");
+        settings.put(ADMIN_LOGIN_PATH, "/admin/login");
         settings.put(MAIL_ENABLED, "false");
         settings.put(MAIL_HOST, "");
         settings.put(MAIL_PORT, "587");
@@ -177,6 +181,23 @@ public class SiteSettingService {
             return trimmed.toLowerCase();
         }
         return fallback;
+    }
+
+    private String normalizeAdminLoginPath(String value, String fallback) {
+        String trimmed = value == null ? "" : value.trim();
+        if (trimmed.isEmpty()) {
+            return fallback == null || fallback.isBlank() ? "/admin/login" : fallback;
+        }
+        if (!trimmed.startsWith("/")) {
+            trimmed = "/" + trimmed;
+        }
+        if ("/".equals(trimmed) || "/login".equals(trimmed) || "/user".equals(trimmed) || "/article".equals(trimmed)) {
+            return fallback == null || fallback.isBlank() ? "/admin/login" : fallback;
+        }
+        if (trimmed.length() > 80 || !trimmed.matches("/[A-Za-z0-9/_-]+")) {
+            return fallback == null || fallback.isBlank() ? "/admin/login" : fallback;
+        }
+        return trimmed;
     }
 
     private Map<String, String> filter(Map<String, String> payload, Set<String> allowedKeys) {

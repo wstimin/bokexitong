@@ -90,6 +90,19 @@ public class ArticleService {
         return responsePage;
     }
 
+    public List<ArticleCardResponse> recommendedCards(int size) {
+        Page<Article> articlePage = articleMapper.selectPage(new Page<>(1, size), new LambdaQueryWrapper<Article>()
+                .eq(Article::getStatus, "PUBLISHED")
+                .eq(Article::getRecommended, 1)
+                .orderByAsc(Article::getRecommendSort)
+                .orderByDesc(Article::getPublishedAt, Article::getCreatedAt));
+        List<Article> records = articlePage.getRecords();
+        if (records == null || records.isEmpty()) {
+            records = page(1, size, null, "PUBLISHED", null, null).getRecords();
+        }
+        return toCardResponses(records);
+    }
+
     public Article detail(Long id, boolean increaseView) {
         Article article = articleMapper.selectById(id);
         if (article == null) {
@@ -134,6 +147,8 @@ public class ArticleService {
         article.setContent(request.getContent());
         article.setContentType(request.getContentType() == null ? "MARKDOWN" : request.getContentType());
         article.setStatus(normalizeUserStatus(request.getStatus()));
+        article.setRecommended(0);
+        article.setRecommendSort(0);
         article.setReviewReason(null);
         article.setReviewedAt(null);
         article.setUpdatedAt(LocalDateTime.now());
@@ -160,6 +175,10 @@ public class ArticleService {
         if ("PUBLISHED".equals(nextStatus) && article.getPublishedAt() == null) {
             article.setPublishedAt(LocalDateTime.now());
         }
+        if (!"PUBLISHED".equals(nextStatus)) {
+            article.setRecommended(0);
+            article.setRecommendSort(0);
+        }
         if (List.of("REJECTED", "OFFLINE").contains(nextStatus)) {
             article.setReviewReason(cleanReason);
         } else {
@@ -183,9 +202,19 @@ public class ArticleService {
         article.setContent(request.getContent());
         article.setContentType(request.getContentType() == null ? "MARKDOWN" : request.getContentType());
         article.setStatus(nextStatus);
+        if (id == null || request.getRecommended() != null) {
+            article.setRecommended(normalizeRecommendation(request.getRecommended()));
+        }
+        if (id == null || request.getRecommendSort() != null) {
+            article.setRecommendSort(normalizeRecommendSort(request.getRecommendSort()));
+        }
         article.setUpdatedAt(now);
         if ("PUBLISHED".equals(nextStatus) && article.getPublishedAt() == null) {
             article.setPublishedAt(now);
+        }
+        if (!"PUBLISHED".equals(nextStatus)) {
+            article.setRecommended(0);
+            article.setRecommendSort(0);
         }
         if (!List.of("REJECTED", "OFFLINE").contains(nextStatus)) {
             article.setReviewReason(null);
@@ -248,6 +277,19 @@ public class ArticleService {
         return responsePage;
     }
 
+    @Transactional
+    public Article updateRecommendationByAdmin(Long id, Boolean recommended, Integer recommendSort) {
+        Article article = detail(id, false);
+        if (!"PUBLISHED".equals(article.getStatus())) {
+            throw new IllegalArgumentException("Only published articles can be recommended");
+        }
+        article.setRecommended(Boolean.TRUE.equals(recommended) ? 1 : 0);
+        article.setRecommendSort(normalizeRecommendSort(recommendSort));
+        article.setUpdatedAt(LocalDateTime.now());
+        articleMapper.updateById(article);
+        return article;
+    }
+
     private void syncTags(Long articleId, List<Long> tagIds) {
         if (tagIds == null) {
             return;
@@ -278,6 +320,14 @@ public class ArticleService {
             return status;
         }
         throw new IllegalArgumentException("Unsupported article status");
+    }
+
+    private Integer normalizeRecommendation(Integer value) {
+        return value != null && value > 0 ? 1 : 0;
+    }
+
+    private Integer normalizeRecommendSort(Integer value) {
+        return value == null ? 0 : value;
     }
 
     private List<ArticleCardResponse> toCardResponses(List<Article> articles) {
@@ -324,6 +374,8 @@ public class ArticleService {
         response.setLikeCount(article.getLikeCount());
         response.setFavoriteCount(article.getFavoriteCount());
         response.setStatus(article.getStatus());
+        response.setRecommended(article.getRecommended());
+        response.setRecommendSort(article.getRecommendSort());
         response.setPublishedAt(article.getPublishedAt());
         response.setReviewReason(article.getReviewReason());
         response.setReviewedAt(article.getReviewedAt());
@@ -352,6 +404,8 @@ public class ArticleService {
         response.setLikeCount(card.getLikeCount());
         response.setFavoriteCount(card.getFavoriteCount());
         response.setStatus(card.getStatus());
+        response.setRecommended(card.getRecommended());
+        response.setRecommendSort(card.getRecommendSort());
         response.setPublishedAt(card.getPublishedAt());
         response.setReviewReason(card.getReviewReason());
         response.setReviewedAt(card.getReviewedAt());

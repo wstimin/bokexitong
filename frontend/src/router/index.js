@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import { useSiteStore } from '../stores/site'
 
 const routes = [
   { path: '/', component: () => import('../views/portal/HomeView.vue') },
@@ -24,21 +25,34 @@ const routes = [
       { path: 'users', component: () => import('../views/admin/UserManage.vue') },
       { path: 'logs', component: () => import('../views/admin/OperationLog.vue') }
     ]
-  }
+  },
+  { path: '/:pathMatch(.*)*', component: () => import('../views/LoginView.vue'), meta: { dynamicAdminLogin: true, loginType: 'ADMIN' } }
 ]
 
 const router = createRouter({ history: createWebHistory(), routes })
 
-router.beforeEach((to) => {
+router.beforeEach(async (to) => {
   const auth = useAuthStore()
+  const site = useSiteStore()
+  await site.loadSite()
+  const adminLoginPath = site.adminLoginPath || '/admin/login'
+  if (to.meta.dynamicAdminLogin) {
+    if (to.path === adminLoginPath) {
+      return auth.isAdminLogin ? '/admin/dashboard' : undefined
+    }
+    return '/'
+  }
+  if (to.path === '/admin/login' && adminLoginPath !== '/admin/login') {
+    return '/'
+  }
   if (to.path === '/login' && auth.isUserLogin) {
     return '/user'
   }
-  if (to.path === '/admin/login' && auth.isAdminLogin) {
+  if (to.path === adminLoginPath && auth.isAdminLogin) {
     return '/admin/dashboard'
   }
   if (to.meta.requiresAdmin && !auth.isAdminLogin) {
-    return { path: '/admin/login', query: { redirect: to.fullPath } }
+    return { path: adminLoginPath, query: { redirect: to.fullPath } }
   }
   if (to.meta.requiresUser && !auth.isUserLogin) {
     return { path: '/login', query: { redirect: to.fullPath } }

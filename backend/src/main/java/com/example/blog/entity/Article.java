@@ -17,6 +17,8 @@ public class Article {
     private String content;
     private String contentType;
     private String status;
+    private Integer recommended;
+    private Integer recommendSort;
     private Integer viewCount;
     private Integer likeCount;
     private Integer favoriteCount;

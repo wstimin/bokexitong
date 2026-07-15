@@ -13,5 +13,7 @@ public class ArticleRequest {
     private String content;
     private String contentType;
     private String status;
+    private Integer recommended;
+    private Integer recommendSort;
     private List<Long> tagIds;
 }

@@ -44,6 +44,7 @@ public class PortalController {
         Map<String, Object> data = new HashMap<>();
         Map<String, String> settings = siteSettingService.publicSettings();
         data.put("articles", articleService.publicCardPage(1, 6, null, null, null).getRecords());
+        data.put("recommendedArticles", articleService.recommendedCards(6));
         data.put("categories", categoryMapper.selectList(new LambdaQueryWrapper<Category>().orderByAsc(Category::getSort)));
         data.put("tags", tagMapper.selectList(new LambdaQueryWrapper<Tag>().orderByDesc(Tag::getCreatedAt)));
         data.put("settings", settings);

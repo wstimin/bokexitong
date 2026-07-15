@@ -23,6 +23,12 @@
         <el-table-column label="状态" width="120">
           <template #default="{ row }"><el-tag :type="statusType(row.status)">{{ statusText(row.status) }}</el-tag></template>
         </el-table-column>
+        <el-table-column label="首页推荐" width="130">
+          <template #default="{ row }">
+            <el-tag v-if="row.recommended === 1" type="success">已推荐 #{{ row.recommendSort || 0 }}</el-tag>
+            <span v-else class="review-note">未推荐</span>
+          </template>
+        </el-table-column>
         <el-table-column label="审核说明" min-width="180" show-overflow-tooltip>
           <template #default="{ row }">{{ row.reviewReason || '-' }}</template>
         </el-table-column>
@@ -36,6 +42,9 @@
               <el-button size="small" @click="openPreview(row)">预览</el-button>
               <el-button size="small" type="primary" @click="openEditor(row)">编辑</el-button>
               <el-button v-if="canPublish(row.status)" size="small" type="success" @click="changeStatus(row, 'PUBLISHED')">发布</el-button>
+              <el-button v-if="row.status === 'PUBLISHED' && row.recommended !== 1" size="small" type="success" @click="setRecommendation(row, true)">设推荐</el-button>
+              <el-button v-if="row.status === 'PUBLISHED' && row.recommended === 1" size="small" @click="setRecommendation(row, true)">改排序</el-button>
+              <el-button v-if="row.recommended === 1" size="small" @click="setRecommendation(row, false)">取消推荐</el-button>
               <el-button v-if="row.status === 'PENDING'" size="small" type="warning" @click="changeStatus(row, 'REJECTED')">驳回</el-button>
               <el-button v-if="row.status === 'PUBLISHED'" size="small" type="warning" @click="changeStatus(row, 'OFFLINE')">下架</el-button>
               <el-button size="small" type="danger" @click="remove(row.id)">删除</el-button>
@@ -68,6 +77,12 @@
             <el-select v-model="form.tagIds" placeholder="选择标签" multiple clearable filterable collapse-tags collapse-tags-tooltip>
               <el-option v-for="tag in tags" :key="tag.id" :label="tag.name" :value="tag.id" />
             </el-select>
+          </el-form-item>
+          <el-form-item label="首页推荐">
+            <div class="recommend-setting-row">
+              <el-switch v-model="form.recommended" :active-value="1" :inactive-value="0" active-text="推荐" inactive-text="不推荐" />
+              <el-input-number v-model="form.recommendSort" :min="0" :step="1" controls-position="right" placeholder="排序" />
+            </div>
           </el-form-item>
         </div>
 
@@ -175,7 +190,9 @@ const emptyForm = () => ({
   content: '',
   contentType: 'MARKDOWN',
   categoryId: null,
-  tagIds: []
+  tagIds: [],
+  recommended: 0,
+  recommendSort: 0
 })
 
 const rows = ref([])
@@ -241,7 +258,9 @@ const openEditor = async (row) => {
       content: detail.content || '',
       contentType: detail.contentType || 'MARKDOWN',
       categoryId: detail.categoryId || null,
-      tagIds: detail.tags?.map((tag) => tag.id) || []
+      tagIds: detail.tags?.map((tag) => tag.id) || [],
+      recommended: detail.recommended || 0,
+      recommendSort: detail.recommendSort || 0
     })
   }
   editorMode.value = 'edit'
@@ -317,6 +336,23 @@ const changeStatus = async (row, status) => {
   await articleApi.updateStatus(row.id, status, reason || undefined)
   ElMessage.success(`文章已${statusText(status)}`)
   previewVisible.value = false
+  load()
+}
+
+const setRecommendation = async (row, recommended) => {
+  let sort = row.recommendSort || 0
+  if (recommended) {
+    const result = await ElMessageBox.prompt('数字越小越靠前，只能推荐已发布文章。', '首页推荐排序', {
+      confirmButtonText: '确认',
+      cancelButtonText: '取消',
+      inputValue: String(sort),
+      inputPattern: /^\d+$/,
+      inputErrorMessage: '请输入 0 或正整数'
+    })
+    sort = Number(result.value || 0)
+  }
+  await articleApi.updateRecommendation(row.id, recommended, sort)
+  ElMessage.success(recommended ? '已设为首页推荐' : '已取消首页推荐')
   load()
 }
 

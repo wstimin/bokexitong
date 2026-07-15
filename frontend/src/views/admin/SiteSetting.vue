@@ -82,8 +82,8 @@
 
       <div class="setting-group">
         <div class="setting-group-info">
-          <h3>前台展示</h3>
-          <p>填写站长联系方式、商务合作、版权补充等会展示在前台页脚。</p>
+          <h3>前台展示与入口</h3>
+          <p>填写前台页脚展示内容，并设置管理员后台登录入口。</p>
         </div>
         <div class="setting-group-fields">
           <el-form-item label="联系信息 / 自定义展示内容" class="field-full">
@@ -95,6 +95,9 @@
               show-word-limit
               placeholder="可填写邮箱、微信、商务合作、站长简介等内容。支持基础 HTML 链接和换行，不执行脚本。"
             />
+          </el-form-item>
+          <el-form-item label="后台登录路径">
+            <el-input v-model="form.adminLoginPath" maxlength="80" placeholder="例如：/admin/login 或 /manage-login" />
           </el-form-item>
           <el-form-item label="开放注册" class="field-full setting-switch-field">
             <el-switch v-model="form.allowRegister" active-text="允许新用户注册" inactive-text="关闭公开注册" />
@@ -132,6 +135,7 @@ const form = reactive({
   icpBeian: '',
   footerText: '',
   contactHtml: '',
+  adminLoginPath: '/admin/login',
   allowRegister: true
 })
 
@@ -152,6 +156,7 @@ const apply = (settings = {}) => {
   form.icpBeian = settings.icpBeian || ''
   form.footerText = settings.footerText || ''
   form.contactHtml = settings.contactHtml || ''
+  form.adminLoginPath = settings.adminLoginPath || '/admin/login'
   form.allowRegister = settings.allowRegister !== 'false'
 }
 

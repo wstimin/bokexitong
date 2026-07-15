@@ -20,6 +20,8 @@ public class ArticleCardResponse {
     private Integer likeCount;
     private Integer favoriteCount;
     private String status;
+    private Integer recommended;
+    private Integer recommendSort;
     private LocalDateTime publishedAt;
     private String reviewReason;
     private LocalDateTime reviewedAt;

@@ -101,6 +101,18 @@ public class ArticleController {
         return Result.ok(article);
     }
 
+    @PutMapping("/{id}/recommendation")
+    @PreAuthorize("hasRole('ADMIN')")
+    public Result<Article> updateRecommendation(@AuthenticationPrincipal BlogPrincipal principal,
+                                                @PathVariable Long id,
+                                                @RequestParam Boolean recommended,
+                                                @RequestParam(defaultValue = "0") Integer recommendSort) {
+        Article article = articleService.updateRecommendationByAdmin(id, recommended, recommendSort);
+        String detail = (Boolean.TRUE.equals(recommended) ? "推荐到首页" : "取消首页推荐") + " - " + article.getTitle();
+        operationLogService.record(principal, "RECOMMEND", "ARTICLE", id, detail);
+        return Result.ok(article);
+    }
+
     @DeleteMapping("/{id}")
     public Result<Void> removeMine(@AuthenticationPrincipal BlogPrincipal principal, @PathVariable Long id) {
         articleService.removeByOwner(id, principal.userId());

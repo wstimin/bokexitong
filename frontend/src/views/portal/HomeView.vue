@@ -1,11 +1,54 @@
 <template>
   <div class="page">
     <PortalNav />
-    <section class="hero" :class="{ 'hero-fallback': !heroUrl }" :style="heroStyle">
-      <div class="shell hero-content">
-        <span class="eyebrow">{{ site.heroBadge }}</span>
-        <h1>{{ site.heroTitle }}</h1>
-        <p>{{ site.heroSubtitle }}</p>
+    <section class="hero hero-compact" :class="{ 'hero-fallback': !heroUrl }" :style="heroStyle">
+      <div class="shell hero-feature">
+        <div class="hero-content">
+          <span class="eyebrow">{{ site.heroBadge }}</span>
+          <h1>{{ site.heroTitle }}</h1>
+          <p>{{ site.heroSubtitle }}</p>
+        </div>
+
+        <aside v-if="recommendedArticles.length" class="recommend-panel">
+          <div class="recommend-head">
+            <div>
+              <span class="recommend-kicker">推荐阅读</span>
+              <strong>{{ activeRecommendIndex + 1 }} / {{ recommendedArticles.length }}</strong>
+            </div>
+            <div class="recommend-nav">
+              <button type="button" aria-label="上一篇推荐" @click="prevRecommend">‹</button>
+              <button type="button" aria-label="下一篇推荐" @click="nextRecommend">›</button>
+            </div>
+          </div>
+          <RouterLink class="recommend-card" :to="`/article/${activeRecommended.id}`">
+            <img v-if="recommendCoverSrc" :src="recommendCoverSrc" :alt="activeRecommended.title" />
+            <div v-else class="recommend-placeholder">{{ activeRecommended.title?.slice(0, 1) || '文' }}</div>
+            <div class="recommend-body">
+              <div class="card-kicker">
+                <span>{{ activeRecommended.categoryName || '未分类' }}</span>
+                <span>{{ activeRecommended.publishedAt || activeRecommended.createdAt || '' }}</span>
+              </div>
+              <h2>{{ activeRecommended.title }}</h2>
+              <p>{{ activeRecommended.summary || '这篇文章暂未填写摘要。' }}</p>
+              <div class="meta card-stats">
+                <span>{{ activeRecommended.viewCount || 0 }} 阅读</span>
+                <span>{{ activeRecommended.likeCount || 0 }} 点赞</span>
+                <span>{{ activeRecommended.favoriteCount || 0 }} 收藏</span>
+              </div>
+            </div>
+          </RouterLink>
+          <div class="recommend-track">
+            <button
+              v-for="(item, index) in recommendedArticles"
+              :key="item.id"
+              type="button"
+              :class="['recommend-chip', { active: activeRecommendIndex === index }]"
+              @click="selectRecommend(index)"
+            >
+              {{ item.title }}
+            </button>
+          </div>
+        </aside>
       </div>
     </section>
 
@@ -99,6 +142,8 @@ const articles = ref([])
 const categories = ref([])
 const tags = ref([])
 const hero = ref([])
+const recommendedArticles = ref([])
+const activeRecommendIndex = ref(0)
 const site = useSiteStore()
 const keyword = ref('')
 const categoryKeyword = ref('')
@@ -109,6 +154,8 @@ const articlePage = reactive({ current: 1, size: 9, total: 0 })
 
 const heroUrl = computed(() => normalizeAssetUrl(hero.value[0]?.url))
 const heroStyle = computed(() => heroUrl.value ? { backgroundImage: `url(${heroUrl.value})` } : {})
+const activeRecommended = computed(() => recommendedArticles.value[activeRecommendIndex.value] || {})
+const recommendCoverSrc = computed(() => normalizeAssetUrl(activeRecommended.value.coverUrl))
 const filteredCategories = computed(() => {
   const key = categoryKeyword.value.trim().toLowerCase()
   if (!key) return categories.value
@@ -143,6 +190,8 @@ const loadHomeMeta = async () => {
   categories.value = res.data.categories || []
   tags.value = res.data.tags || []
   hero.value = res.data.hero || []
+  recommendedArticles.value = res.data.recommendedArticles || res.data.articles || []
+  activeRecommendIndex.value = 0
 }
 
 const loadArticles = async () => {
@@ -185,6 +234,20 @@ const resetFilters = () => {
   selectedTagId.value = null
   articlePage.current = 1
   loadArticles()
+}
+
+const selectRecommend = (index) => {
+  activeRecommendIndex.value = index
+}
+
+const prevRecommend = () => {
+  if (!recommendedArticles.value.length) return
+  activeRecommendIndex.value = (activeRecommendIndex.value - 1 + recommendedArticles.value.length) % recommendedArticles.value.length
+}
+
+const nextRecommend = () => {
+  if (!recommendedArticles.value.length) return
+  activeRecommendIndex.value = (activeRecommendIndex.value + 1) % recommendedArticles.value.length
 }
 
 onMounted(async () => {

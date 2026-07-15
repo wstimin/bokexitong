@@ -81,7 +81,6 @@
         <button v-if="isLogin && site.allowRegister && !isAdminLogin" class="auth-switch" type="button" @click="setMode('register')">还没有账号，去注册</button>
         <button v-if="!isForgot && !isAdminLogin" class="auth-switch" type="button" @click="setMode('forgot')">忘记密码</button>
         <RouterLink v-if="isAdminLogin" class="auth-switch" to="/login">前台用户登录</RouterLink>
-        <RouterLink v-else class="auth-switch" to="/admin/login">后台管理员登录</RouterLink>
       </div>
     </section>
   </main>

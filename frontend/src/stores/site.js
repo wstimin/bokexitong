@@ -31,6 +31,7 @@ export const useSiteStore = defineStore('site', {
     icpBeian: '',
     footerText: '',
     contactHtml: '',
+    adminLoginPath: '/admin/login',
     loaded: false,
     loading: false
   }),
@@ -58,6 +59,7 @@ export const useSiteStore = defineStore('site', {
         this.icpBeian = settings.icpBeian || ''
         this.footerText = settings.footerText || ''
         this.contactHtml = settings.contactHtml || ''
+        this.adminLoginPath = settings.adminLoginPath || '/admin/login'
         this.loaded = true
         this.applyHead()
       } catch (error) {
