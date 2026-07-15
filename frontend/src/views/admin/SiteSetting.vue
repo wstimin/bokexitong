@@ -140,7 +140,7 @@ const form = reactive({
 })
 
 const previewStyle = computed(() => form.backgroundUrl
-  ? { backgroundImage: `linear-gradient(120deg, rgba(38, 29, 57, .78), rgba(70, 50, 94, .42)), url("${normalizeAssetUrl(form.backgroundUrl)}")` }
+  ? { backgroundImage: `url("${normalizeAssetUrl(form.backgroundUrl)}")` }
   : {})
 const logoPreviewSrc = computed(() => normalizeAssetUrl(form.logoUrl))
 
