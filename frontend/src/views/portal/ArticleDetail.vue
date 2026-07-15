@@ -27,7 +27,7 @@
           <button class="btn-ghost" @click="favorite">收藏</button>
         </div>
 
-        <div class="markdown" v-html="html"></div>
+        <div class="article-body" v-html="html"></div>
       </article>
 
       <section class="detail-article comment-section">
@@ -54,22 +54,12 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { marked } from 'marked'
-import hljs from 'highlight.js/lib/common'
 import PortalNav from '../../components/PortalNav.vue'
 import PortalFooter from '../../components/PortalFooter.vue'
 import { articleApi, commentApi, portalApi } from '../../api/blog'
 import { useAuthStore } from '../../stores/auth'
 import { normalizeAssetUrl } from '../../utils/assets'
-
-marked.use({
-  renderer: {
-    code(code, lang) {
-      const language = hljs.getLanguage(lang) ? lang : 'plaintext'
-      return `<pre><code>${hljs.highlight(code, { language }).value}</code></pre>`
-    }
-  }
-})
+import { toDisplayHtml } from '../../utils/richText'
 
 const route = useRoute()
 const router = useRouter()
@@ -77,7 +67,7 @@ const auth = useAuthStore()
 const article = ref({})
 const comments = ref([])
 const commentText = ref('')
-const html = computed(() => marked(article.value.content || ''))
+const html = computed(() => toDisplayHtml(article.value.content, article.value.contentType))
 const coverSrc = computed(() => normalizeAssetUrl(article.value.coverUrl))
 const displayDate = computed(() => formatDate(article.value.publishedAt || article.value.createdAt).slice(0, 10) || '未发布')
 
@@ -86,7 +76,7 @@ const load = async () => {
     portalApi.detail(route.params.id),
     commentApi.page({ articleId: route.params.id })
   ])
-  article.value = detail.data
+  article.value = detail.data || {}
   comments.value = commentPage.data.records || []
 }
 

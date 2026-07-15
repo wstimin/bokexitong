@@ -3,7 +3,7 @@
     <div class="toolbar article-admin-toolbar">
       <div>
         <h2>内容管理</h2>
-        <p class="section-subtitle">管理员可以新增、编辑、发布、下架和审核文章。</p>
+        <p class="section-subtitle">管理员可以新增、编辑、审核、发布、下架和推荐文章。</p>
       </div>
       <div class="admin-filters article-admin-actions">
         <el-input v-model="query.keyword" placeholder="搜索标题、摘要或内容" class="filter-input" clearable @keyup.enter="search" @clear="search" />
@@ -58,13 +58,13 @@
       <el-pagination background layout="total, prev, pager, next" :total="total" :page-size="query.size" v-model:current-page="query.current" @current-change="load" />
     </div>
 
-    <el-dialog v-model="editorVisible" :title="editingId ? '编辑文章' : '新增文章'" width="980px" class="article-editor-dialog" destroy-on-close>
+    <el-dialog v-model="editorVisible" :title="editingId ? '编辑文章' : '新增文章'" width="1020px" class="article-editor-dialog" destroy-on-close>
       <el-form label-position="top">
         <el-form-item label="标题">
           <el-input v-model="form.title" maxlength="180" show-word-limit placeholder="请输入文章标题" />
         </el-form-item>
         <el-form-item label="摘要">
-          <el-input v-model="form.summary" type="textarea" :rows="2" maxlength="500" show-word-limit placeholder="用于首页卡片和搜索结果展示" />
+          <el-input v-model="form.summary" type="textarea" :rows="2" maxlength="500" show-word-limit placeholder="用于首页和搜索结果展示" />
         </el-form-item>
 
         <div class="writer-meta-grid">
@@ -100,20 +100,18 @@
         </el-form-item>
 
         <el-form-item label="正文">
-          <el-tabs v-model="editorMode" class="writer-mode-tabs">
-            <el-tab-pane label="编辑" name="edit">
-              <el-input v-model="form.content" type="textarea" :rows="16" placeholder="可以直接写普通文字，也可以用下方按钮插入图片、视频、附件、小标题和代码块。" />
-            </el-tab-pane>
-            <el-tab-pane label="预览" name="preview">
-              <div class="writer-preview-box markdown" v-html="editorHtml"></div>
-            </el-tab-pane>
-          </el-tabs>
+          <QuillEditor
+            v-model:content="form.content"
+            theme="snow"
+            content-type="html"
+            class="rich-editor"
+            :toolbar="richToolbar"
+            placeholder="开始写正文，支持字体、字号、颜色、对齐、图片、视频和链接。"
+          />
         </el-form-item>
       </el-form>
 
       <div class="upload-row writer-tools">
-        <button class="btn-ghost" type="button" @click="insertSnippet('**加粗文字**')">加粗</button>
-        <button class="btn-ghost" type="button" @click="insertSnippet('\n\n> 引用内容\n')">引用</button>
         <el-upload :show-file-list="false" :http-request="(options) => uploadFile(options, 'image')" accept="image/*">
           <button class="btn-ghost" type="button">插入图片</button>
         </el-upload>
@@ -123,20 +121,17 @@
         <el-upload :show-file-list="false" :http-request="(options) => uploadFile(options, 'file')">
           <button class="btn-ghost" type="button">插入附件</button>
         </el-upload>
-        <button class="btn-ghost" type="button" @click="insertSnippet('\n\n## 小标题\n')">小标题</button>
-        <button class="btn-ghost" type="button" @click="insertSnippet('\n\n- 列表项\n')">列表</button>
-        <button class="btn-ghost" type="button" @click="insertSnippet('\n\n```\n代码写在这里\n```\n')">代码块</button>
       </div>
 
       <template #footer>
         <button class="btn-ghost" @click="editorVisible = false">取消</button>
         <button class="btn-ghost" :disabled="saving" @click="saveArticle('DRAFT')">保存草稿</button>
-        <button class="btn-ghost" :disabled="saving" @click="saveArticle('PENDING')">设为待审核</button>
+        <button class="btn-ghost" :disabled="saving" @click="saveArticle('PENDING')">提交审核</button>
         <button class="btn-primary" :disabled="saving" @click="saveArticle('PUBLISHED')">发布文章</button>
       </template>
     </el-dialog>
 
-    <el-dialog v-model="previewVisible" title="文章预览" width="860px" class="article-preview-dialog">
+    <el-dialog v-model="previewVisible" title="文章预览" width="900px" class="article-preview-dialog">
       <div v-if="previewArticle.id" class="admin-preview">
         <img v-if="previewArticle.coverUrl" class="cover detail-cover" :src="previewCoverSrc" :alt="previewArticle.title" />
         <div class="meta detail-meta">
@@ -156,7 +151,7 @@
           type="warning"
           :closable="false"
         />
-        <div class="markdown" v-html="previewHtml"></div>
+        <div class="article-body" v-html="previewHtml"></div>
       </div>
       <template #footer>
         <button class="btn-ghost" @click="previewVisible = false">关闭</button>
@@ -171,9 +166,10 @@
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { marked } from 'marked'
+import { QuillEditor } from '@vueup/vue-quill'
 import { adminApi, articleApi, uploadApi } from '../../api/blog'
 import { normalizeAssetUrl } from '../../utils/assets'
+import { appendHtmlSnippet, fileSnippet, imageSnippet, isEmptyHtml, richToolbar, toDisplayHtml, toEditableHtml, videoSnippet } from '../../utils/richText'
 
 const statusOptions = [
   { label: '草稿', value: 'DRAFT' },
@@ -188,7 +184,7 @@ const emptyForm = () => ({
   summary: '',
   coverUrl: '',
   content: '',
-  contentType: 'MARKDOWN',
+  contentType: 'HTML',
   categoryId: null,
   tagIds: [],
   recommended: 0,
@@ -202,22 +198,24 @@ const loading = ref(false)
 const saving = ref(false)
 const previewVisible = ref(false)
 const editorVisible = ref(false)
-const editorMode = ref('edit')
 const previewArticle = ref({})
 const categories = ref([])
 const tags = ref([])
 const editingId = ref(null)
 const form = reactive(emptyForm())
 const query = reactive({ current: 1, size: 10, keyword: '', status: '' })
-const previewHtml = computed(() => marked(previewArticle.value.content || ''))
+const previewHtml = computed(() => toDisplayHtml(previewArticle.value.content, previewArticle.value.contentType))
 const previewCoverSrc = computed(() => normalizeAssetUrl(previewArticle.value.coverUrl))
-const editorHtml = computed(() => marked(form.content || ''))
 const coverPreviewSrc = computed(() => normalizeAssetUrl(form.coverUrl))
 
 const load = async () => {
   loading.value = true
   try {
-    const res = await articleApi.page({ ...query, keyword: query.keyword?.trim() || undefined, status: query.status || undefined })
+    const res = await articleApi.page({
+      ...query,
+      keyword: query.keyword?.trim() || undefined,
+      status: query.status || undefined
+    })
     rows.value = res.data.records || []
     total.value = res.data.total || 0
   } finally {
@@ -255,15 +253,14 @@ const openEditor = async (row) => {
       title: detail.title || '',
       summary: detail.summary || '',
       coverUrl: detail.coverUrl || '',
-      content: detail.content || '',
-      contentType: detail.contentType || 'MARKDOWN',
+      content: toEditableHtml(detail.content, detail.contentType),
+      contentType: 'HTML',
       categoryId: detail.categoryId || null,
       tagIds: detail.tags?.map((tag) => tag.id) || [],
       recommended: detail.recommended || 0,
       recommendSort: detail.recommendSort || 0
     })
   }
-  editorMode.value = 'edit'
   previewVisible.value = false
   editorVisible.value = true
 }
@@ -278,13 +275,13 @@ const saveArticle = async (status) => {
     ElMessage.warning('请填写文章标题')
     return
   }
-  if (['PENDING', 'PUBLISHED'].includes(status) && !form.content.trim()) {
-    ElMessage.warning('发布或提交前请先填写正文')
+  if (['PENDING', 'PUBLISHED'].includes(status) && isEmptyHtml(form.content)) {
+    ElMessage.warning('发布或提交前请先写正文')
     return
   }
   saving.value = true
   try {
-    const payload = { ...form, status }
+    const payload = { ...form, contentType: 'HTML', status }
     if (editingId.value) {
       await articleApi.adminUpdate(editingId.value, payload)
     } else {
@@ -305,17 +302,17 @@ const uploadFile = async (options, type) => {
   if (type === 'cover') {
     form.coverUrl = url
   } else if (type === 'image') {
-    insertSnippet(`\n\n![${name}](${url})\n`)
+    insertSnippet(imageSnippet(url, name))
   } else if (type === 'video') {
-    insertSnippet(`\n\n<video src="${url}" controls style="max-width:100%"></video>\n`)
+    insertSnippet(videoSnippet(url, name))
   } else {
-    insertSnippet(`\n\n[${name}](${url})\n`)
+    insertSnippet(fileSnippet(url, name))
   }
   ElMessage.success('上传成功')
 }
 
 const insertSnippet = (text) => {
-  form.content = `${form.content || ''}${text}`
+  form.content = appendHtmlSnippet(form.content, text)
 }
 
 const canPublish = (status) => ['PENDING', 'REJECTED', 'OFFLINE', 'DRAFT'].includes(status)

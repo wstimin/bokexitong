@@ -500,7 +500,7 @@ mvn clean package -DskipTests
 打包产物一般位于：
 
 ```text
-backend/target/blog-backend-1.0.0.jar
+backend/target/blog-backend-1.0.1.jar
 ```
 
 实际文件名以 `target` 目录为准。
