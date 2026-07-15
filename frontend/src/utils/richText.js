@@ -54,6 +54,51 @@ export const richToolbarLabels = {
   clean: '清除格式'
 }
 
+const fontLabels = {
+  system: '系统字体',
+  songti: '宋体',
+  heiti: '黑体',
+  kaiti: '楷体',
+  serif: '衬线',
+  mono: '等宽'
+}
+
+const sizeLabels = {
+  '12px': '12px',
+  '14px': '14px',
+  '16px': '16px',
+  '18px': '18px',
+  '20px': '20px',
+  '24px': '24px',
+  '28px': '28px',
+  '32px': '32px'
+}
+
+const headerLabels = {
+  1: '标题 1',
+  2: '标题 2',
+  3: '标题 3',
+  4: '标题 4',
+  false: '正文'
+}
+
+const listLabels = {
+  ordered: '有序列表',
+  bullet: '无序列表'
+}
+
+const alignLabels = {
+  '': '默认对齐',
+  center: '居中',
+  right: '右对齐',
+  justify: '两端对齐'
+}
+
+const colorLabels = {
+  color: '文字颜色',
+  background: '背景色'
+}
+
 const toolbarSelector = '.ql-toolbar.ql-snow'
 
 const setTitle = (el, title) => {
@@ -70,7 +115,8 @@ export const localizeRichTextToolbar = (editorRoot) => {
   if (!toolbar) return
 
   toolbar.querySelectorAll('button').forEach((button) => {
-    const format = button.className.match(/ql-([a-z-]+)/)?.[1]
+    const classes = Array.from(button.classList)
+    const format = classes.find((cls) => cls.startsWith('ql-') && cls !== 'ql-active')?.replace(/^ql-/, '')
     const title = richToolbarLabels[format]
     if (title) setTitle(button, title)
   })
@@ -85,9 +131,20 @@ export const localizeRichTextToolbar = (editorRoot) => {
     const label = picker.querySelector('.ql-picker-label')
     setTitle(label, title)
     label?.setAttribute('data-label', title)
+
     picker.querySelectorAll('.ql-picker-item').forEach((item) => {
-      setTitle(item, title)
-      item.setAttribute('data-label', title)
+      const value = item.getAttribute('data-value') ?? ''
+      const itemTitle = ({
+        font: fontLabels[value] || '字体',
+        size: sizeLabels[value] || '字号',
+        header: headerLabels[value === '' ? false : Number(value)] || '标题',
+        list: listLabels[value] || '列表',
+        align: alignLabels[value] || '对齐',
+        color: colorLabels[format] || '颜色',
+        background: colorLabels[format] || '背景色'
+      })[format] || title
+      setTitle(item, itemTitle)
+      item.setAttribute('data-label', itemTitle)
     })
   })
 }
