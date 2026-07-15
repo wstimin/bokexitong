@@ -272,8 +272,10 @@ a { color: inherit; text-decoration: none; }
 .auth-switch { width: 100%; border: 0; background: transparent; color: #d93686; font-weight: 800; cursor: pointer; }
 .code-row { display: grid; grid-template-columns: minmax(0, 1fr) 110px; gap: 10px; width: 100%; }
 .code-button { white-space: nowrap; }
-.admin-layout { display: grid; grid-template-columns: 238px minmax(0, 1fr); min-height: 100vh; }
+.admin-layout { position: relative; isolation: isolate; display: grid; grid-template-columns: 238px minmax(0, 1fr); min-height: 100vh; }
 .admin-sidebar {
+  position: relative;
+  z-index: 2;
   color: var(--ink);
   padding: 18px;
   border-right: 1px solid rgba(255,255,255,.48);
@@ -283,10 +285,10 @@ a { color: inherit; text-decoration: none; }
   -webkit-backdrop-filter: blur(22px) saturate(150%);
 }
 .admin-sidebar .brand { margin-bottom: 22px; color: var(--ink); text-shadow: none; }
-.admin-menu { display: grid; gap: 8px; }
-.admin-menu a { padding: 12px 14px; border-radius: 8px; color: #4f5366; font-weight: 800; border: 1px solid transparent; background: rgba(255,255,255,.18); }
+.admin-menu { position: relative; z-index: 2; display: grid; gap: 8px; }
+.admin-menu a { position: relative; z-index: 2; display: block; padding: 12px 14px; border-radius: 8px; color: #4f5366; font-weight: 800; border: 1px solid transparent; background: rgba(255,255,255,.18); cursor: pointer; pointer-events: auto; }
 .admin-menu a.router-link-active, .admin-menu a:hover { background: rgba(255,255,255,.56); border-color: rgba(217,54,134,.24); color: #d93686; box-shadow: inset 0 0 0 1px rgba(255,255,255,.12), 0 10px 24px rgba(36, 21, 58, .08); }
-.admin-main { padding: 24px; background: transparent; }
+.admin-main { position: relative; z-index: 1; padding: 24px; background: transparent; }
 .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
 .admin-alert { margin-bottom: 16px; }
 .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-bottom: 16px; }
@@ -296,7 +298,7 @@ a { color: inherit; text-decoration: none; }
 .dashboard-grid { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(320px, .8fr); gap: 16px; }
 .dashboard-shortcuts { grid-column: 1 / -1; }
 .shortcut-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
-.shortcut-item { position: relative; isolation: isolate; display: grid; gap: 6px; padding: 16px; border-radius: 8px; background: rgba(255,255,255,.20); border: 1px solid rgba(255,255,255,.58); backdrop-filter: blur(16px) saturate(145%); transition: transform .18s ease, border-color .18s ease, background .18s ease; }
+.shortcut-item { position: relative; z-index: 2; isolation: isolate; display: grid; gap: 6px; padding: 16px; border-radius: 8px; background: rgba(255,255,255,.20); border: 1px solid rgba(255,255,255,.58); backdrop-filter: blur(16px) saturate(145%); transition: transform .18s ease, border-color .18s ease, background .18s ease; }
 .shortcut-item:hover { transform: translateY(-2px); background: rgba(255,255,255,.30); border-color: rgba(217,54,134,.28); }
 .shortcut-item strong { font-size: 16px; color: #252235; }
 .shortcut-item span { color: var(--muted); line-height: 1.55; font-size: 13px; }
@@ -305,7 +307,7 @@ a { color: inherit; text-decoration: none; }
 .chart-box { height: 320px; min-width: 0; }
 .dashboard-alerts { align-self: stretch; }
 .todo-list { display: grid; gap: 10px; }
-.todo-item { position: relative; isolation: isolate; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; border-radius: 8px; background: rgba(255,255,255,.20); border: 1px solid rgba(255,255,255,.58); backdrop-filter: blur(16px) saturate(145%); font-weight: 800; }
+.todo-item { position: relative; z-index: 2; isolation: isolate; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; border-radius: 8px; background: rgba(255,255,255,.20); border: 1px solid rgba(255,255,255,.58); backdrop-filter: blur(16px) saturate(145%); font-weight: 800; }
 .todo-item strong { font-size: 24px; color: #d93686; }
 .admin-card { padding: 18px; }
 .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
