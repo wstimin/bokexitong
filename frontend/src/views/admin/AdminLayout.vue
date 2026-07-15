@@ -9,7 +9,7 @@
       <nav class="admin-menu">
         <RouterLink to="/admin/dashboard">数据看板</RouterLink>
         <RouterLink to="/admin/settings">站点设置</RouterLink>
-        <RouterLink to="/admin/mail-settings">邮箱设置</RouterLink>
+        <RouterLink to="/admin/mail-settings">邮件设置</RouterLink>
         <RouterLink to="/admin/articles">内容管理</RouterLink>
         <RouterLink to="/admin/taxonomies">分类标签</RouterLink>
         <RouterLink to="/admin/images">图片资源</RouterLink>
@@ -27,7 +27,7 @@
           <button class="btn-ghost danger-action" type="button" @click="logout">退出登录</button>
         </div>
       </div>
-      <el-alert v-if="auth.passwordChangeRequired" class="admin-alert" title="当前管理员仍在使用默认密码，请立即修改。生产环境会禁止默认密码启动。" type="error" :closable="false" />
+      <el-alert v-if="auth.passwordChangeRequired" class="admin-alert" title="当前管理员仍在使用默认密码，请立即修改。" type="error" :closable="false" />
       <RouterView />
     </main>
 
@@ -63,7 +63,7 @@ const auth = useAuthStore()
 const names = {
   '/admin/dashboard': '数据看板',
   '/admin/settings': '站点设置',
-  '/admin/mail-settings': '邮箱设置',
+  '/admin/mail-settings': '邮件设置',
   '/admin/articles': '内容管理',
   '/admin/taxonomies': '分类标签',
   '/admin/images': '图片资源管理',
@@ -76,9 +76,7 @@ const passwordVisible = ref(false)
 const password = reactive({ oldPassword: '', newPassword: '' })
 
 onMounted(() => {
-  site.loadSite().catch((error) => {
-    console.error(error)
-  })
+  site.loadSite().catch((error) => console.error(error))
 })
 
 const changePassword = async () => {

@@ -1,7 +1,7 @@
 <template>
   <RouterLink class="article-card" :to="`/article/${article.id}`">
     <img v-if="article.coverUrl" class="cover" :src="coverSrc" :alt="article.title" />
-    <div v-else class="cover cover-placeholder">{{ article.categoryName || '未设置封面' }}</div>
+    <div v-else class="cover cover-placeholder">{{ article.categoryName || '未设封面' }}</div>
 
     <div class="card-body">
       <div class="card-kicker">
@@ -35,7 +35,6 @@ import { normalizeAssetUrl } from '../utils/assets'
 const props = defineProps({ article: { type: Object, required: true } })
 
 const coverSrc = computed(() => normalizeAssetUrl(props.article.coverUrl))
-
 const displayDate = computed(() => {
   const raw = props.article.publishedAt || props.article.createdAt
   if (!raw) return '未发布'

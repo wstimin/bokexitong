@@ -15,6 +15,7 @@ import { computed, onMounted } from 'vue'
 import { useSiteStore } from '../stores/site'
 
 const site = useSiteStore()
+
 const sanitizeHtml = (html = '') => String(html)
   .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '')
   .replace(/\son\w+="[^"]*"/gi, '')

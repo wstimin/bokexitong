@@ -2,18 +2,13 @@
   <section class="admin-card settings-panel">
     <div class="toolbar user-toolbar">
       <div>
-        <h2>邮箱设置</h2>
+        <h2>邮件设置</h2>
         <p class="section-subtitle">配置注册、找回密码和测试邮件使用的 SMTP 服务。</p>
       </div>
-      <button class="btn-primary" type="button" :disabled="loading" @click="save">保存邮箱设置</button>
+      <button class="btn-primary" type="button" :disabled="loading" @click="save">保存邮件设置</button>
     </div>
 
-    <el-alert
-      class="settings-alert"
-      title="启用邮箱验证码前，请填写真实 SMTP 服务、账号和授权码。密码留空保存时会保留服务器中已有密码。"
-      type="info"
-      :closable="false"
-    />
+    <el-alert class="settings-alert" title="启用邮箱验证码前，请先填写真实的 SMTP 服务、账号和授权码。密码留空保存时会保留服务器中已有密码。" type="info" :closable="false" />
 
     <el-form label-position="top" class="settings-form">
       <el-form-item label="启用邮箱验证码">
@@ -45,9 +40,9 @@
       </div>
 
       <el-divider content-position="left">发送测试</el-divider>
-      <el-form-item label="测试收件邮箱">
+      <el-form-item label="测试接收邮箱">
         <div class="inline-field">
-          <el-input v-model="testEmail" placeholder="先保存邮箱配置，再发送测试邮件" />
+          <el-input v-model="testEmail" placeholder="先保存邮件配置，再发送测试邮件" />
           <button class="btn-ghost" type="button" :disabled="loading" @click="sendTestMail">发送测试</button>
         </div>
       </el-form-item>
@@ -62,17 +57,7 @@ import { adminApi } from '../../api/blog'
 
 const loading = ref(false)
 const testEmail = ref('')
-const form = reactive({
-  mailEnabled: false,
-  mailHost: '',
-  mailPort: 587,
-  mailUsername: '',
-  mailPassword: '',
-  mailFromName: '',
-  mailSmtpAuth: true,
-  mailStarttlsEnable: true,
-  mailSslEnable: false
-})
+const form = reactive({ mailEnabled: false, mailHost: '', mailPort: 587, mailUsername: '', mailPassword: '', mailFromName: '', mailSmtpAuth: true, mailStarttlsEnable: true, mailSslEnable: false })
 
 const apply = (settings = {}) => {
   form.mailEnabled = settings.mailEnabled === 'true'
@@ -111,7 +96,7 @@ const save = async () => {
     }
     const res = await adminApi.saveMailSettings(payload)
     apply(res.data)
-    ElMessage.success('邮箱设置已保存')
+    ElMessage.success('邮件设置已保存')
   } catch (error) {
     console.error(error)
   } finally {
@@ -121,7 +106,7 @@ const save = async () => {
 
 const sendTestMail = async () => {
   if (!testEmail.value.trim()) {
-    ElMessage.warning('请填写测试收件邮箱')
+    ElMessage.warning('请填写测试接收邮箱')
     return
   }
   loading.value = true
@@ -135,7 +120,5 @@ const sendTestMail = async () => {
   }
 }
 
-onMounted(() => {
-  load()
-})
+onMounted(load)
 </script>

@@ -12,16 +12,16 @@
         <p>{{ pageHint }}</p>
       </div>
 
-      <el-alert v-if="isAdminLogin" class="auth-alert" title="后台入口仅允许管理员账号登录，普通用户请使用前台登录。" type="info" :closable="false" />
-      <el-alert v-if="isRegister && !site.allowRegister" class="auth-alert" title="站点暂未开放注册" type="warning" :closable="false" />
+      <el-alert v-if="isAdminLogin" class="auth-alert" title="管理员入口仅供后台账号登录。" type="info" :closable="false" />
+      <el-alert v-if="isRegister && !site.allowRegister" class="auth-alert" title="本站暂未开放注册。" type="warning" :closable="false" />
 
       <el-form label-position="top" @keyup.enter="submit">
         <template v-if="isLogin">
           <el-form-item label="用户名或邮箱">
-            <el-input v-model="form.account" placeholder="输入用户名或邮箱" />
+            <el-input v-model="form.account" placeholder="请输入用户名或邮箱" />
           </el-form-item>
           <el-form-item label="密码">
-            <el-input v-model="form.password" type="password" show-password placeholder="至少 6 位" />
+            <el-input v-model="form.password" type="password" show-password placeholder="不少于 6 位" />
           </el-form-item>
         </template>
 
@@ -33,7 +33,7 @@
             <el-input v-model="form.nickname" maxlength="30" placeholder="不填则默认使用用户名" :disabled="!site.allowRegister" />
           </el-form-item>
           <el-form-item label="邮箱">
-            <el-input v-model="form.email" type="email" placeholder="接收注册验证码" :disabled="!site.allowRegister" />
+            <el-input v-model="form.email" type="email" placeholder="用于接收验证码" :disabled="!site.allowRegister" />
           </el-form-item>
           <el-form-item label="邮箱验证码">
             <div class="code-row">
@@ -44,16 +44,16 @@
             </div>
           </el-form-item>
           <el-form-item label="密码">
-            <el-input v-model="form.password" type="password" show-password placeholder="至少 6 位" :disabled="!site.allowRegister" />
+            <el-input v-model="form.password" type="password" show-password placeholder="不少于 6 位" :disabled="!site.allowRegister" />
           </el-form-item>
           <el-form-item label="确认密码">
-            <el-input v-model="form.confirmPassword" type="password" show-password placeholder="再输入一次密码" :disabled="!site.allowRegister" />
+            <el-input v-model="form.confirmPassword" type="password" show-password placeholder="再次输入密码" :disabled="!site.allowRegister" />
           </el-form-item>
         </template>
 
         <template v-else>
-          <el-form-item label="注册邮箱">
-            <el-input v-model="form.email" type="email" placeholder="输入账号绑定的邮箱" />
+          <el-form-item label="绑定邮箱">
+            <el-input v-model="form.email" type="email" placeholder="请输入账号绑定的邮箱" />
           </el-form-item>
           <el-form-item label="邮箱验证码">
             <div class="code-row">
@@ -64,10 +64,10 @@
             </div>
           </el-form-item>
           <el-form-item label="新密码">
-            <el-input v-model="form.password" type="password" show-password placeholder="至少 6 位" />
+            <el-input v-model="form.password" type="password" show-password placeholder="不少于 6 位" />
           </el-form-item>
           <el-form-item label="确认新密码">
-            <el-input v-model="form.confirmPassword" type="password" show-password placeholder="再输入一次新密码" />
+            <el-input v-model="form.confirmPassword" type="password" show-password placeholder="再次输入新密码" />
           </el-form-item>
         </template>
       </el-form>
@@ -78,7 +78,7 @@
 
       <div class="auth-actions">
         <button v-if="!isLogin" class="auth-switch" type="button" @click="setMode('login')">已有账号，去登录</button>
-        <button v-if="isLogin && site.allowRegister && !isAdminLogin" class="auth-switch" type="button" @click="setMode('register')">还没有账号，去注册</button>
+        <button v-if="isLogin && site.allowRegister && !isAdminLogin" class="auth-switch" type="button" @click="setMode('register')">没有账号，去注册</button>
         <button v-if="!isForgot && !isAdminLogin" class="auth-switch" type="button" @click="setMode('forgot')">忘记密码</button>
         <RouterLink v-if="isAdminLogin" class="auth-switch" to="/login">前台用户登录</RouterLink>
       </div>
@@ -111,10 +111,10 @@ const isRegister = computed(() => !isAdminLogin.value && mode.value === 'registe
 const isForgot = computed(() => !isAdminLogin.value && mode.value === 'forgot')
 const pageTitle = computed(() => (isAdminLogin.value ? '后台登录' : isRegister.value ? '注册账号' : isForgot.value ? '重置密码' : '用户登录'))
 const pageHint = computed(() => {
-  if (isAdminLogin.value) return '管理员账号进入后台处理文章、评论、用户和站点设置。'
-  if (isRegister.value) return site.allowRegister ? '使用邮箱验证码确认账号归属后开始写博客。' : '管理员已关闭公开注册。'
-  if (isForgot.value) return '通过绑定邮箱验证身份，然后设置新密码。'
-  return '普通用户登录后进入用户中心写文章、管理收藏和评论。'
+  if (isAdminLogin.value) return '管理员账号用于进入后台管理文章、评论、用户和站点设置。'
+  if (isRegister.value) return site.allowRegister ? '使用邮箱验证码完成注册，注册后即可进入用户中心。' : '站点暂未开放注册。'
+  if (isForgot.value) return '通过绑定邮箱验证身份后设置新密码。'
+  return '登录后可进入用户中心，管理文章、收藏和评论。'
 })
 const submitText = computed(() => (isRegister.value ? '注册并进入' : isForgot.value ? '重置密码' : isAdminLogin.value ? '进入后台' : '进入用户中心'))
 const submitDisabled = computed(() => loading.value || (isRegister.value && !site.allowRegister))
@@ -122,9 +122,7 @@ const canSendRegisterCode = computed(() => site.allowRegister && !sendingScene.v
 const canSendResetCode = computed(() => !sendingScene.value && !resetCountdown.value)
 
 onMounted(() => {
-  site.loadSite().catch((error) => {
-    console.error(error)
-  })
+  site.loadSite().catch((error) => console.error(error))
 })
 
 const redirectTo = () => route.query.redirect || (isAdminLogin.value ? '/admin/dashboard' : '/user')
@@ -153,7 +151,7 @@ const sendCode = async (scene) => {
   try {
     await authApi.sendEmailCode({ email: form.email, scene })
     startCountdown(scene === 'REGISTER' ? registerCountdown : resetCountdown)
-    ElMessage.success('验证码已发送，请查收邮箱')
+    ElMessage.success('验证码已发送，请查收邮件')
   } catch (error) {
     console.error(error)
   } finally {
@@ -167,9 +165,7 @@ const login = async () => {
     return
   }
   await auth.login({ account: form.account, password: form.password, loginType: isAdminLogin.value ? 'ADMIN' : 'USER' })
-  if (auth.passwordChangeRequired) {
-    ElMessage.warning('当前管理员仍在使用默认密码，请立即修改')
-  }
+  if (auth.passwordChangeRequired) ElMessage.warning('当前管理员仍在使用默认密码，请尽快修改。')
   router.push(redirectTo())
 }
 
@@ -195,13 +191,7 @@ const register = async () => {
     return
   }
   if (!ensurePasswordConfirmed()) return
-  await authApi.register({
-    username: form.username,
-    nickname: form.nickname,
-    email: form.email,
-    code: form.code,
-    password: form.password
-  })
+  await authApi.register({ username: form.username, nickname: form.nickname, email: form.email, code: form.code, password: form.password })
   await auth.login({ account: form.username, password: form.password, loginType: 'USER' })
   ElMessage.success('注册成功')
   router.push(redirectTo())

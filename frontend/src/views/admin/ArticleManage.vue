@@ -101,16 +101,7 @@
 
         <el-form-item label="正文">
           <div class="rich-editor-shell">
-            <QuillEditor
-              v-model:content="form.content"
-              theme="snow"
-              content-type="html"
-              class="rich-editor"
-              :toolbar="richToolbar"
-              @ready="onEditorReady"
-              @selectionChange="onSelectionChange"
-              placeholder="开始写正文，支持字体、字号、颜色、对齐、图片、视频和链接。"
-            />
+            <QuillEditor v-model:content="form.content" theme="snow" content-type="html" class="rich-editor" :toolbar="richToolbar" @ready="onEditorReady" @selectionChange="onSelectionChange" placeholder="开始写正文，支持字体、字号、颜色、对齐、图片、视频和链接。" />
           </div>
         </el-form-item>
       </el-form>
@@ -147,14 +138,7 @@
         </div>
         <h1>{{ previewArticle.title }}</h1>
         <p v-if="previewArticle.summary" class="detail-summary">{{ previewArticle.summary }}</p>
-        <el-alert
-          v-if="previewArticle.reviewReason"
-          class="review-alert"
-          :title="`${statusText(previewArticle.status)}：${previewArticle.reviewReason}`"
-          :description="previewArticle.reviewedAt ? `处理时间：${previewArticle.reviewedAt}` : ''"
-          type="warning"
-          :closable="false"
-        />
+        <el-alert v-if="previewArticle.reviewReason" class="review-alert" :title="`${statusText(previewArticle.status)}：${previewArticle.reviewReason}`" :description="previewArticle.reviewedAt ? `处理时间：${previewArticle.reviewedAt}` : ''" type="warning" :closable="false" />
         <div class="article-body" v-html="previewHtml"></div>
       </div>
       <template #footer>
@@ -182,18 +166,7 @@ const statusOptions = [
   { label: '已驳回', value: 'REJECTED' },
   { label: '已下架', value: 'OFFLINE' }
 ]
-
-const emptyForm = () => ({
-  title: '',
-  summary: '',
-  coverUrl: '',
-  content: '',
-  contentType: 'HTML',
-  categoryId: null,
-  tagIds: [],
-  recommended: 0,
-  recommendSort: 0
-})
+const emptyForm = () => ({ title: '', summary: '', coverUrl: '', content: '', contentType: 'HTML', categoryId: null, tagIds: [], recommended: 0, recommendSort: 0 })
 
 const rows = ref([])
 const selected = ref([])
@@ -218,11 +191,7 @@ const coverPreviewSrc = computed(() => normalizeAssetUrl(form.coverUrl))
 const load = async () => {
   loading.value = true
   try {
-    const res = await articleApi.page({
-      ...query,
-      keyword: query.keyword?.trim() || undefined,
-      status: query.status || undefined
-    })
+    const res = await articleApi.page({ ...query, keyword: query.keyword?.trim() || undefined, status: query.status || undefined })
     rows.value = res.data.records || []
     total.value = res.data.total || 0
   } catch (error) {
@@ -235,10 +204,7 @@ const load = async () => {
 
 const loadMeta = async () => {
   try {
-    const [categoryRes, tagRes] = await Promise.all([
-      adminApi.categories({ current: 1, size: 200 }),
-      adminApi.tags({ current: 1, size: 200 })
-    ])
+    const [categoryRes, tagRes] = await Promise.all([adminApi.categories({ current: 1, size: 200 }), adminApi.tags({ current: 1, size: 200 })])
     categories.value = categoryRes.data.records || []
     tags.value = tagRes.data.records || []
   } catch (error) {
@@ -266,24 +232,13 @@ const openEditor = async (row) => {
   resetForm()
   previewVisible.value = false
   await ensureRichTextFormats()
-  lastSelection.value = null
   editorVisible.value = true
   if (!row?.id) return
   try {
     const res = await articleApi.adminDetail(row.id)
     const detail = res.data || row
     editingId.value = detail.id
-    Object.assign(form, {
-      title: detail.title || '',
-      summary: detail.summary || '',
-      coverUrl: detail.coverUrl || '',
-      content: toEditableHtml(detail.content, detail.contentType),
-      contentType: 'HTML',
-      categoryId: detail.categoryId || null,
-      tagIds: detail.tags?.map((tag) => tag.id) || [],
-      recommended: detail.recommended || 0,
-      recommendSort: detail.recommendSort || 0
-    })
+    Object.assign(form, { title: detail.title || '', summary: detail.summary || '', coverUrl: detail.coverUrl || '', content: toEditableHtml(detail.content, detail.contentType), contentType: 'HTML', categoryId: detail.categoryId || null, tagIds: detail.tags?.map((tag) => tag.id) || [], recommended: detail.recommended || 0, recommendSort: detail.recommendSort || 0 })
   } catch (error) {
     console.error(error)
   }
@@ -294,16 +249,8 @@ const resetForm = () => {
   lastSelection.value = null
   Object.assign(form, emptyForm())
 }
-
-const onEditorReady = (quill) => {
-  editorRef.value = quill
-  lastSelection.value = null
-}
-
-const onSelectionChange = ({ range }) => {
-  if (range) lastSelection.value = range
-}
-
+const onEditorReady = (quill) => { editorRef.value = quill; lastSelection.value = null }
+const onSelectionChange = ({ range }) => { if (range) lastSelection.value = range }
 const getInsertIndex = () => {
   const quill = editorRef.value
   if (quill) {
@@ -315,22 +262,13 @@ const getInsertIndex = () => {
 }
 
 const saveArticle = async (status) => {
-  if (!form.title.trim()) {
-    ElMessage.warning('请填写文章标题')
-    return
-  }
-  if (['PENDING', 'PUBLISHED'].includes(status) && isEmptyHtml(form.content)) {
-    ElMessage.warning('发布或提交前请先写正文')
-    return
-  }
+  if (!form.title.trim()) return ElMessage.warning('请填写文章标题')
+  if (['PENDING', 'PUBLISHED'].includes(status) && isEmptyHtml(form.content)) return ElMessage.warning('发布或提交前请先写正文')
   saving.value = true
   try {
     const payload = { ...form, contentType: 'HTML', status }
-    if (editingId.value) {
-      await articleApi.adminUpdate(editingId.value, payload)
-    } else {
-      await articleApi.adminSave(payload)
-    }
+    if (editingId.value) await articleApi.adminUpdate(editingId.value, payload)
+    else await articleApi.adminSave(payload)
     ElMessage.success(status === 'PUBLISHED' ? '文章已发布' : '文章已保存')
     editorVisible.value = false
     resetForm()
@@ -347,15 +285,10 @@ const uploadFile = async (options, type) => {
   try {
     const res = await uploadApi.file(options.file)
     const { url, name } = res.data
-    if (type === 'cover') {
-      form.coverUrl = url
-    } else if (type === 'image') {
-      insertSnippet(imageSnippet(url, name))
-    } else if (type === 'video') {
-      insertSnippet(videoSnippet(url, name))
-    } else {
-      insertSnippet(fileSnippet(url, name))
-    }
+    if (type === 'cover') form.coverUrl = url
+    else if (type === 'image') insertSnippet(imageSnippet(url, name))
+    else if (type === 'video') insertSnippet(videoSnippet(url, name))
+    else insertSnippet(fileSnippet(url, name))
     options.onSuccess?.(res)
     ElMessage.success('上传成功')
   } catch (error) {
@@ -371,20 +304,13 @@ const insertSnippet = (text) => {
   if (quill && insertHtmlSnippet(quill, getInsertIndex(), text)) return
   form.content = `${form.content || ''}${text}`
 }
-
 const canPublish = (status) => ['PENDING', 'REJECTED', 'OFFLINE', 'DRAFT'].includes(status)
 
 const changeStatus = async (row, status) => {
   let reason = ''
   if (['REJECTED', 'OFFLINE'].includes(status)) {
     const action = status === 'REJECTED' ? '驳回' : '下架'
-    const result = await ElMessageBox.prompt(`请填写${action}原因，作者会在用户中心看到这条说明。`, `${action}文章`, {
-      confirmButtonText: '确认',
-      cancelButtonText: '取消',
-      inputType: 'textarea',
-      inputPlaceholder: '例如：标题不够清晰、正文缺少必要信息、包含不适合公开展示的内容等',
-      inputValidator: (value) => Boolean(value && value.trim()) || `${action}原因不能为空`
-    })
+    const result = await ElMessageBox.prompt(`请填写${action}原因，作者会在用户中心看到这条说明。`, `${action}文章`, { confirmButtonText: '确认', cancelButtonText: '取消', inputType: 'textarea', inputPlaceholder: '例如：标题不够清晰、正文缺少必要信息、包含不适合公开展示的内容等', inputValidator: (value) => Boolean(value && value.trim()) || `${action}原因不能为空` })
     reason = result.value.trim()
   }
   try {
@@ -400,13 +326,7 @@ const changeStatus = async (row, status) => {
 const setRecommendation = async (row, recommended) => {
   let sort = row.recommendSort || 0
   if (recommended) {
-    const result = await ElMessageBox.prompt('数字越小越靠前，只能推荐已发布文章。', '首页推荐排序', {
-      confirmButtonText: '确认',
-      cancelButtonText: '取消',
-      inputValue: String(sort),
-      inputPattern: /^\d+$/,
-      inputErrorMessage: '请输入 0 或正整数'
-    })
+    const result = await ElMessageBox.prompt('数字越小越靠前，只能推荐已发布文章。', '首页推荐排序', { confirmButtonText: '确认', cancelButtonText: '取消', inputValue: String(sort), inputPattern: /^\d+$/, inputErrorMessage: '请输入 0 或正整数' })
     sort = Number(result.value || 0)
   }
   try {
@@ -418,14 +338,8 @@ const setRecommendation = async (row, recommended) => {
   }
 }
 
-const remove = async (id) => {
-  await removeIds([id], '确认删除这篇文章吗？删除后前台将不可见。')
-}
-
-const removeSelected = async () => {
-  await removeIds(selected.value.map((item) => item.id), `确认删除选中的 ${selected.value.length} 篇文章吗？`)
-}
-
+const remove = async (id) => removeIds([id], '确认删除这篇文章吗？删除后前台将不可见。')
+const removeSelected = async () => removeIds(selected.value.map((item) => item.id), `确认删除选中的 ${selected.value.length} 篇文章吗？`)
 const removeIds = async (ids, message) => {
   if (!ids.length) return
   await ElMessageBox.confirm(message, '删除文章', { type: 'warning' })
@@ -439,24 +353,8 @@ const removeIds = async (ids, message) => {
   }
 }
 
-const statusText = (status) => ({
-  DRAFT: '草稿',
-  PENDING: '待审核',
-  PUBLISHED: '已发布',
-  REJECTED: '已驳回',
-  OFFLINE: '已下架'
-}[status] || status || '-')
+const statusText = (status) => ({ DRAFT: '草稿', PENDING: '待审核', PUBLISHED: '已发布', REJECTED: '已驳回', OFFLINE: '已下架' }[status] || status || '-')
+const statusType = (status) => ({ PUBLISHED: 'success', PENDING: 'warning', REJECTED: 'danger', OFFLINE: 'info', DRAFT: 'info' }[status] || 'info')
 
-const statusType = (status) => ({
-  PUBLISHED: 'success',
-  PENDING: 'warning',
-  REJECTED: 'danger',
-  OFFLINE: 'info',
-  DRAFT: 'info'
-}[status] || 'info')
-
-onMounted(() => {
-  loadMeta()
-  load()
-})
+onMounted(() => { loadMeta(); load() })
 </script>

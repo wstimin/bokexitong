@@ -6,12 +6,13 @@
         <span v-else class="brand-mark"></span>
         <span>{{ site.name }}</span>
       </RouterLink>
+
       <nav class="nav-links">
         <RouterLink class="nav-link" to="/">首页</RouterLink>
         <RouterLink v-if="auth.isUserLogin" class="nav-link" to="/user">用户中心</RouterLink>
         <RouterLink v-if="!auth.isUserLogin" class="nav-link" to="/login">登录</RouterLink>
         <RouterLink v-if="!auth.isUserLogin" class="nav-link" to="/login?mode=register">注册</RouterLink>
-        <button v-else class="btn-ghost" type="button" @click="logout">退出用户</button>
+        <button v-else class="btn-ghost" type="button" @click="logout">退出</button>
       </nav>
     </div>
   </header>

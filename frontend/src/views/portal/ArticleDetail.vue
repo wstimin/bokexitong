@@ -122,8 +122,6 @@ const submitComment = async () => {
 const formatDate = (date) => String(date || '').slice(0, 16) || '-'
 
 onMounted(() => {
-  load().catch((error) => {
-    console.error(error)
-  })
+  load().catch((error) => console.error(error))
 })
 </script>

@@ -21,30 +21,22 @@
       </section>
 
       <section class="admin-card">
-        <div class="chart-title">
-          <h2>近 7 天发布趋势</h2>
-        </div>
+        <div class="chart-title"><h2>近 7 天发布趋势</h2></div>
         <div ref="trendRef" class="chart-box"></div>
       </section>
 
       <section class="admin-card">
-        <div class="chart-title">
-          <h2>文章状态分布</h2>
-        </div>
+        <div class="chart-title"><h2>文章状态分布</h2></div>
         <div ref="statusRef" class="chart-box"></div>
       </section>
 
       <section class="admin-card">
-        <div class="chart-title">
-          <h2>分类文章占比</h2>
-        </div>
+        <div class="chart-title"><h2>分类文章占比</h2></div>
         <div ref="categoryRef" class="chart-box"></div>
       </section>
 
       <section class="admin-card dashboard-alerts">
-        <div class="chart-title">
-          <h2>待处理事项</h2>
-        </div>
+        <div class="chart-title"><h2>待处理事项</h2></div>
         <div class="todo-list">
           <RouterLink to="/admin/articles" class="todo-item">
             <span>待审核文章</span>
@@ -55,7 +47,7 @@
             <strong>{{ stats.pendingCommentCount || 0 }}</strong>
           </RouterLink>
           <RouterLink to="/admin/articles" class="todo-item">
-            <span>已驳回文章</span>
+            <span>已拒绝文章</span>
             <strong>{{ stats.rejectedArticleCount || 0 }}</strong>
           </RouterLink>
         </div>
@@ -87,13 +79,13 @@ const statItems = computed(() => [
   { label: '图片资源', value: stats.value.imageCount || 0 },
   { label: '点赞总数', value: stats.value.likeCount || 0 },
   { label: '收藏总数', value: stats.value.favoriteCount || 0 },
-  { label: '待审文章', value: stats.value.pendingArticleCount || 0 },
+  { label: '待审核文章', value: stats.value.pendingArticleCount || 0 },
   { label: '已发布文章', value: stats.value.publishedArticleCount || 0 }
 ])
 
 const shortcuts = [
   { title: '站点设置', desc: '修改站点名称、首页文案和背景', to: '/admin/settings' },
-  { title: '邮箱设置', desc: '配置 SMTP、发件名称和测试验证码邮件', to: '/admin/mail-settings' },
+  { title: '邮件设置', desc: '配置 SMTP、发件名和验证码邮件', to: '/admin/mail-settings' },
   { title: '图片资源', desc: '维护 Logo、横幅、封面和素材', to: '/admin/images' },
   { title: '文章审核', desc: '审核、下架或删除用户文章', to: '/admin/articles' },
   { title: '分类标签', desc: '整理文章分类和标签体系', to: '/admin/taxonomies' },
@@ -118,7 +110,7 @@ const renderCharts = () => {
     grid: { left: 36, right: 18, top: 28, bottom: 34 },
     xAxis: { type: 'category', data: trend.map((item) => item.date), boundaryGap: false },
     yAxis: { type: 'value', minInterval: 1 },
-    series: [{ name: '发布数', type: 'line', smooth: true, areaStyle: {}, data: trend.map((item) => item.count), color: '#2f80ed' }]
+    series: [{ name: '发布数', type: 'line', smooth: true, areaStyle: {}, data: trend.map((item) => item.count), color: '#3677e6' }]
   })
 
   initChart(statusRef.value, {

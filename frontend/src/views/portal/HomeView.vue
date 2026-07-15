@@ -1,11 +1,8 @@
 <template>
   <div class="page">
     <PortalNav />
-    <section
-      class="hero hero-compact"
-      :class="{ 'hero-fallback': !heroBackgroundSrc, 'hero-synced': Boolean(site.backgroundSrc) }"
-      :style="heroStyle"
-    >
+
+    <section class="hero" :class="{ 'hero-fallback': !heroBackgroundSrc }" :style="heroStyle">
       <div class="shell hero-feature">
         <div class="hero-content">
           <span class="eyebrow">{{ site.heroBadge }}</span>
@@ -24,13 +21,14 @@
               <button type="button" aria-label="下一篇推荐" @click="nextRecommend">›</button>
             </div>
           </div>
+
           <RouterLink class="recommend-card" :to="`/article/${activeRecommended.id}`">
             <img v-if="recommendCoverSrc" :src="recommendCoverSrc" :alt="activeRecommended.title" />
             <div v-else class="recommend-placeholder">{{ activeRecommended.title?.slice(0, 1) || '文' }}</div>
             <div class="recommend-body">
               <div class="card-kicker">
                 <span>{{ activeRecommended.categoryName || '未分类' }}</span>
-                <span>{{ activeRecommended.publishedAt || activeRecommended.createdAt || '' }}</span>
+                <span>{{ formatDate(activeRecommended.publishedAt || activeRecommended.createdAt) }}</span>
               </div>
               <h2>{{ activeRecommended.title }}</h2>
               <p>{{ activeRecommended.summary || '这篇文章暂未填写摘要。' }}</p>
@@ -41,6 +39,7 @@
               </div>
             </div>
           </RouterLink>
+
           <div class="recommend-track">
             <button
               v-for="(item, index) in recommendedArticles"
@@ -64,13 +63,7 @@
             <p class="section-subtitle">{{ filterSummary }}，共 {{ articlePage.total }} 篇文章</p>
           </div>
           <div class="article-search">
-            <el-input
-              v-model="keyword"
-              placeholder="搜索标题、摘要或正文"
-              clearable
-              @keyup.enter="searchArticles"
-              @clear="searchArticles"
-            />
+            <el-input v-model="keyword" placeholder="搜索标题、摘要或正文" clearable @keyup.enter="searchArticles" @clear="searchArticles" />
             <button class="btn-ghost" type="button" :disabled="articleLoading" @click="searchArticles">搜索</button>
             <button v-if="hasActiveFilter" class="btn-ghost" type="button" :disabled="articleLoading" @click="resetFilters">重置</button>
           </div>
@@ -81,14 +74,7 @@
         </div>
         <el-empty v-if="!articleLoading && articles.length === 0" description="没有找到相关文章" />
         <div v-if="articlePage.total > articlePage.size" class="pager">
-          <el-pagination
-            background
-            layout="prev, pager, next"
-            :total="articlePage.total"
-            :page-size="articlePage.size"
-            v-model:current-page="articlePage.current"
-            @current-change="loadArticles"
-          />
+          <el-pagination v-model:current-page="articlePage.current" background layout="prev, pager, next" :total="articlePage.total" :page-size="articlePage.size" @current-change="loadArticles" />
         </div>
       </section>
 
@@ -113,6 +99,7 @@
           </div>
           <el-empty v-if="filteredCategories.length === 0" description="暂无匹配分类" :image-size="72" />
         </div>
+
         <div class="side-panel">
           <h3>标签</h3>
           <div class="tag-row">
@@ -128,9 +115,11 @@
               {{ tag.name }}
             </button>
           </div>
+          <el-empty v-if="tags.length === 0" description="暂无标签" :image-size="72" />
         </div>
       </aside>
     </main>
+
     <PortalFooter />
   </div>
 </template>
@@ -159,10 +148,8 @@ const articleLoading = ref(false)
 const articlePage = reactive({ current: 1, size: 9, total: 0 })
 
 const heroUrl = computed(() => normalizeAssetUrl(hero.value[0]?.url))
-const heroBackgroundSrc = computed(() => site.backgroundSrc || heroUrl.value)
-const heroStyle = computed(() => (!site.backgroundSrc && heroBackgroundSrc.value)
-  ? { backgroundImage: `url("${heroBackgroundSrc.value}")` }
-  : {})
+const heroBackgroundSrc = computed(() => heroUrl.value || site.backgroundSrc)
+const heroStyle = computed(() => heroBackgroundSrc.value ? { backgroundImage: `url("${heroBackgroundSrc.value}")` } : {})
 const activeRecommended = computed(() => recommendedArticles.value[activeRecommendIndex.value] || {})
 const recommendCoverSrc = computed(() => normalizeAssetUrl(activeRecommended.value.coverUrl))
 const filteredCategories = computed(() => {
@@ -186,20 +173,12 @@ const filterSummary = computed(() => {
 
 const loadHomeMeta = async () => {
   const res = await portalApi.home()
-  const settings = res.data.settings || {}
-  site.name = settings.siteName || site.name
-  site.heroTitle = settings.heroTitle || site.name
-  site.heroSubtitle = settings.heroSubtitle || site.heroSubtitle
-  site.heroBadge = settings.heroBadge || site.heroBadge
-  site.backgroundUrl = settings.backgroundUrl || ''
-  site.contactHtml = settings.contactHtml || ''
-  site.logoUrl = (Array.isArray(res.data.logo) ? res.data.logo[0] : res.data.logo)?.url || site.logoUrl
-  site.loaded = true
-  site.applyHead()
-  categories.value = res.data.categories || []
-  tags.value = res.data.tags || []
-  hero.value = res.data.hero || []
-  recommendedArticles.value = res.data.recommendedArticles || res.data.articles || []
+  const data = res.data || {}
+  site.applySettings(data)
+  categories.value = data.categories || []
+  tags.value = data.tags || []
+  hero.value = data.hero || []
+  recommendedArticles.value = data.recommendedArticles || data.articles || []
   activeRecommendIndex.value = 0
 }
 
@@ -245,19 +224,16 @@ const resetFilters = () => {
   loadArticles()
 }
 
-const selectRecommend = (index) => {
-  activeRecommendIndex.value = index
-}
-
+const selectRecommend = (index) => { activeRecommendIndex.value = index }
 const prevRecommend = () => {
   if (!recommendedArticles.value.length) return
   activeRecommendIndex.value = (activeRecommendIndex.value - 1 + recommendedArticles.value.length) % recommendedArticles.value.length
 }
-
 const nextRecommend = () => {
   if (!recommendedArticles.value.length) return
   activeRecommendIndex.value = (activeRecommendIndex.value + 1) % recommendedArticles.value.length
 }
+const formatDate = (date) => String(date || '').slice(0, 10)
 
 onMounted(async () => {
   try {

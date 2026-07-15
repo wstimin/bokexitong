@@ -26,14 +26,10 @@
         <el-table-column prop="nickname" label="昵称" min-width="130" show-overflow-tooltip />
         <el-table-column prop="email" label="邮箱" min-width="190" show-overflow-tooltip />
         <el-table-column label="角色" width="120">
-          <template #default="{ row }">
-            <el-tag :type="row.role === 'ADMIN' ? 'danger' : 'info'">{{ roleText(row.role) }}</el-tag>
-          </template>
+          <template #default="{ row }"><el-tag :type="row.role === 'ADMIN' ? 'danger' : 'info'">{{ roleText(row.role) }}</el-tag></template>
         </el-table-column>
         <el-table-column label="状态" width="110">
-          <template #default="{ row }">
-            <el-tag :type="row.status === 1 ? 'success' : 'warning'">{{ row.status === 1 ? '正常' : '封禁' }}</el-tag>
-          </template>
+          <template #default="{ row }"><el-tag :type="row.status === 1 ? 'success' : 'warning'">{{ row.status === 1 ? '正常' : '封禁' }}</el-tag></template>
         </el-table-column>
         <el-table-column prop="createdAt" label="创建时间" width="180" />
         <el-table-column label="操作" width="300" fixed="right">
@@ -41,9 +37,7 @@
             <div class="action-row">
               <el-button size="small" :disabled="actionLoading" @click="openEdit(row)">编辑</el-button>
               <el-button size="small" :disabled="actionLoading" @click="openPassword(row)">重置密码</el-button>
-              <el-button size="small" :disabled="actionLoading" @click="setStatus(row.id, row.status === 1 ? 0 : 1)">
-                {{ row.status === 1 ? '封禁' : '解封' }}
-              </el-button>
+              <el-button size="small" :disabled="actionLoading" @click="setStatus(row.id, row.status === 1 ? 0 : 1)">{{ row.status === 1 ? '封禁' : '解封' }}</el-button>
               <el-button size="small" type="danger" :disabled="actionLoading" @click="remove(row.id)">删除</el-button>
             </div>
           </template>
@@ -76,30 +70,18 @@
 
     <el-dialog v-model="createVisible" title="新增用户" width="560px" append-to-body>
       <el-form label-position="top" class="user-form-grid">
-        <el-form-item label="用户名">
-          <el-input v-model="createForm.username" maxlength="20" show-word-limit placeholder="3-20 位字母、数字或下划线" />
-        </el-form-item>
-        <el-form-item label="昵称">
-          <el-input v-model="createForm.nickname" maxlength="30" show-word-limit placeholder="不填则使用用户名" />
-        </el-form-item>
-        <el-form-item label="邮箱">
-          <el-input v-model="createForm.email" placeholder="用于登录和找回密码" />
-        </el-form-item>
-        <el-form-item label="初始密码">
-          <el-input v-model="createForm.password" type="password" show-password placeholder="至少 6 位" />
-        </el-form-item>
-        <el-form-item label="头像 URL">
-          <el-input v-model="createForm.avatar" placeholder="可选" />
-        </el-form-item>
+        <el-form-item label="用户名"><el-input v-model="createForm.username" maxlength="20" show-word-limit placeholder="3-20 位字母、数字或下划线" /></el-form-item>
+        <el-form-item label="昵称"><el-input v-model="createForm.nickname" maxlength="30" show-word-limit placeholder="不填则使用用户名" /></el-form-item>
+        <el-form-item label="邮箱"><el-input v-model="createForm.email" placeholder="用于登录和找回密码" /></el-form-item>
+        <el-form-item label="初始密码"><el-input v-model="createForm.password" type="password" show-password placeholder="至少 6 位" /></el-form-item>
+        <el-form-item label="头像 URL"><el-input v-model="createForm.avatar" placeholder="可选" /></el-form-item>
         <el-form-item label="角色">
           <el-select v-model="createForm.role" style="width: 100%">
             <el-option label="管理员" value="ADMIN" />
             <el-option label="普通用户" value="USER" />
           </el-select>
         </el-form-item>
-        <el-form-item label="状态">
-          <el-switch v-model="createStatusBool" active-text="正常" inactive-text="封禁" />
-        </el-form-item>
+        <el-form-item label="状态"><el-switch v-model="createStatusBool" active-text="正常" inactive-text="封禁" /></el-form-item>
       </el-form>
       <template #footer>
         <button class="btn-ghost" type="button" :disabled="actionLoading" @click="createVisible = false">取消</button>
@@ -108,9 +90,7 @@
     </el-dialog>
 
     <el-dialog v-model="passwordVisible" title="重置密码" width="420px" append-to-body>
-      <el-form label-position="top">
-        <el-form-item label="新密码"><el-input v-model="newPassword" type="password" show-password /></el-form-item>
-      </el-form>
+      <el-form label-position="top"><el-form-item label="新密码"><el-input v-model="newPassword" type="password" show-password /></el-form-item></el-form>
       <template #footer>
         <button class="btn-ghost" type="button" :disabled="actionLoading" @click="passwordVisible = false">取消</button>
         <button class="btn-primary" type="button" :disabled="actionLoading" @click="resetPassword">保存</button>
@@ -137,22 +117,9 @@ const query = reactive({ current: 1, size: 10, keyword: '', role: '', status: nu
 const createForm = reactive({ username: '', nickname: '', avatar: '', email: '', password: '', role: 'USER', status: 1 })
 const editForm = reactive({ nickname: '', avatar: '', email: '', role: 'USER', status: 1 })
 
-const statusBool = computed({
-  get: () => editForm.status === 1,
-  set: (value) => { editForm.status = value ? 1 : 0 }
-})
-
-const createStatusBool = computed({
-  get: () => createForm.status === 1,
-  set: (value) => { createForm.status = value ? 1 : 0 }
-})
-
-const cleanQuery = () => ({
-  ...query,
-  keyword: query.keyword?.trim() || undefined,
-  role: query.role || undefined,
-  status: query.status ?? undefined
-})
+const statusBool = computed({ get: () => editForm.status === 1, set: (value) => { editForm.status = value ? 1 : 0 } })
+const createStatusBool = computed({ get: () => createForm.status === 1, set: (value) => { createForm.status = value ? 1 : 0 } })
+const cleanQuery = () => ({ ...query, keyword: query.keyword?.trim() || undefined, role: query.role || undefined, status: query.status ?? undefined })
 
 const load = async () => {
   loading.value = true
@@ -167,115 +134,34 @@ const load = async () => {
     loading.value = false
   }
 }
-
-const searchUsers = () => {
-  query.current = 1
-  load()
-}
-
-const resetCreateForm = () => {
-  Object.assign(createForm, { username: '', nickname: '', avatar: '', email: '', password: '', role: 'USER', status: 1 })
-}
-
-const openCreate = () => {
-  resetCreateForm()
-  createVisible.value = true
-}
-
+const searchUsers = () => { query.current = 1; load() }
+const resetCreateForm = () => Object.assign(createForm, { username: '', nickname: '', avatar: '', email: '', password: '', role: 'USER', status: 1 })
+const openCreate = () => { resetCreateForm(); createVisible.value = true }
 const createUser = async () => {
-  if (!createForm.username.trim() || !createForm.email.trim() || !createForm.password.trim()) {
-    ElMessage.warning('请填写用户名、邮箱和初始密码')
-    return
-  }
+  if (!createForm.username.trim() || !createForm.email.trim() || !createForm.password.trim()) return ElMessage.warning('请填写用户名、邮箱和初始密码')
   actionLoading.value = true
-  try {
-    await adminApi.createUser({ ...createForm })
-    createVisible.value = false
-    ElMessage.success('用户已创建')
-    await load()
-  } catch (error) {
-    console.error(error)
-  } finally {
-    actionLoading.value = false
-  }
+  try { await adminApi.createUser({ ...createForm }); createVisible.value = false; ElMessage.success('用户已创建'); await load() } catch (error) { console.error(error) } finally { actionLoading.value = false }
 }
-
-const openEdit = (row) => {
-  currentId.value = row.id
-  Object.assign(editForm, {
-    nickname: row.nickname || '',
-    avatar: row.avatar || '',
-    email: row.email || '',
-    role: row.role || 'USER',
-    status: row.status ?? 1
-  })
-  editVisible.value = true
-}
-
+const openEdit = (row) => { currentId.value = row.id; Object.assign(editForm, { nickname: row.nickname || '', avatar: row.avatar || '', email: row.email || '', role: row.role || 'USER', status: row.status ?? 1 }); editVisible.value = true }
 const saveEdit = async () => {
   actionLoading.value = true
-  try {
-    await adminApi.updateUser(currentId.value, { ...editForm })
-    editVisible.value = false
-    ElMessage.success('用户资料已更新')
-    await load()
-  } catch (error) {
-    console.error(error)
-  } finally {
-    actionLoading.value = false
-  }
+  try { await adminApi.updateUser(currentId.value, { ...editForm }); editVisible.value = false; ElMessage.success('用户资料已更新'); await load() } catch (error) { console.error(error) } finally { actionLoading.value = false }
 }
-
-const openPassword = (row) => {
-  currentId.value = row.id
-  newPassword.value = ''
-  passwordVisible.value = true
-}
-
+const openPassword = (row) => { currentId.value = row.id; newPassword.value = ''; passwordVisible.value = true }
 const resetPassword = async () => {
-  if (!newPassword.value) {
-    ElMessage.warning('请输入新密码')
-    return
-  }
+  if (!newPassword.value) return ElMessage.warning('请输入新密码')
   actionLoading.value = true
-  try {
-    await adminApi.resetUserPassword(currentId.value, { newPassword: newPassword.value })
-    passwordVisible.value = false
-    ElMessage.success('密码已重置')
-  } catch (error) {
-    console.error(error)
-  } finally {
-    actionLoading.value = false
-  }
+  try { await adminApi.resetUserPassword(currentId.value, { newPassword: newPassword.value }); passwordVisible.value = false; ElMessage.success('密码已重置') } catch (error) { console.error(error) } finally { actionLoading.value = false }
 }
-
 const setStatus = async (id, status) => {
   actionLoading.value = true
-  try {
-    await adminApi.userStatus(id, status)
-    ElMessage.success(status === 1 ? '用户已解封' : '用户已封禁')
-    await load()
-  } catch (error) {
-    console.error(error)
-  } finally {
-    actionLoading.value = false
-  }
+  try { await adminApi.userStatus(id, status); ElMessage.success(status === 1 ? '用户已解封' : '用户已封禁'); await load() } catch (error) { console.error(error) } finally { actionLoading.value = false }
 }
-
 const remove = async (id) => {
   await ElMessageBox.confirm('确认删除这个用户吗？删除后无法恢复。', '删除用户', { type: 'warning' })
   actionLoading.value = true
-  try {
-    await adminApi.deleteUser(id)
-    ElMessage.success('用户已删除')
-    await load()
-  } catch (error) {
-    console.error(error)
-  } finally {
-    actionLoading.value = false
-  }
+  try { await adminApi.deleteUser(id); ElMessage.success('用户已删除'); await load() } catch (error) { console.error(error) } finally { actionLoading.value = false }
 }
-
 const roleText = (role) => ({ ADMIN: '管理员', USER: '普通用户' }[role] || role || '-')
 
 onMounted(load)
