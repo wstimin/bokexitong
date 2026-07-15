@@ -73,9 +73,11 @@ export const commentApi = {
 }
 
 export const uploadApi = {
-  file: (file) => {
+  file: (input) => {
+    const file = input?.file || input?.target?.files?.[0] || input
     const form = new FormData()
-    form.append('file', file)
+    if (!file) throw new Error('未选择上传文件')
+    form.append('file', file, file.name || 'file')
     return http.post('/uploads', form)
   }
 }
