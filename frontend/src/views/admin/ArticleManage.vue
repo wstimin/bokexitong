@@ -116,12 +116,15 @@
       </el-form>
 
       <div class="upload-row writer-tools">
-        <button class="btn-ghost" type="button" @click="openUpload('image')">插入图片</button>
-        <button class="btn-ghost" type="button" @click="openUpload('video')">插入视频</button>
-        <button class="btn-ghost" type="button" @click="openUpload('file')">插入附件</button>
-        <input ref="imageInput" class="hidden-file-input" type="file" accept="image/*" @change="(event) => uploadSelectedFile(event, 'image')" />
-        <input ref="videoInput" class="hidden-file-input" type="file" accept="video/*" @change="(event) => uploadSelectedFile(event, 'video')" />
-        <input ref="fileInput" class="hidden-file-input" type="file" @change="(event) => uploadSelectedFile(event, 'file')" />
+        <el-upload class="writer-upload-control" :show-file-list="false" :http-request="(options) => uploadFile(options, 'image')" accept="image/*" :disabled="uploading">
+          <button class="btn-ghost" type="button" :disabled="uploading">插入图片</button>
+        </el-upload>
+        <el-upload class="writer-upload-control" :show-file-list="false" :http-request="(options) => uploadFile(options, 'video')" accept="video/*" :disabled="uploading">
+          <button class="btn-ghost" type="button" :disabled="uploading">插入视频</button>
+        </el-upload>
+        <el-upload class="writer-upload-control" :show-file-list="false" :http-request="(options) => uploadFile(options, 'file')" :disabled="uploading">
+          <button class="btn-ghost" type="button" :disabled="uploading">插入附件</button>
+        </el-upload>
       </div>
 
       <template #footer>
@@ -205,19 +208,12 @@ const tags = ref([])
 const editingId = ref(null)
 const editorRef = ref(null)
 const lastSelection = ref(null)
-const imageInput = ref(null)
-const videoInput = ref(null)
-const fileInput = ref(null)
+const uploading = ref(false)
 const form = reactive(emptyForm())
 const query = reactive({ current: 1, size: 10, keyword: '', status: '' })
 const previewHtml = computed(() => toDisplayHtml(previewArticle.value.content, previewArticle.value.contentType))
 const previewCoverSrc = computed(() => normalizeAssetUrl(previewArticle.value.coverUrl))
 const coverPreviewSrc = computed(() => normalizeAssetUrl(form.coverUrl))
-const uploadInputs = {
-  image: imageInput,
-  video: videoInput,
-  file: fileInput
-}
 
 const load = async () => {
   loading.value = true
@@ -347,6 +343,7 @@ const saveArticle = async (status) => {
 }
 
 const uploadFile = async (options, type) => {
+  uploading.value = true
   try {
     const res = await uploadApi.file(options.file)
     const { url, name } = res.data
@@ -364,19 +361,9 @@ const uploadFile = async (options, type) => {
   } catch (error) {
     console.error(error)
     options.onError?.(error)
+  } finally {
+    uploading.value = false
   }
-}
-
-const openUpload = (type) => {
-  uploadInputs[type]?.value?.click()
-}
-
-const uploadSelectedFile = async (event, type) => {
-  const input = event.target
-  const file = input.files?.[0]
-  input.value = ''
-  if (!file) return
-  await uploadFile({ file }, type)
 }
 
 const insertSnippet = (text) => {

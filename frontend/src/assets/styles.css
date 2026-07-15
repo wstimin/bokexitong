@@ -410,7 +410,6 @@ a { color: inherit; text-decoration: none; }
 .my-articles { grid-column: 1 / -1; }
 .inline-field { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; width: 100%; align-items: center; }
 .upload-row { display: flex; gap: 10px; flex-wrap: wrap; }
-.hidden-file-input { position: fixed; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
 .settings-panel { max-width: 1080px; }
 .settings-form { max-width: 680px; }
 .grouped-settings-form { max-width: none; display: grid; gap: 16px; }
