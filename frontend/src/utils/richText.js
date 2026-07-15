@@ -35,6 +35,63 @@ export const richToolbar = [
   ['clean']
 ]
 
+export const richToolbarLabels = {
+  font: '字体',
+  size: '字号',
+  bold: '加粗',
+  italic: '斜体',
+  underline: '下划线',
+  strike: '删除线',
+  color: '文字颜色',
+  background: '背景色',
+  align: '对齐',
+  header: '标题',
+  list: '列表',
+  blockquote: '引用',
+  'code-block': '代码块',
+  link: '链接',
+  image: '图片',
+  clean: '清除格式'
+}
+
+const toolbarSelector = '.ql-toolbar.ql-snow'
+
+const setTitle = (el, title) => {
+  if (!el) return
+  el.setAttribute('title', title)
+  el.setAttribute('aria-label', title)
+}
+
+export const localizeRichTextToolbar = (editorRoot) => {
+  const root = editorRoot?.container || editorRoot?.$el || editorRoot
+  if (!root?.querySelector) return
+
+  const toolbar = root.querySelector(toolbarSelector)
+  if (!toolbar) return
+
+  toolbar.querySelectorAll('button').forEach((button) => {
+    const format = button.className.match(/ql-([a-z-]+)/)?.[1]
+    const title = richToolbarLabels[format]
+    if (title) setTitle(button, title)
+  })
+
+  toolbar.querySelectorAll('.ql-picker').forEach((picker) => {
+    const format = Array.from(picker.classList)
+      .find((cls) => cls.startsWith('ql-') && cls !== 'ql-picker' && cls !== 'ql-expanded')
+      ?.replace(/^ql-/, '')
+    const title = richToolbarLabels[format]
+    if (!title) return
+
+    const label = picker.querySelector('.ql-picker-label')
+    setTitle(label, title)
+    label?.setAttribute('data-label', title)
+    picker.querySelectorAll('.ql-picker-item').forEach((item) => {
+      setTitle(item, title)
+      item.setAttribute('data-label', title)
+    })
+  })
+}
+
 export const isRichTextContentType = (contentType) => {
   const normalized = String(contentType || '').toUpperCase()
   return normalized === 'HTML' || normalized === 'RICH_TEXT'

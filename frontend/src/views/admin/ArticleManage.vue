@@ -92,9 +92,7 @@
             <div v-else class="cover-empty">封面预览</div>
             <div class="cover-fields">
               <el-input v-model="form.coverUrl" placeholder="上传封面或粘贴图片地址" />
-              <el-upload :show-file-list="false" :http-request="(options) => uploadFile(options, 'cover')" accept="image/*">
-                <button class="btn-ghost" type="button">上传封面</button>
-              </el-upload>
+              <FileUploadButton accept="image/*" @select="(file) => uploadFile({ file }, 'cover')">上传封面</FileUploadButton>
             </div>
           </div>
         </el-form-item>
@@ -107,15 +105,9 @@
       </el-form>
 
       <div class="upload-row writer-tools">
-        <el-upload class="writer-upload-control" :show-file-list="false" :http-request="(options) => uploadFile(options, 'image')" accept="image/*" :disabled="uploading">
-          <button class="btn-ghost" type="button" :disabled="uploading">插入图片</button>
-        </el-upload>
-        <el-upload class="writer-upload-control" :show-file-list="false" :http-request="(options) => uploadFile(options, 'video')" accept="video/*" :disabled="uploading">
-          <button class="btn-ghost" type="button" :disabled="uploading">插入视频</button>
-        </el-upload>
-        <el-upload class="writer-upload-control" :show-file-list="false" :http-request="(options) => uploadFile(options, 'file')" :disabled="uploading">
-          <button class="btn-ghost" type="button" :disabled="uploading">插入附件</button>
-        </el-upload>
+        <FileUploadButton accept="image/*" :disabled="uploading" @select="(file) => uploadFile({ file }, 'image')">插入图片</FileUploadButton>
+        <FileUploadButton accept="video/*" :disabled="uploading" @select="(file) => uploadFile({ file }, 'video')">插入视频</FileUploadButton>
+        <FileUploadButton :disabled="uploading" @select="(file) => uploadFile({ file }, 'file')">插入附件</FileUploadButton>
       </div>
 
       <template #footer>
@@ -155,9 +147,10 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { QuillEditor } from '@vueup/vue-quill'
+import FileUploadButton from '../../components/FileUploadButton.vue'
 import { adminApi, articleApi, uploadApi } from '../../api/blog'
 import { normalizeAssetUrl } from '../../utils/assets'
-import { ensureRichTextFormats, fileSnippet, imageSnippet, insertHtmlSnippet, isEmptyHtml, richToolbar, toDisplayHtml, toEditableHtml, videoSnippet } from '../../utils/richText'
+import { ensureRichTextFormats, fileSnippet, imageSnippet, insertHtmlSnippet, isEmptyHtml, localizeRichTextToolbar, richToolbar, toDisplayHtml, toEditableHtml, videoSnippet } from '../../utils/richText'
 
 const statusOptions = [
   { label: '草稿', value: 'DRAFT' },
@@ -249,7 +242,11 @@ const resetForm = () => {
   lastSelection.value = null
   Object.assign(form, emptyForm())
 }
-const onEditorReady = (quill) => { editorRef.value = quill; lastSelection.value = null }
+const onEditorReady = (quill) => {
+  editorRef.value = quill
+  lastSelection.value = null
+  localizeRichTextToolbar(quill)
+}
 const onSelectionChange = ({ range }) => { if (range) lastSelection.value = range }
 const getInsertIndex = () => {
   const quill = editorRef.value

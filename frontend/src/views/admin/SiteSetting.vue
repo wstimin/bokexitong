@@ -24,9 +24,7 @@
               <div v-else class="cover-empty">Logo 预览</div>
               <div class="cover-fields">
                 <el-input v-model="form.logoUrl" placeholder="上传 Logo 或粘贴图片地址" />
-                <el-upload :show-file-list="false" :http-request="uploadLogo" accept="image/*">
-                  <button class="btn-ghost" type="button">上传 Logo</button>
-                </el-upload>
+                <FileUploadButton accept="image/*" @select="uploadLogoFile">上传 Logo</FileUploadButton>
               </div>
             </div>
           </el-form-item>
@@ -51,9 +49,7 @@
           <el-form-item label="全站背景图 URL" class="field-full">
             <div class="inline-field">
               <el-input v-model="form.backgroundUrl" placeholder="上传背景图或粘贴图片地址，留空使用默认背景" />
-              <el-upload :show-file-list="false" :http-request="uploadBackground" accept="image/*">
-                <button class="btn-ghost" type="button">上传背景</button>
-              </el-upload>
+              <FileUploadButton accept="image/*" @select="uploadBackgroundFile">上传背景</FileUploadButton>
             </div>
           </el-form-item>
         </div>
@@ -111,6 +107,7 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { adminApi, uploadApi } from '../../api/blog'
+import FileUploadButton from '../../components/FileUploadButton.vue'
 import { useSiteStore } from '../../stores/site'
 import { normalizeAssetUrl } from '../../utils/assets'
 
@@ -166,9 +163,9 @@ const save = async () => {
   }
 }
 
-const uploadBackground = async (options) => {
+const uploadBackground = async (file) => {
   try {
-    const res = await uploadApi.file(options.file)
+    const res = await uploadApi.file(file)
     form.backgroundUrl = res.data.url
     ElMessage.success('背景图已上传')
   } catch (error) {
@@ -176,15 +173,18 @@ const uploadBackground = async (options) => {
   }
 }
 
-const uploadLogo = async (options) => {
+const uploadLogo = async (file) => {
   try {
-    const res = await uploadApi.file(options.file)
+    const res = await uploadApi.file(file)
     form.logoUrl = res.data.url
     ElMessage.success('Logo 已上传')
   } catch (error) {
     console.error(error)
   }
 }
+
+const uploadBackgroundFile = (file) => uploadBackground(file)
+const uploadLogoFile = (file) => uploadLogo(file)
 
 onMounted(load)
 </script>

@@ -8,7 +8,7 @@
         <button class="btn-ghost" type="button" :disabled="loading" @click="load">刷新</button>
       </div>
       <div class="hero-actions">
-        <el-upload :show-file-list="false" :http-request="uploadAndOpen" accept="image/*"><button class="btn-ghost" type="button">上传图片</button></el-upload>
+        <FileUploadButton accept="image/*" @select="uploadAndOpenFile">上传图片</FileUploadButton>
         <button class="btn-primary" type="button" @click="open()">新增图片 URL</button>
       </div>
     </div>
@@ -34,7 +34,7 @@
         <div class="image-dialog-preview"><img v-if="form.url" :src="assetUrl(form.url)" alt="图片预览" /><div v-else>暂无预览</div></div>
         <el-form label-position="top" class="image-dialog-form">
           <el-form-item label="标题"><el-input v-model="form.title" placeholder="例如：首页横幅、站点 Logo" /></el-form-item>
-          <el-form-item label="图片 URL"><div class="inline-field"><el-input v-model="form.url" placeholder="上传图片或粘贴图片地址" /><el-upload :show-file-list="false" :http-request="uploadIntoForm" accept="image/*"><button class="btn-ghost" type="button">上传</button></el-upload></div></el-form-item>
+          <el-form-item label="图片 URL"><div class="inline-field"><el-input v-model="form.url" placeholder="上传图片或粘贴图片地址" /><FileUploadButton accept="image/*" @select="uploadIntoFormFile">上传</FileUploadButton></div></el-form-item>
           <el-form-item label="用途"><el-select v-model="form.type" style="width: 100%"><el-option v-for="item in imageTypes" :key="item.value" :label="item.label" :value="item.value" /></el-select></el-form-item>
           <el-form-item label="描述"><el-input v-model="form.description" type="textarea" :rows="3" /></el-form-item>
           <el-form-item label="排序"><el-input-number v-model="form.sort" :min="0" /></el-form-item>
@@ -50,6 +50,7 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { adminApi, uploadApi } from '../../api/blog'
+import FileUploadButton from '../../components/FileUploadButton.vue'
 import { useSiteStore } from '../../stores/site'
 import { normalizeAssetUrl } from '../../utils/assets'
 
@@ -73,8 +74,10 @@ const load = async () => { loading.value = true; try { const res = await adminAp
 const open = (row) => { Object.assign(form, row || emptyForm()); visible.value = true }
 const save = async () => { if (!form.title?.trim() || !form.url?.trim()) return ElMessage.warning('请填写标题和图片 URL'); try { await adminApi.saveImage({ ...form }); if (['LOGO', 'BACKGROUND', 'HERO'].includes(form.type)) await site.loadSite(true); visible.value = false; ElMessage.success('图片资源已保存'); await load() } catch (error) { console.error(error) } }
 const remove = async (row) => { await ElMessageBox.confirm('确认删除这条图片资源吗？', '删除图片', { type: 'warning' }); try { await adminApi.deleteImage(row.id); if (['LOGO', 'BACKGROUND', 'HERO'].includes(row.type)) await site.loadSite(true); ElMessage.success('图片资源已删除'); await load() } catch (error) { console.error(error) } }
-const uploadIntoForm = async (options) => { try { const res = await uploadApi.file(options.file); form.url = res.data.url; if (!form.title) form.title = fileTitle(res.data.name); ElMessage.success('上传成功') } catch (error) { console.error(error) } }
-const uploadAndOpen = async (options) => { try { const res = await uploadApi.file(options.file); await adminApi.saveImage({ ...emptyForm(), title: fileTitle(res.data.name), url: res.data.url }); ElMessage.success('图片已上传并保存到资源库'); await load() } catch (error) { console.error(error) } }
+const uploadIntoForm = async (file) => { try { const res = await uploadApi.file(file); form.url = res.data.url; if (!form.title) form.title = fileTitle(res.data.name); ElMessage.success('上传成功') } catch (error) { console.error(error) } }
+const uploadAndOpen = async (file) => { try { const res = await uploadApi.file(file); await adminApi.saveImage({ ...emptyForm(), title: fileTitle(res.data.name), url: res.data.url }); ElMessage.success('图片已上传并保存到资源库'); await load() } catch (error) { console.error(error) } }
+const uploadIntoFormFile = (file) => uploadIntoForm(file)
+const uploadAndOpenFile = (file) => uploadAndOpen(file)
 const copyUrl = async (url) => { if (!navigator.clipboard) return ElMessage.warning('当前浏览器不支持自动复制，请手动复制 URL'); try { await navigator.clipboard.writeText(url); ElMessage.success('图片 URL 已复制') } catch (error) { console.error(error) } }
 const assetUrl = (url) => normalizeAssetUrl(url)
 const fileTitle = (name) => String(name || '图片').replace(/\.[^.]+$/, '')

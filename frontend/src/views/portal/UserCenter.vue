@@ -39,7 +39,7 @@
             <el-form-item label="昵称"><el-input v-model="profile.nickname" /></el-form-item>
             <el-form-item label="邮箱"><el-input v-model="profile.email" /></el-form-item>
             <el-form-item label="头像 URL" class="field-full">
-              <div class="inline-field"><el-input v-model="profile.avatar" placeholder="上传头像或粘贴图片地址" /><el-upload :show-file-list="false" :http-request="(options) => uploadProfileFile(options, 'avatar')" accept="image/*"><button class="btn-ghost" type="button">上传头像</button></el-upload></div>
+              <div class="inline-field"><el-input v-model="profile.avatar" placeholder="上传头像或粘贴图片地址" /><FileUploadButton accept="image/*" @select="(file) => uploadProfileFile({ file }, 'avatar')">上传头像</FileUploadButton></div>
             </el-form-item>
           </el-form>
           <button class="btn-primary" type="button" @click="saveProfile">保存资料</button>
@@ -71,7 +71,7 @@
               <div class="cover-picker">
                 <img v-if="articleForm.coverUrl" :src="coverPreviewSrc" alt="文章封面" />
                 <div v-else class="cover-empty">封面预览</div>
-                <div class="cover-fields"><el-input v-model="articleForm.coverUrl" placeholder="上传封面或粘贴图片地址" /><el-upload :show-file-list="false" :http-request="(options) => uploadArticleFile(options, 'cover')" accept="image/*"><button class="btn-ghost" type="button">上传封面</button></el-upload></div>
+                <div class="cover-fields"><el-input v-model="articleForm.coverUrl" placeholder="上传封面或粘贴图片地址" /><FileUploadButton accept="image/*" @select="(file) => uploadArticleFile({ file }, 'cover')">上传封面</FileUploadButton></div>
               </div>
             </el-form-item>
             <el-form-item label="正文">
@@ -80,9 +80,9 @@
           </el-form>
 
           <div class="upload-row writer-tools">
-            <el-upload class="writer-upload-control" :show-file-list="false" :http-request="(options) => uploadArticleFile(options, 'image')" accept="image/*" :disabled="articleUploading"><button class="btn-ghost" type="button" :disabled="articleUploading">插入图片</button></el-upload>
-            <el-upload class="writer-upload-control" :show-file-list="false" :http-request="(options) => uploadArticleFile(options, 'video')" accept="video/*" :disabled="articleUploading"><button class="btn-ghost" type="button" :disabled="articleUploading">插入视频</button></el-upload>
-            <el-upload class="writer-upload-control" :show-file-list="false" :http-request="(options) => uploadArticleFile(options, 'file')" :disabled="articleUploading"><button class="btn-ghost" type="button" :disabled="articleUploading">插入附件</button></el-upload>
+            <FileUploadButton accept="image/*" :disabled="articleUploading" @select="(file) => uploadArticleFile({ file }, 'image')">插入图片</FileUploadButton>
+            <FileUploadButton accept="video/*" :disabled="articleUploading" @select="(file) => uploadArticleFile({ file }, 'video')">插入视频</FileUploadButton>
+            <FileUploadButton :disabled="articleUploading" @select="(file) => uploadArticleFile({ file }, 'file')">插入附件</FileUploadButton>
           </div>
           <div class="hero-actions writer-actions">
             <button class="btn-primary" type="button" @click="saveArticle('PUBLISHED')">发布文章</button>
@@ -120,12 +120,13 @@ import { computed, defineComponent, h, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElButton, ElMessage, ElMessageBox, ElTable, ElTableColumn, ElTag } from 'element-plus'
 import { QuillEditor } from '@vueup/vue-quill'
+import FileUploadButton from '../../components/FileUploadButton.vue'
 import PortalNav from '../../components/PortalNav.vue'
 import PortalFooter from '../../components/PortalFooter.vue'
 import { articleApi, portalApi, uploadApi, userApi } from '../../api/blog'
 import { useAuthStore } from '../../stores/auth'
 import { normalizeAssetUrl } from '../../utils/assets'
-import { ensureRichTextFormats, fileSnippet, imageSnippet, insertHtmlSnippet, isEmptyHtml, richToolbar, toEditableHtml, videoSnippet } from '../../utils/richText'
+import { ensureRichTextFormats, fileSnippet, imageSnippet, insertHtmlSnippet, isEmptyHtml, localizeRichTextToolbar, richToolbar, toEditableHtml, videoSnippet } from '../../utils/richText'
 
 const ArticleTable = defineComponent({
   props: { rows: { type: Array, default: () => [] }, statusText: Function, statusType: Function },
@@ -197,7 +198,7 @@ const saveArticle = async (status) => {
 }
 const resetArticleForm = () => { editingId.value = null; Object.assign(articleForm, { title: '', summary: '', coverUrl: '', content: '', contentType: 'HTML', categoryId: null, tagIds: [] }) }
 const editArticle = async (row) => { await ensureRichTextFormats(); editingId.value = row.id; Object.assign(articleForm, { title: row.title || '', summary: row.summary || '', coverUrl: row.coverUrl || '', content: toEditableHtml(row.content, row.contentType), contentType: 'HTML', categoryId: row.categoryId || null, tagIds: row.tags?.map((tag) => tag.id) || [] }); activeSection.value = 'write' }
-const onEditorReady = (quill) => { editorRef.value = quill; lastSelection.value = null }
+const onEditorReady = (quill) => { editorRef.value = quill; lastSelection.value = null; localizeRichTextToolbar(quill) }
 const onSelectionChange = ({ range }) => { if (range) lastSelection.value = range }
 const getInsertIndex = () => { const quill = editorRef.value; if (quill) { const selection = quill.getSelection(true) || lastSelection.value; if (selection) return selection.index; return Math.max(quill.getLength() - 1, 0) } return 0 }
 const removeArticle = async (row) => { await ElMessageBox.confirm(`确认删除《${row.title}》吗？`, '删除文章', { type: 'warning' }); await articleApi.removeMine(row.id); if (editingId.value === row.id) resetArticleForm(); ElMessage.success('文章已删除'); loadMine(Math.min(articlePage.current, pageCount(articlePage.total - 1, articlePage.size))) }
