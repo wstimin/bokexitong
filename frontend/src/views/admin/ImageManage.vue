@@ -98,7 +98,7 @@ const enabledBool = computed({
   set: (value) => { form.enabled = value ? 1 : 0 }
 })
 
-const emptyForm = () => ({ id: null, title: '', url: '', type: query.type || 'LOGO', description: '', sort: 0, enabled: 1 })
+const emptyForm = () => ({ id: null, title: '', url: '', type: query.type || 'COVER', description: '', sort: 0, enabled: 1 })
 
 const load = async () => {
   loading.value = true
@@ -143,12 +143,15 @@ const uploadIntoForm = async (options) => {
 }
 
 const uploadAndOpen = async (options) => {
-  Object.assign(form, emptyForm())
   const res = await uploadApi.file(options.file)
-  form.url = res.data.url
-  form.title = fileTitle(res.data.name)
-  visible.value = true
-  ElMessage.success('已上传，请确认用途后保存')
+  const payload = {
+    ...emptyForm(),
+    title: fileTitle(res.data.name),
+    url: res.data.url
+  }
+  await adminApi.saveImage(payload)
+  ElMessage.success('图片已上传并保存到资源库')
+  await load()
 }
 
 const copyUrl = async (url) => {
