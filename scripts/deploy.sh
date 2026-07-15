@@ -299,7 +299,7 @@ wait_for_mysql() {
   cd "$PROJECT_DIR"
   info "Waiting for MySQL to be ready..."
   for _ in $(seq 1 60); do
-    if compose_cmd exec -T mysql sh -c 'mysql --protocol=TCP -h127.0.0.1 -P3306 -uroot -p"$MYSQL_ROOT_PASSWORD" personal_blog -e "SELECT 1"' >/dev/null 2>&1; then
+    if compose_cmd exec -T mysql sh -c 'mysql --protocol=TCP -h127.0.0.1 -P3306 --default-character-set=utf8mb4 -uroot -p"$MYSQL_ROOT_PASSWORD" personal_blog -e "SELECT 1"' >/dev/null 2>&1; then
       ok "MySQL is ready."
       return
     fi
@@ -313,7 +313,7 @@ run_sql_file() {
   [ -f "$sql_file" ] || return 0
   info "Applying database upgrade: $(basename "$sql_file")"
   for attempt in $(seq 1 5); do
-    if compose_cmd exec -T mysql sh -c 'mysql --protocol=TCP -h127.0.0.1 -P3306 -uroot -p"$MYSQL_ROOT_PASSWORD" personal_blog' < "$sql_file"; then
+    if compose_cmd exec -T mysql sh -c 'mysql --protocol=TCP -h127.0.0.1 -P3306 --default-character-set=utf8mb4 -uroot -p"$MYSQL_ROOT_PASSWORD" personal_blog' < "$sql_file"; then
       return
     fi
     [ "$attempt" -lt 5 ] || break

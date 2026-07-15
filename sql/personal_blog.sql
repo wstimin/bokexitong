@@ -150,7 +150,7 @@ CREATE TABLE email_code (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 INSERT INTO blog_user(username, nickname, password, avatar, email, role, status)
-VALUES ('admin', '站长', '{noop}123456', '', NULL, 'ADMIN', 1);
+VALUES ('admin', CONVERT(0xE7AB99E995BF USING utf8mb4), '{noop}123456', '', NULL, 'ADMIN', 1);
 
 INSERT INTO site_setting(setting_key, setting_value, description) VALUES
 ('siteName', '博客系统', '站点名称'),

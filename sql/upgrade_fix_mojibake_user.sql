@@ -1,7 +1,7 @@
 USE personal_blog;
 
 UPDATE blog_user
-SET nickname = '站长'
+SET nickname = CONVERT(0xE7AB99E995BF USING utf8mb4)
 WHERE username = 'admin'
   AND role = 'ADMIN'
   AND (
