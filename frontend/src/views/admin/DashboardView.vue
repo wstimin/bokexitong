@@ -135,11 +135,15 @@ const renderCharts = () => {
 const resizeCharts = () => charts.forEach((chart) => chart.resize())
 
 onMounted(async () => {
-  const res = await adminApi.dashboard()
-  stats.value = res.data || {}
-  await nextTick()
-  renderCharts()
-  window.addEventListener('resize', resizeCharts)
+  try {
+    const res = await adminApi.dashboard()
+    stats.value = res.data || {}
+    await nextTick()
+    renderCharts()
+    window.addEventListener('resize', resizeCharts)
+  } catch (error) {
+    console.error(error)
+  }
 })
 
 onBeforeUnmount(() => {

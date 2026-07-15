@@ -4,6 +4,14 @@ import { ElMessage } from 'element-plus'
 let unauthorizedHandler = null
 let unauthorizedNotified = false
 
+const isAdminPath = (path = '') => {
+  if (!path) return false
+  if (path.startsWith('/admin')) return true
+  if (path === '/login' || path === '/') return false
+  const adminLoginPath = localStorage.getItem('blog_admin_login_path') || '/admin/login'
+  return path === adminLoginPath
+}
+
 export const setUnauthorizedHandler = (handler) => {
   unauthorizedHandler = handler
 }
@@ -17,7 +25,7 @@ http.interceptors.request.use((config) => {
   const currentPath = window.location.pathname || ''
   const adminToken = localStorage.getItem('blog_admin_token') || ''
   const userToken = localStorage.getItem('blog_user_token') || localStorage.getItem('blog_token') || ''
-  const token = currentPath.startsWith('/admin') ? adminToken : userToken
+  const token = isAdminPath(currentPath) ? adminToken : userToken
   if (token) config.headers.Authorization = `Bearer ${token}`
   return config
 })

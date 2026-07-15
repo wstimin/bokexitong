@@ -23,8 +23,8 @@
         </div>
 
         <div class="hero-actions detail-actions">
-          <button class="btn-primary" @click="like">点赞</button>
-          <button class="btn-ghost" @click="favorite">收藏</button>
+          <button class="btn-primary" type="button" @click="like">点赞</button>
+          <button class="btn-ghost" type="button" @click="favorite">收藏</button>
         </div>
 
         <div class="article-body" v-html="html"></div>
@@ -36,7 +36,7 @@
           <span class="section-subtitle">评论通过审核后会公开显示</span>
         </div>
         <el-input v-model="commentText" type="textarea" :rows="3" placeholder="写下你的评论" />
-        <button class="btn-primary comment-submit" :disabled="!commentText.trim()" @click="submitComment">提交评论</button>
+        <button class="btn-primary comment-submit" type="button" :disabled="!commentText.trim()" @click="submitComment">提交评论</button>
         <div v-if="comments.length" class="comment-list">
           <div v-for="item in comments" :key="item.id" class="comment-item">
             <div class="meta">{{ formatDate(item.createdAt) }}</div>
@@ -88,26 +88,42 @@ const requireLogin = () => {
 
 const like = async () => {
   if (!requireLogin()) return
-  const res = await articleApi.like(route.params.id)
-  article.value.likeCount = res.data.count
-  ElMessage.success(res.data.active ? '已点赞' : '已取消点赞')
+  try {
+    const res = await articleApi.like(route.params.id)
+    article.value.likeCount = res.data.count
+    ElMessage.success(res.data.active ? '已点赞' : '已取消点赞')
+  } catch (error) {
+    console.error(error)
+  }
 }
 
 const favorite = async () => {
   if (!requireLogin()) return
-  const res = await articleApi.favorite(route.params.id)
-  article.value.favoriteCount = res.data.count
-  ElMessage.success(res.data.active ? '已收藏' : '已取消收藏')
+  try {
+    const res = await articleApi.favorite(route.params.id)
+    article.value.favoriteCount = res.data.count
+    ElMessage.success(res.data.active ? '已收藏' : '已取消收藏')
+  } catch (error) {
+    console.error(error)
+  }
 }
 
 const submitComment = async () => {
   if (!requireLogin() || !commentText.value.trim()) return
-  await commentApi.save({ articleId: route.params.id, content: commentText.value.trim() })
-  commentText.value = ''
-  ElMessage.success('评论已提交，审核通过后会显示')
+  try {
+    await commentApi.save({ articleId: route.params.id, content: commentText.value.trim() })
+    commentText.value = ''
+    ElMessage.success('评论已提交，审核通过后会显示')
+  } catch (error) {
+    console.error(error)
+  }
 }
 
 const formatDate = (date) => String(date || '').slice(0, 16) || '-'
 
-onMounted(load)
+onMounted(() => {
+  load().catch((error) => {
+    console.error(error)
+  })
+})
 </script>

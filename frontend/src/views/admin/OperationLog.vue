@@ -27,7 +27,7 @@
           <el-option label="站点设置" value="SITE_SETTING" />
           <el-option label="邮箱设置" value="MAIL_SETTING" />
         </el-select>
-        <button class="btn-ghost" :disabled="loading" @click="search">查询</button>
+        <button class="btn-ghost" type="button" :disabled="loading" @click="search">查询</button>
       </div>
     </div>
 
@@ -74,6 +74,8 @@ const load = async () => {
     const res = await adminApi.operationLogs(cleanQuery())
     rows.value = res.data.records || []
     total.value = res.data.total || 0
+  } catch (error) {
+    console.error(error)
   } finally {
     loading.value = false
   }

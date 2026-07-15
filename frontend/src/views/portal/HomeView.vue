@@ -67,8 +67,8 @@
               @keyup.enter="searchArticles"
               @clear="searchArticles"
             />
-            <button class="btn-ghost" :disabled="articleLoading" @click="searchArticles">搜索</button>
-            <button v-if="hasActiveFilter" class="btn-ghost" :disabled="articleLoading" @click="resetFilters">重置</button>
+            <button class="btn-ghost" type="button" :disabled="articleLoading" @click="searchArticles">搜索</button>
+            <button v-if="hasActiveFilter" class="btn-ghost" type="button" :disabled="articleLoading" @click="resetFilters">重置</button>
           </div>
         </div>
 
@@ -93,13 +93,14 @@
           <h3>分类</h3>
           <el-input v-model="categoryKeyword" placeholder="搜索分类" clearable size="small" class="category-search" />
           <div class="category-list category-scroll">
-            <button class="category-item category-button" :class="{ active: selectedCategoryId === null }" @click="selectCategory(null)">
+            <button class="category-item category-button" type="button" :class="{ active: selectedCategoryId === null }" @click="selectCategory(null)">
               <span>全部文章</span><span>{{ articlePage.total }}</span>
             </button>
             <button
               v-for="item in filteredCategories"
               :key="item.id"
               class="category-item category-button"
+              type="button"
               :class="{ active: selectedCategoryId === item.id }"
               @click="selectCategory(item.id)"
             >
@@ -115,6 +116,7 @@
               v-for="tag in tags"
               :key="tag.id"
               class="anime-tag tag-button"
+              type="button"
               :class="{ active: selectedTagId === tag.id }"
               :style="{ color: tag.color }"
               @click="selectTag(tag)"
@@ -251,7 +253,11 @@ const nextRecommend = () => {
 }
 
 onMounted(async () => {
-  await loadHomeMeta()
+  try {
+    await loadHomeMeta()
+  } catch (error) {
+    console.error(error)
+  }
   await loadArticles()
 })
 </script>

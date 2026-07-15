@@ -7,9 +7,9 @@
           <el-option label="已通过" value="APPROVED" />
           <el-option label="已驳回" value="REJECTED" />
         </el-select>
-        <button class="btn-ghost" :disabled="loading" @click="search">刷新</button>
+        <button class="btn-ghost" type="button" :disabled="loading" @click="search">刷新</button>
       </div>
-      <button class="btn-ghost danger-action" :disabled="!selected.length || loading" @click="removeSelected">批量删除</button>
+      <button class="btn-ghost danger-action" type="button" :disabled="!selected.length || loading" @click="removeSelected">批量删除</button>
     </div>
 
     <div class="table-scroll">
@@ -60,6 +60,9 @@ const load = async () => {
     const res = await adminApi.comments({ ...query, status: query.status || undefined })
     rows.value = res.data.records || []
     total.value = res.data.total || 0
+  } catch (error) {
+    console.error(error)
+    ElMessage.error('评论列表加载失败')
   } finally {
     loading.value = false
   }
@@ -82,9 +85,13 @@ const audit = async (id, status) => {
     })
     reason = result.value.trim()
   }
-  await adminApi.auditComment(id, status, reason || undefined)
-  ElMessage.success(`评论已${statusText(status)}`)
-  load()
+  try {
+    await adminApi.auditComment(id, status, reason || undefined)
+    ElMessage.success(`评论已${statusText(status)}`)
+    await load()
+  } catch (error) {
+    console.error(error)
+  }
 }
 
 const remove = async (id) => {
@@ -98,10 +105,14 @@ const removeSelected = async () => {
 const removeIds = async (ids, message) => {
   if (!ids.length) return
   await ElMessageBox.confirm(message, '删除评论', { type: 'warning' })
-  await Promise.all(ids.map((id) => adminApi.deleteComment(id)))
-  ElMessage.success('评论已删除')
-  selected.value = []
-  load()
+  try {
+    await Promise.all(ids.map((id) => adminApi.deleteComment(id)))
+    ElMessage.success('评论已删除')
+    selected.value = []
+    await load()
+  } catch (error) {
+    console.error(error)
+  }
 }
 
 const statusText = (status) => ({ APPROVED: '通过', REJECTED: '驳回', PENDING: '待审核' }[status] || status || '-')

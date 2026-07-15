@@ -69,24 +69,41 @@ const category = reactive({ id: null, name: '', description: '', sort: 0 })
 const tag = reactive({ id: null, name: '', color: '#2f80ed' })
 
 const load = async () => {
-  categories.value = (await adminApi.categories({ current: 1, size: 50 })).data.records || []
-  tags.value = (await adminApi.tags({ current: 1, size: 50 })).data.records || []
+  try {
+    const [categoryRes, tagRes] = await Promise.all([
+      adminApi.categories({ current: 1, size: 50 }),
+      adminApi.tags({ current: 1, size: 50 })
+    ])
+    categories.value = categoryRes.data.records || []
+    tags.value = tagRes.data.records || []
+  } catch (error) {
+    console.error(error)
+    ElMessage.error('分类和标签加载失败')
+  }
 }
 
 const saveCategory = async () => {
   if (!category.name.trim()) return ElMessage.warning('请填写分类名称')
-  await adminApi.saveCategory({ ...category })
-  resetCategory()
-  ElMessage.success('分类已保存')
-  load()
+  try {
+    await adminApi.saveCategory({ ...category })
+    resetCategory()
+    ElMessage.success('分类已保存')
+    await load()
+  } catch (error) {
+    console.error(error)
+  }
 }
 
 const saveTag = async () => {
   if (!tag.name.trim()) return ElMessage.warning('请填写标签名称')
-  await adminApi.saveTag({ ...tag })
-  resetTag()
-  ElMessage.success('标签已保存')
-  load()
+  try {
+    await adminApi.saveTag({ ...tag })
+    resetTag()
+    ElMessage.success('标签已保存')
+    await load()
+  } catch (error) {
+    console.error(error)
+  }
 }
 
 const editCategory = (row) => {
@@ -116,18 +133,26 @@ const resetTag = () => {
 
 const removeCategory = async (id) => {
   await ElMessageBox.confirm('确认删除这个分类吗？', '删除分类', { type: 'warning' })
-  await adminApi.deleteCategory(id)
-  if (category.id === id) resetCategory()
-  ElMessage.success('分类已删除')
-  load()
+  try {
+    await adminApi.deleteCategory(id)
+    if (category.id === id) resetCategory()
+    ElMessage.success('分类已删除')
+    await load()
+  } catch (error) {
+    console.error(error)
+  }
 }
 
 const removeTag = async (id) => {
   await ElMessageBox.confirm('确认删除这个标签吗？', '删除标签', { type: 'warning' })
-  await adminApi.deleteTag(id)
-  if (tag.id === id) resetTag()
-  ElMessage.success('标签已删除')
-  load()
+  try {
+    await adminApi.deleteTag(id)
+    if (tag.id === id) resetTag()
+    ElMessage.success('标签已删除')
+    await load()
+  } catch (error) {
+    console.error(error)
+  }
 }
 
 onMounted(load)

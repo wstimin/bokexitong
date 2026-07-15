@@ -5,13 +5,13 @@
         <el-select v-model="query.type" placeholder="用途筛选" clearable style="width: 170px" @change="load">
           <el-option v-for="item in imageTypes" :key="item.value" :label="item.label" :value="item.value" />
         </el-select>
-        <button class="btn-ghost" :disabled="loading" @click="load">刷新</button>
+        <button class="btn-ghost" type="button" :disabled="loading" @click="load">刷新</button>
       </div>
       <div class="hero-actions">
         <el-upload :show-file-list="false" :http-request="uploadAndOpen" accept="image/*">
           <button class="btn-ghost" type="button">上传图片</button>
         </el-upload>
-        <button class="btn-primary" @click="open()">新增图片 URL</button>
+        <button class="btn-primary" type="button" @click="open()">新增图片 URL</button>
       </div>
     </div>
 
@@ -105,6 +105,9 @@ const load = async () => {
   try {
     const res = await adminApi.images({ current: 1, size: 50, type: query.type || undefined })
     rows.value = res.data.records || []
+  } catch (error) {
+    console.error(error)
+    ElMessage.error('图片资源加载失败')
   } finally {
     loading.value = false
   }
@@ -120,38 +123,54 @@ const save = async () => {
     ElMessage.warning('请填写标题和图片 URL')
     return
   }
-  await adminApi.saveImage({ ...form })
-  if (form.type === 'LOGO') await site.loadSite(true)
-  visible.value = false
-  ElMessage.success('图片资源已保存')
-  load()
+  try {
+    await adminApi.saveImage({ ...form })
+    if (form.type === 'LOGO') await site.loadSite(true)
+    visible.value = false
+    ElMessage.success('图片资源已保存')
+    await load()
+  } catch (error) {
+    console.error(error)
+  }
 }
 
 const remove = async (row) => {
   await ElMessageBox.confirm('确认删除这条图片资源吗？', '删除图片', { type: 'warning' })
-  await adminApi.deleteImage(row.id)
-  if (row.type === 'LOGO') await site.loadSite(true)
-  ElMessage.success('图片资源已删除')
-  load()
+  try {
+    await adminApi.deleteImage(row.id)
+    if (row.type === 'LOGO') await site.loadSite(true)
+    ElMessage.success('图片资源已删除')
+    await load()
+  } catch (error) {
+    console.error(error)
+  }
 }
 
 const uploadIntoForm = async (options) => {
-  const res = await uploadApi.file(options.file)
-  form.url = res.data.url
-  if (!form.title) form.title = fileTitle(res.data.name)
-  ElMessage.success('上传成功')
+  try {
+    const res = await uploadApi.file(options.file)
+    form.url = res.data.url
+    if (!form.title) form.title = fileTitle(res.data.name)
+    ElMessage.success('上传成功')
+  } catch (error) {
+    console.error(error)
+  }
 }
 
 const uploadAndOpen = async (options) => {
-  const res = await uploadApi.file(options.file)
-  const payload = {
-    ...emptyForm(),
-    title: fileTitle(res.data.name),
-    url: res.data.url
+  try {
+    const res = await uploadApi.file(options.file)
+    const payload = {
+      ...emptyForm(),
+      title: fileTitle(res.data.name),
+      url: res.data.url
+    }
+    await adminApi.saveImage(payload)
+    ElMessage.success('图片已上传并保存到资源库')
+    await load()
+  } catch (error) {
+    console.error(error)
   }
-  await adminApi.saveImage(payload)
-  ElMessage.success('图片已上传并保存到资源库')
-  await load()
 }
 
 const copyUrl = async (url) => {
@@ -159,8 +178,12 @@ const copyUrl = async (url) => {
     ElMessage.warning('当前浏览器不支持自动复制，请手动复制 URL')
     return
   }
-  await navigator.clipboard.writeText(url)
-  ElMessage.success('图片 URL 已复制')
+  try {
+    await navigator.clipboard.writeText(url)
+    ElMessage.success('图片 URL 已复制')
+  } catch (error) {
+    console.error(error)
+  }
 }
 
 const assetUrl = (url) => normalizeAssetUrl(url)

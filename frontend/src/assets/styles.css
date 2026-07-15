@@ -113,8 +113,41 @@ a { color: inherit; text-decoration: none; }
 .setting-group::before,
 .setting-switch-field::before,
 .rich-editor::before {
-  content: none;
-  display: none;
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: conic-gradient(from var(--border-angle), #f45b9b, #4f8df7, #2fc5b5, #f2b84b, #f45b9b);
+  pointer-events: none;
+  opacity: .85;
+  z-index: 0;
+  animation: borderFlow 9s linear infinite;
+}
+.recommend-panel::after,
+.article-card::after,
+.image-resource-card::after,
+.admin-card::after,
+.form-panel::after,
+.login-box::after,
+.stat-card::after,
+.side-panel::after,
+.detail-article::after,
+.shortcut-item::after,
+.todo-item::after,
+.comment-item::after,
+.user-profile-card::after,
+.user-menu-item::after,
+.writer-preview-box::after,
+.setting-group::after,
+.setting-switch-field::after,
+.rich-editor::after {
+  content: "";
+  position: absolute;
+  inset: 2px;
+  border-radius: max(6px, calc(8px - 2px));
+  background: var(--flow-fill, rgba(255,255,255,.24));
+  pointer-events: none;
+  z-index: 1;
 }
 .recommend-panel > *,
 .article-card > *,
@@ -135,7 +168,7 @@ a { color: inherit; text-decoration: none; }
 .setting-switch-field > *,
 .rich-editor > * {
   position: relative;
-  z-index: 1;
+  z-index: 2;
 }
 .recommend-head { display: flex; justify-content: space-between; gap: 12px; align-items: center; margin-bottom: 12px; color: #252235; }
 .recommend-head strong { display: block; margin-top: 2px; font-size: 13px; color: var(--muted); }
@@ -184,6 +217,7 @@ a { color: inherit; text-decoration: none; }
   box-shadow: 0 16px 34px rgba(32, 37, 58, .1);
   backdrop-filter: blur(18px) saturate(150%);
   -webkit-backdrop-filter: blur(18px) saturate(150%);
+  overflow: hidden;
 }
 .article-card { overflow: hidden; transition: transform .2s ease, box-shadow .2s ease; }
 .article-card:hover { transform: translateY(-3px); box-shadow: 0 24px 48px rgba(32, 37, 58, .14); }
@@ -482,31 +516,6 @@ a { color: inherit; text-decoration: none; }
 .user-action-card { cursor: pointer; text-align: left; font: inherit; }
 .user-action-card strong { display: block; }
 .user-action-card span { display: block; }
-
-.recommend-panel,
-.article-card,
-.image-resource-card,
-.admin-card,
-.form-panel,
-.login-box,
-.stat-card,
-.side-panel,
-.detail-article,
-.shortcut-item,
-.todo-item,
-.comment-item,
-.user-profile-card,
-.user-menu-item,
-.writer-preview-box,
-.setting-group,
-.setting-switch-field,
-.rich-editor {
-  border: 2px solid transparent;
-  background:
-    linear-gradient(var(--flow-fill, rgba(255,255,255,.24)), var(--flow-fill, rgba(255,255,255,.24))) padding-box,
-    conic-gradient(from var(--border-angle), #f45b9b, #4f8df7, #2fc5b5, #f2b84b, #f45b9b) border-box;
-  animation: borderFlow 9s linear infinite;
-}
 
 @keyframes borderFlow {
   to { --border-angle: 360deg; }

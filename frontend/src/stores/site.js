@@ -31,7 +31,7 @@ export const useSiteStore = defineStore('site', {
     icpBeian: '',
     footerText: '',
     contactHtml: '',
-    adminLoginPath: '/admin/login',
+    adminLoginPath: localStorage.getItem('blog_admin_login_path') || '/admin/login',
     loaded: false,
     loading: false
   }),
@@ -60,6 +60,7 @@ export const useSiteStore = defineStore('site', {
         this.footerText = settings.footerText || ''
         this.contactHtml = settings.contactHtml || ''
         this.adminLoginPath = settings.adminLoginPath || '/admin/login'
+        localStorage.setItem('blog_admin_login_path', this.adminLoginPath)
         this.loaded = true
         this.applyHead()
       } catch (error) {

@@ -15,8 +15,8 @@
           <el-option label="正常" :value="1" />
           <el-option label="封禁" :value="0" />
         </el-select>
-        <button class="btn-ghost" :disabled="loading" @click="searchUsers">查询</button>
-        <button class="btn-primary" :disabled="actionLoading" @click="openCreate">新增用户</button>
+        <button class="btn-ghost" type="button" :disabled="loading" @click="searchUsers">查询</button>
+        <button class="btn-primary" type="button" :disabled="actionLoading" @click="openCreate">新增用户</button>
       </div>
     </div>
 
@@ -69,8 +69,8 @@
         <el-form-item label="状态"><el-switch v-model="statusBool" active-text="正常" inactive-text="封禁" /></el-form-item>
       </el-form>
       <template #footer>
-        <button class="btn-ghost" :disabled="actionLoading" @click="editVisible = false">取消</button>
-        <button class="btn-primary" :disabled="actionLoading" @click="saveEdit">保存</button>
+        <button class="btn-ghost" type="button" :disabled="actionLoading" @click="editVisible = false">取消</button>
+        <button class="btn-primary" type="button" :disabled="actionLoading" @click="saveEdit">保存</button>
       </template>
     </el-dialog>
 
@@ -102,8 +102,8 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <button class="btn-ghost" :disabled="actionLoading" @click="createVisible = false">取消</button>
-        <button class="btn-primary" :disabled="actionLoading" @click="createUser">创建用户</button>
+        <button class="btn-ghost" type="button" :disabled="actionLoading" @click="createVisible = false">取消</button>
+        <button class="btn-primary" type="button" :disabled="actionLoading" @click="createUser">创建用户</button>
       </template>
     </el-dialog>
 
@@ -112,8 +112,8 @@
         <el-form-item label="新密码"><el-input v-model="newPassword" type="password" show-password /></el-form-item>
       </el-form>
       <template #footer>
-        <button class="btn-ghost" :disabled="actionLoading" @click="passwordVisible = false">取消</button>
-        <button class="btn-primary" :disabled="actionLoading" @click="resetPassword">保存</button>
+        <button class="btn-ghost" type="button" :disabled="actionLoading" @click="passwordVisible = false">取消</button>
+        <button class="btn-primary" type="button" :disabled="actionLoading" @click="resetPassword">保存</button>
       </template>
     </el-dialog>
   </section>
@@ -160,6 +160,9 @@ const load = async () => {
     const res = await adminApi.users(cleanQuery())
     rows.value = res.data.records || []
     total.value = res.data.total || 0
+  } catch (error) {
+    console.error(error)
+    ElMessage.error('用户列表加载失败')
   } finally {
     loading.value = false
   }
@@ -190,6 +193,8 @@ const createUser = async () => {
     createVisible.value = false
     ElMessage.success('用户已创建')
     await load()
+  } catch (error) {
+    console.error(error)
   } finally {
     actionLoading.value = false
   }
@@ -214,6 +219,8 @@ const saveEdit = async () => {
     editVisible.value = false
     ElMessage.success('用户资料已更新')
     await load()
+  } catch (error) {
+    console.error(error)
   } finally {
     actionLoading.value = false
   }
@@ -235,6 +242,8 @@ const resetPassword = async () => {
     await adminApi.resetUserPassword(currentId.value, { newPassword: newPassword.value })
     passwordVisible.value = false
     ElMessage.success('密码已重置')
+  } catch (error) {
+    console.error(error)
   } finally {
     actionLoading.value = false
   }
@@ -246,6 +255,8 @@ const setStatus = async (id, status) => {
     await adminApi.userStatus(id, status)
     ElMessage.success(status === 1 ? '用户已解封' : '用户已封禁')
     await load()
+  } catch (error) {
+    console.error(error)
   } finally {
     actionLoading.value = false
   }
@@ -258,6 +269,8 @@ const remove = async (id) => {
     await adminApi.deleteUser(id)
     ElMessage.success('用户已删除')
     await load()
+  } catch (error) {
+    console.error(error)
   } finally {
     actionLoading.value = false
   }

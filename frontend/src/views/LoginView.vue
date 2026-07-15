@@ -72,7 +72,7 @@
         </template>
       </el-form>
 
-      <button class="btn-primary auth-submit" :disabled="submitDisabled" @click="submit">
+      <button class="btn-primary auth-submit" type="button" :disabled="submitDisabled" @click="submit">
         {{ submitText }}
       </button>
 
@@ -121,7 +121,11 @@ const submitDisabled = computed(() => loading.value || (isRegister.value && !sit
 const canSendRegisterCode = computed(() => site.allowRegister && !sendingScene.value && !registerCountdown.value)
 const canSendResetCode = computed(() => !sendingScene.value && !resetCountdown.value)
 
-onMounted(() => site.loadSite())
+onMounted(() => {
+  site.loadSite().catch((error) => {
+    console.error(error)
+  })
+})
 
 const redirectTo = () => route.query.redirect || (isAdminLogin.value ? '/admin/dashboard' : '/user')
 
@@ -150,6 +154,8 @@ const sendCode = async (scene) => {
     await authApi.sendEmailCode({ email: form.email, scene })
     startCountdown(scene === 'REGISTER' ? registerCountdown : resetCountdown)
     ElMessage.success('验证码已发送，请查收邮箱')
+  } catch (error) {
+    console.error(error)
   } finally {
     sendingScene.value = ''
   }
@@ -223,6 +229,8 @@ const submit = async () => {
     if (isRegister.value) await register()
     else if (isForgot.value) await resetPassword()
     else await login()
+  } catch (error) {
+    console.error(error)
   } finally {
     loading.value = false
   }

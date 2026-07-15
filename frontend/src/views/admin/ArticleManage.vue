@@ -10,9 +10,9 @@
         <el-select v-model="query.status" placeholder="状态" clearable class="filter-select" @change="search">
           <el-option v-for="item in statusOptions" :key="item.value" :label="item.label" :value="item.value" />
         </el-select>
-        <button class="btn-ghost" :disabled="loading" @click="search">查询</button>
-        <button class="btn-primary" @click="openEditor()">新增文章</button>
-        <button class="btn-ghost danger-action" :disabled="!selected.length || loading" @click="removeSelected">批量删除</button>
+        <button class="btn-ghost" type="button" :disabled="loading" @click="search">查询</button>
+        <button class="btn-primary" type="button" @click="openEditor()">新增文章</button>
+        <button class="btn-ghost danger-action" type="button" :disabled="!selected.length || loading" @click="removeSelected">批量删除</button>
       </div>
     </div>
 
@@ -124,10 +124,10 @@
       </div>
 
       <template #footer>
-        <button class="btn-ghost" @click="editorVisible = false">取消</button>
-        <button class="btn-ghost" :disabled="saving" @click="saveArticle('DRAFT')">保存草稿</button>
-        <button class="btn-ghost" :disabled="saving" @click="saveArticle('PENDING')">提交审核</button>
-        <button class="btn-primary" :disabled="saving" @click="saveArticle('PUBLISHED')">发布文章</button>
+        <button class="btn-ghost" type="button" @click="editorVisible = false">取消</button>
+        <button class="btn-ghost" type="button" :disabled="saving" @click="saveArticle('DRAFT')">保存草稿</button>
+        <button class="btn-ghost" type="button" :disabled="saving" @click="saveArticle('PENDING')">提交审核</button>
+        <button class="btn-primary" type="button" :disabled="saving" @click="saveArticle('PUBLISHED')">发布文章</button>
       </template>
     </el-dialog>
 
@@ -154,10 +154,10 @@
         <div class="article-body" v-html="previewHtml"></div>
       </div>
       <template #footer>
-        <button class="btn-ghost" @click="previewVisible = false">关闭</button>
-        <button class="btn-ghost" @click="openEditor(previewArticle)">编辑</button>
-        <button v-if="canPublish(previewArticle.status)" class="btn-primary" @click="changeStatus(previewArticle, 'PUBLISHED')">发布</button>
-        <button v-if="previewArticle.status === 'PENDING'" class="btn-ghost danger-action" @click="changeStatus(previewArticle, 'REJECTED')">驳回</button>
+        <button class="btn-ghost" type="button" @click="previewVisible = false">关闭</button>
+        <button class="btn-ghost" type="button" @click="openEditor(previewArticle)">编辑</button>
+        <button v-if="canPublish(previewArticle.status)" class="btn-primary" type="button" @click="changeStatus(previewArticle, 'PUBLISHED')">发布</button>
+        <button v-if="previewArticle.status === 'PENDING'" class="btn-ghost danger-action" type="button" @click="changeStatus(previewArticle, 'REJECTED')">驳回</button>
       </template>
     </el-dialog>
   </section>
@@ -218,18 +218,25 @@ const load = async () => {
     })
     rows.value = res.data.records || []
     total.value = res.data.total || 0
+  } catch (error) {
+    console.error(error)
+    ElMessage.error('文章列表加载失败')
   } finally {
     loading.value = false
   }
 }
 
 const loadMeta = async () => {
-  const [categoryRes, tagRes] = await Promise.all([
-    adminApi.categories({ current: 1, size: 200 }),
-    adminApi.tags({ current: 1, size: 200 })
-  ])
-  categories.value = categoryRes.data.records || []
-  tags.value = tagRes.data.records || []
+  try {
+    const [categoryRes, tagRes] = await Promise.all([
+      adminApi.categories({ current: 1, size: 200 }),
+      adminApi.tags({ current: 1, size: 200 })
+    ])
+    categories.value = categoryRes.data.records || []
+    tags.value = tagRes.data.records || []
+  } catch (error) {
+    console.error(error)
+  }
 }
 
 const search = () => {
@@ -238,14 +245,22 @@ const search = () => {
 }
 
 const openPreview = async (row) => {
-  const res = await articleApi.adminDetail(row.id)
-  previewArticle.value = res.data || row
+  previewArticle.value = row
   previewVisible.value = true
+  try {
+    const res = await articleApi.adminDetail(row.id)
+    previewArticle.value = res.data || row
+  } catch (error) {
+    console.error(error)
+  }
 }
 
 const openEditor = async (row) => {
   resetForm()
-  if (row?.id) {
+  previewVisible.value = false
+  editorVisible.value = true
+  if (!row?.id) return
+  try {
     const res = await articleApi.adminDetail(row.id)
     const detail = res.data || row
     editingId.value = detail.id
@@ -260,9 +275,9 @@ const openEditor = async (row) => {
       recommended: detail.recommended || 0,
       recommendSort: detail.recommendSort || 0
     })
+  } catch (error) {
+    console.error(error)
   }
-  previewVisible.value = false
-  editorVisible.value = true
 }
 
 const resetForm = () => {
@@ -290,25 +305,31 @@ const saveArticle = async (status) => {
     ElMessage.success(status === 'PUBLISHED' ? '文章已发布' : '文章已保存')
     editorVisible.value = false
     resetForm()
-    load()
+    await load()
+  } catch (error) {
+    console.error(error)
   } finally {
     saving.value = false
   }
 }
 
 const uploadFile = async (options, type) => {
-  const res = await uploadApi.file(options.file)
-  const { url, name } = res.data
-  if (type === 'cover') {
-    form.coverUrl = url
-  } else if (type === 'image') {
-    insertSnippet(imageSnippet(url, name))
-  } else if (type === 'video') {
-    insertSnippet(videoSnippet(url, name))
-  } else {
-    insertSnippet(fileSnippet(url, name))
+  try {
+    const res = await uploadApi.file(options.file)
+    const { url, name } = res.data
+    if (type === 'cover') {
+      form.coverUrl = url
+    } else if (type === 'image') {
+      insertSnippet(imageSnippet(url, name))
+    } else if (type === 'video') {
+      insertSnippet(videoSnippet(url, name))
+    } else {
+      insertSnippet(fileSnippet(url, name))
+    }
+    ElMessage.success('上传成功')
+  } catch (error) {
+    console.error(error)
   }
-  ElMessage.success('上传成功')
 }
 
 const insertSnippet = (text) => {
@@ -330,10 +351,14 @@ const changeStatus = async (row, status) => {
     })
     reason = result.value.trim()
   }
-  await articleApi.updateStatus(row.id, status, reason || undefined)
-  ElMessage.success(`文章已${statusText(status)}`)
-  previewVisible.value = false
-  load()
+  try {
+    await articleApi.updateStatus(row.id, status, reason || undefined)
+    ElMessage.success(`文章已${statusText(status)}`)
+    previewVisible.value = false
+    await load()
+  } catch (error) {
+    console.error(error)
+  }
 }
 
 const setRecommendation = async (row, recommended) => {
@@ -348,9 +373,13 @@ const setRecommendation = async (row, recommended) => {
     })
     sort = Number(result.value || 0)
   }
-  await articleApi.updateRecommendation(row.id, recommended, sort)
-  ElMessage.success(recommended ? '已设为首页推荐' : '已取消首页推荐')
-  load()
+  try {
+    await articleApi.updateRecommendation(row.id, recommended, sort)
+    ElMessage.success(recommended ? '已设为首页推荐' : '已取消首页推荐')
+    await load()
+  } catch (error) {
+    console.error(error)
+  }
 }
 
 const remove = async (id) => {
@@ -364,10 +393,14 @@ const removeSelected = async () => {
 const removeIds = async (ids, message) => {
   if (!ids.length) return
   await ElMessageBox.confirm(message, '删除文章', { type: 'warning' })
-  await articleApi.remove(ids)
-  ElMessage.success('文章已删除')
-  selected.value = []
-  load()
+  try {
+    await articleApi.remove(ids)
+    ElMessage.success('文章已删除')
+    selected.value = []
+    await load()
+  } catch (error) {
+    console.error(error)
+  }
 }
 
 const statusText = (status) => ({

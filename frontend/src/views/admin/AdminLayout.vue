@@ -22,9 +22,9 @@
       <div class="admin-header">
         <h1>{{ title }}</h1>
         <div class="hero-actions">
-          <button class="btn-ghost" @click="passwordVisible = true">修改密码</button>
+          <button class="btn-ghost" type="button" @click="passwordVisible = true">修改密码</button>
           <RouterLink class="btn-ghost" to="/">打开前台首页</RouterLink>
-          <button class="btn-ghost danger-action" @click="logout">退出登录</button>
+          <button class="btn-ghost danger-action" type="button" @click="logout">退出登录</button>
         </div>
       </div>
       <el-alert v-if="auth.passwordChangeRequired" class="admin-alert" title="当前管理员仍在使用默认密码，请立即修改。生产环境会禁止默认密码启动。" type="error" :closable="false" />
@@ -41,8 +41,8 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <button class="btn-ghost" @click="passwordVisible = false">取消</button>
-        <button class="btn-primary" @click="changePassword">保存</button>
+        <button class="btn-ghost" type="button" @click="passwordVisible = false">取消</button>
+        <button class="btn-primary" type="button" @click="changePassword">保存</button>
       </template>
     </el-dialog>
   </div>
@@ -75,19 +75,27 @@ const title = computed(() => names[route.path] || '后台管理')
 const passwordVisible = ref(false)
 const password = reactive({ oldPassword: '', newPassword: '' })
 
-onMounted(() => site.loadSite())
+onMounted(() => {
+  site.loadSite().catch((error) => {
+    console.error(error)
+  })
+})
 
 const changePassword = async () => {
   if (!password.oldPassword || !password.newPassword) {
     ElMessage.warning('请填写原密码和新密码')
     return
   }
-  await userApi.changePassword({ ...password })
-  auth.clearPasswordRequired()
-  password.oldPassword = ''
-  password.newPassword = ''
-  passwordVisible.value = false
-  ElMessage.success('密码已修改')
+  try {
+    await userApi.changePassword({ ...password })
+    auth.clearPasswordRequired()
+    password.oldPassword = ''
+    password.newPassword = ''
+    passwordVisible.value = false
+    ElMessage.success('密码已修改')
+  } catch (error) {
+    console.error(error)
+  }
 }
 
 const logout = () => {

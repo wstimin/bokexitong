@@ -81,7 +81,7 @@
               </div>
             </el-form-item>
           </el-form>
-          <button class="btn-primary" @click="saveProfile">保存资料</button>
+          <button class="btn-primary" type="button" @click="saveProfile">保存资料</button>
         </section>
 
         <section v-if="activeSection === 'password'" class="form-panel user-section-panel account-panel">
@@ -95,7 +95,7 @@
             <el-form-item label="原密码"><el-input v-model="password.oldPassword" type="password" show-password /></el-form-item>
             <el-form-item label="新密码"><el-input v-model="password.newPassword" type="password" show-password /></el-form-item>
           </el-form>
-          <button class="btn-primary" @click="changePassword">修改密码</button>
+          <button class="btn-primary" type="button" @click="changePassword">修改密码</button>
         </section>
 
         <section v-if="activeSection === 'write'" class="form-panel user-section-panel writer-panel">
@@ -166,9 +166,9 @@
           </div>
 
           <div class="hero-actions writer-actions">
-            <button class="btn-primary" @click="saveArticle('PENDING')">提交审核</button>
-            <button class="btn-ghost" @click="saveArticle('DRAFT')">保存草稿</button>
-            <button v-if="editingId" class="btn-ghost" @click="resetArticleForm">取消编辑</button>
+            <button class="btn-primary" type="button" @click="saveArticle('PENDING')">提交审核</button>
+            <button class="btn-ghost" type="button" @click="saveArticle('DRAFT')">保存草稿</button>
+            <button v-if="editingId" class="btn-ghost" type="button" @click="resetArticleForm">取消编辑</button>
           </div>
         </section>
 
@@ -178,7 +178,7 @@
               <h2>我的文章</h2>
               <p class="section-subtitle">查看草稿、审核状态和发布记录。</p>
             </div>
-            <button class="btn-ghost" @click="loadMine(articlePage.current)">刷新</button>
+            <button class="btn-ghost" type="button" @click="loadMine(articlePage.current)">刷新</button>
           </div>
           <div class="content-filters">
             <el-input v-model="articleQuery.keyword" class="filter-input" placeholder="搜索我的文章" clearable @keyup.enter="loadMine(1)" @clear="loadMine(1)" />
@@ -189,7 +189,7 @@
               <el-option label="已驳回" value="REJECTED" />
               <el-option label="已下架" value="OFFLINE" />
             </el-select>
-            <button class="btn-ghost" @click="loadMine(1)">查询</button>
+            <button class="btn-ghost" type="button" @click="loadMine(1)">查询</button>
           </div>
           <div class="table-scroll">
             <el-table :data="mineRows" border style="min-width: 940px">
@@ -235,7 +235,7 @@
               <h2>我的收藏</h2>
               <p class="section-subtitle">回看收藏过的公开文章。</p>
             </div>
-            <button class="btn-ghost" @click="loadFavorites(favoritePage.current)">刷新</button>
+            <button class="btn-ghost" type="button" @click="loadFavorites(favoritePage.current)">刷新</button>
           </div>
           <div class="table-scroll">
             <el-table :data="favoriteRows" border style="min-width: 860px">
@@ -276,7 +276,7 @@
               <h2>我的评论</h2>
               <p class="section-subtitle">查看评论审核结果和关联文章。</p>
             </div>
-            <button class="btn-ghost" @click="loadComments(commentPage.current)">刷新</button>
+            <button class="btn-ghost" type="button" @click="loadComments(commentPage.current)">刷新</button>
           </div>
           <div class="table-scroll">
             <el-table :data="commentRows" border style="min-width: 1040px">
@@ -363,21 +363,33 @@ const workbenchMenus = [
 ]
 
 const loadProfile = async () => {
-  const res = await userApi.me()
-  Object.assign(profile, { nickname: res.data.nickname || '', avatar: res.data.avatar || '', email: res.data.email || '' })
-  auth.setUser(res.data)
+  try {
+    const res = await userApi.me()
+    Object.assign(profile, { nickname: res.data.nickname || '', avatar: res.data.avatar || '', email: res.data.email || '' })
+    auth.setUser(res.data)
+  } catch (error) {
+    console.error(error)
+  }
 }
 
 const loadMeta = async () => {
-  const res = await portalApi.home()
-  categories.value = res.data.categories || []
-  tags.value = res.data.tags || []
+  try {
+    const res = await portalApi.home()
+    categories.value = res.data.categories || []
+    tags.value = res.data.tags || []
+  } catch (error) {
+    console.error(error)
+  }
 }
 
 const saveProfile = async () => {
-  const res = await userApi.updateProfile({ ...profile })
-  auth.setUser(res.data)
-  ElMessage.success('资料已保存')
+  try {
+    const res = await userApi.updateProfile({ ...profile })
+    auth.setUser(res.data)
+    ElMessage.success('资料已保存')
+  } catch (error) {
+    console.error(error)
+  }
 }
 
 const changePassword = async () => {
@@ -385,11 +397,15 @@ const changePassword = async () => {
     ElMessage.warning('请填写原密码和新密码')
     return
   }
-  await userApi.changePassword({ ...password })
-  auth.clearPasswordRequired()
-  password.oldPassword = ''
-  password.newPassword = ''
-  ElMessage.success('密码已修改')
+  try {
+    await userApi.changePassword({ ...password })
+    auth.clearPasswordRequired()
+    password.oldPassword = ''
+    password.newPassword = ''
+    ElMessage.success('密码已修改')
+  } catch (error) {
+    console.error(error)
+  }
 }
 
 const saveArticle = async (status) => {
@@ -402,15 +418,19 @@ const saveArticle = async (status) => {
     return
   }
   const payload = { ...articleForm, contentType: 'HTML', status }
-  if (editingId.value) {
-    await articleApi.update(editingId.value, payload)
-  } else {
-    await articleApi.save(payload)
+  try {
+    if (editingId.value) {
+      await articleApi.update(editingId.value, payload)
+    } else {
+      await articleApi.save(payload)
+    }
+    ElMessage.success(status === 'PENDING' ? '文章已提交审核' : '草稿已保存')
+    resetArticleForm()
+    await loadMine(1)
+    activeSection.value = 'articles'
+  } catch (error) {
+    console.error(error)
   }
-  ElMessage.success(status === 'PENDING' ? '文章已提交审核' : '草稿已保存')
-  resetArticleForm()
-  await loadMine(1)
-  activeSection.value = 'articles'
 }
 
 const resetArticleForm = () => {
@@ -441,24 +461,32 @@ const removeArticle = async (row) => {
 }
 
 const uploadProfileFile = async (options, field) => {
-  const res = await uploadApi.file(options.file)
-  profile[field] = res.data.url
-  ElMessage.success('上传成功')
+  try {
+    const res = await uploadApi.file(options.file)
+    profile[field] = res.data.url
+    ElMessage.success('上传成功')
+  } catch (error) {
+    console.error(error)
+  }
 }
 
 const uploadArticleFile = async (options, type) => {
-  const res = await uploadApi.file(options.file)
-  const { url, name } = res.data
-  if (type === 'cover') {
-    articleForm.coverUrl = url
-  } else if (type === 'image') {
-    insertSnippet(imageSnippet(url, name))
-  } else if (type === 'video') {
-    insertSnippet(videoSnippet(url, name))
-  } else {
-    insertSnippet(fileSnippet(url, name))
+  try {
+    const res = await uploadApi.file(options.file)
+    const { url, name } = res.data
+    if (type === 'cover') {
+      articleForm.coverUrl = url
+    } else if (type === 'image') {
+      insertSnippet(imageSnippet(url, name))
+    } else if (type === 'video') {
+      insertSnippet(videoSnippet(url, name))
+    } else {
+      insertSnippet(fileSnippet(url, name))
+    }
+    ElMessage.success('上传成功')
+  } catch (error) {
+    console.error(error)
   }
-  ElMessage.success('上传成功')
 }
 
 const insertSnippet = (text) => {
@@ -467,28 +495,40 @@ const insertSnippet = (text) => {
 
 const loadMine = async (page = articlePage.current) => {
   articlePage.current = page
-  const res = await articleApi.mine({
-    current: articlePage.current,
-    size: articlePage.size,
-    keyword: articleQuery.keyword?.trim() || undefined,
-    status: articleQuery.status || undefined
-  })
-  mineRows.value = res.data.records || []
-  articlePage.total = res.data.total || 0
+  try {
+    const res = await articleApi.mine({
+      current: articlePage.current,
+      size: articlePage.size,
+      keyword: articleQuery.keyword?.trim() || undefined,
+      status: articleQuery.status || undefined
+    })
+    mineRows.value = res.data.records || []
+    articlePage.total = res.data.total || 0
+  } catch (error) {
+    console.error(error)
+  }
 }
 
 const loadFavorites = async (page = favoritePage.current) => {
   favoritePage.current = page
-  const res = await userApi.favorites({ current: favoritePage.current, size: favoritePage.size })
-  favoriteRows.value = res.data.records || []
-  favoritePage.total = res.data.total || 0
+  try {
+    const res = await userApi.favorites({ current: favoritePage.current, size: favoritePage.size })
+    favoriteRows.value = res.data.records || []
+    favoritePage.total = res.data.total || 0
+  } catch (error) {
+    console.error(error)
+  }
 }
 
 const loadComments = async (page = commentPage.current) => {
   commentPage.current = page
-  const res = await userApi.comments({ current: commentPage.current, size: commentPage.size })
-  commentRows.value = res.data.records || []
-  commentPage.total = res.data.total || 0
+  try {
+    const res = await userApi.comments({ current: commentPage.current, size: commentPage.size })
+    commentRows.value = res.data.records || []
+    commentPage.total = res.data.total || 0
+  } catch (error) {
+    console.error(error)
+  }
 }
 
 const focusWriter = () => {

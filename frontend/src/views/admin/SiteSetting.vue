@@ -5,7 +5,7 @@
         <h2>站点设置</h2>
         <p class="section-subtitle">配置站点名称、Logo、浏览器图标、首页文案、全站背景、SEO 和前台展示信息。</p>
       </div>
-      <button class="btn-primary" :disabled="loading" @click="save">保存设置</button>
+      <button class="btn-primary" type="button" :disabled="loading" @click="save">保存设置</button>
     </div>
 
     <el-form label-position="top" class="settings-form grouped-settings-form">
@@ -165,6 +165,9 @@ const load = async () => {
   try {
     const res = await adminApi.siteSettings()
     apply(res.data)
+    localStorage.setItem('blog_admin_login_path', form.adminLoginPath || '/admin/login')
+  } catch (error) {
+    console.error(error)
   } finally {
     loading.value = false
   }
@@ -179,23 +182,34 @@ const save = async () => {
     }
     const res = await adminApi.saveSiteSettings(payload)
     apply(res.data)
+    localStorage.setItem('blog_admin_login_path', form.adminLoginPath || '/admin/login')
     await site.loadSite(true)
     ElMessage.success('站点设置已保存')
+  } catch (error) {
+    console.error(error)
   } finally {
     loading.value = false
   }
 }
 
 const uploadBackground = async (options) => {
-  const res = await uploadApi.file(options.file)
-  form.backgroundUrl = res.data.url
-  ElMessage.success('背景图已上传')
+  try {
+    const res = await uploadApi.file(options.file)
+    form.backgroundUrl = res.data.url
+    ElMessage.success('背景图已上传')
+  } catch (error) {
+    console.error(error)
+  }
 }
 
 const uploadLogo = async (options) => {
-  const res = await uploadApi.file(options.file)
-  form.logoUrl = res.data.url
-  ElMessage.success('Logo 已上传')
+  try {
+    const res = await uploadApi.file(options.file)
+    form.logoUrl = res.data.url
+    ElMessage.success('Logo 已上传')
+  } catch (error) {
+    console.error(error)
+  }
 }
 
 onMounted(load)

@@ -5,7 +5,7 @@
         <h2>邮箱设置</h2>
         <p class="section-subtitle">配置注册、找回密码和测试邮件使用的 SMTP 服务。</p>
       </div>
-      <button class="btn-primary" :disabled="loading" @click="save">保存邮箱设置</button>
+      <button class="btn-primary" type="button" :disabled="loading" @click="save">保存邮箱设置</button>
     </div>
 
     <el-alert
@@ -91,6 +91,8 @@ const load = async () => {
   try {
     const res = await adminApi.mailSettings()
     apply(res.data)
+  } catch (error) {
+    console.error(error)
   } finally {
     loading.value = false
   }
@@ -110,6 +112,8 @@ const save = async () => {
     const res = await adminApi.saveMailSettings(payload)
     apply(res.data)
     ElMessage.success('邮箱设置已保存')
+  } catch (error) {
+    console.error(error)
   } finally {
     loading.value = false
   }
@@ -124,10 +128,14 @@ const sendTestMail = async () => {
   try {
     await adminApi.testMail({ email: testEmail.value.trim() })
     ElMessage.success('测试邮件已发送')
+  } catch (error) {
+    console.error(error)
   } finally {
     loading.value = false
   }
 }
 
-onMounted(load)
+onMounted(() => {
+  load()
+})
 </script>
