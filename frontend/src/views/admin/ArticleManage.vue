@@ -58,7 +58,7 @@
       <el-pagination background layout="total, prev, pager, next" :total="total" :page-size="query.size" v-model:current-page="query.current" @current-change="load" />
     </div>
 
-    <el-dialog v-model="editorVisible" :title="editingId ? '编辑文章' : '新增文章'" width="1020px" class="article-editor-dialog" destroy-on-close>
+    <el-dialog v-model="editorVisible" :title="editingId ? '编辑文章' : '新增文章'" width="1020px" class="article-editor-dialog" destroy-on-close append-to-body>
       <el-form label-position="top">
         <el-form-item label="标题">
           <el-input v-model="form.title" maxlength="180" show-word-limit placeholder="请输入文章标题" />
@@ -131,7 +131,7 @@
       </template>
     </el-dialog>
 
-    <el-dialog v-model="previewVisible" title="文章预览" width="900px" class="article-preview-dialog">
+    <el-dialog v-model="previewVisible" title="文章预览" width="900px" class="article-preview-dialog" append-to-body>
       <div v-if="previewArticle.id" class="admin-preview">
         <img v-if="previewArticle.coverUrl" class="cover detail-cover" :src="previewCoverSrc" :alt="previewArticle.title" />
         <div class="meta detail-meta">

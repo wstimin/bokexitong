@@ -35,7 +35,7 @@
     </div>
     <el-empty v-if="!loading && rows.length === 0" description="暂无图片资源" />
 
-    <el-dialog v-model="visible" :title="form.id ? '编辑图片' : '新增图片'" width="620px" class="image-form-dialog">
+    <el-dialog v-model="visible" :title="form.id ? '编辑图片' : '新增图片'" width="620px" class="image-form-dialog" append-to-body>
       <div class="image-dialog-layout">
         <div class="image-dialog-preview">
           <img v-if="form.url" :src="assetUrl(form.url)" alt="图片预览" />

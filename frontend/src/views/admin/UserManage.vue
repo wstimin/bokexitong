@@ -55,7 +55,7 @@
       <el-pagination background layout="prev, pager, next" :total="total" :page-size="query.size" v-model:current-page="query.current" @current-change="load" />
     </div>
 
-    <el-dialog v-model="editVisible" title="编辑用户" width="520px">
+    <el-dialog v-model="editVisible" title="编辑用户" width="520px" append-to-body>
       <el-form label-position="top">
         <el-form-item label="昵称"><el-input v-model="editForm.nickname" /></el-form-item>
         <el-form-item label="头像 URL"><el-input v-model="editForm.avatar" /></el-form-item>
@@ -74,7 +74,7 @@
       </template>
     </el-dialog>
 
-    <el-dialog v-model="createVisible" title="新增用户" width="560px">
+    <el-dialog v-model="createVisible" title="新增用户" width="560px" append-to-body>
       <el-form label-position="top" class="user-form-grid">
         <el-form-item label="用户名">
           <el-input v-model="createForm.username" maxlength="20" show-word-limit placeholder="3-20 位字母、数字或下划线" />
@@ -107,7 +107,7 @@
       </template>
     </el-dialog>
 
-    <el-dialog v-model="passwordVisible" title="重置密码" width="420px">
+    <el-dialog v-model="passwordVisible" title="重置密码" width="420px" append-to-body>
       <el-form label-position="top">
         <el-form-item label="新密码"><el-input v-model="newPassword" type="password" show-password /></el-form-item>
       </el-form>
