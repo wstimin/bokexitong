@@ -100,14 +100,16 @@
         </el-form-item>
 
         <el-form-item label="正文">
-          <QuillEditor
-            v-model:content="form.content"
-            theme="snow"
-            content-type="html"
-            class="rich-editor"
-            :toolbar="richToolbar"
-            placeholder="开始写正文，支持字体、字号、颜色、对齐、图片、视频和链接。"
-          />
+          <div class="rich-editor-shell">
+            <QuillEditor
+              v-model:content="form.content"
+              theme="snow"
+              content-type="html"
+              class="rich-editor"
+              :toolbar="richToolbar"
+              placeholder="开始写正文，支持字体、字号、颜色、对齐、图片、视频和链接。"
+            />
+          </div>
         </el-form-item>
       </el-form>
 

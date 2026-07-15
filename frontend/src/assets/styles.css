@@ -318,11 +318,22 @@ a { color: inherit; text-decoration: none; }
 .writer-actions { margin-top: 14px; }
 .writer-mode-tabs { width: 100%; }
 .writer-preview-box { position: relative; isolation: isolate; min-height: 394px; padding: 14px; border-radius: 8px; background: rgba(255,255,255,.28); border: 1px solid rgba(255,255,255,.58); backdrop-filter: blur(16px) saturate(145%); -webkit-backdrop-filter: blur(16px) saturate(145%); }
-.rich-editor { position: relative; isolation: isolate; height: clamp(420px, 52vh, 620px); border-radius: 8px; overflow: hidden; background: rgba(255,255,255,.34); border: 1px solid rgba(255,255,255,.58); backdrop-filter: blur(16px) saturate(145%); -webkit-backdrop-filter: blur(16px) saturate(145%); }
+.article-editor-dialog .el-dialog__body { min-width: 0; }
+.article-editor-dialog .el-form { width: 100%; min-width: 0; }
+.article-editor-dialog .el-form-item { width: 100%; min-width: 0; }
+.article-editor-dialog .el-form-item__content { width: 100%; min-width: 0; display: flex; flex-direction: column; align-items: stretch; }
+.rich-editor-shell { display: block; flex: 1 1 100%; align-self: stretch; width: 100%; max-width: 100%; min-height: clamp(420px, 52vh, 620px); min-width: 0; }
+.article-editor-dialog .el-form-item__content > .rich-editor,
+.article-editor-dialog .el-form-item__content > .ql-container,
+.article-editor-dialog .el-form-item__content > .ql-toolbar { width: 100%; min-width: 0; }
+.rich-editor-shell > .ql-toolbar.ql-snow,
+.rich-editor-shell > .ql-container.ql-snow,
+.rich-editor-shell > .rich-editor { display: block; width: 100%; max-width: 100%; min-width: 0; }
+.rich-editor { position: relative; isolation: isolate; width: 100%; max-width: 100%; min-height: clamp(420px, 52vh, 620px); height: auto; border-radius: 8px; overflow: visible; background: rgba(255,255,255,.34); border: 1px solid rgba(255,255,255,.58); backdrop-filter: blur(16px) saturate(145%); -webkit-backdrop-filter: blur(16px) saturate(145%); }
 .rich-editor .ql-toolbar.ql-snow { border: 0; border-bottom: 1px solid rgba(40,45,68,.12); background: rgba(248,249,252,.72); padding: 10px 12px; }
 .rich-editor.ql-container.ql-snow, .rich-editor .ql-container.ql-snow { border: 0; font-family: inherit; }
-.rich-editor.ql-container { height: clamp(420px, 52vh, 620px); }
-.rich-editor .ql-editor { height: 100%; min-height: 0; overflow-y: auto; font-size: 17px; line-height: 1.9; color: var(--ink); }
+.rich-editor.ql-container { display: block; width: 100%; max-width: 100%; height: auto; min-height: inherit; }
+.rich-editor .ql-editor { display: block; width: 100%; max-width: 100%; min-width: 0; min-height: clamp(420px, 52vh, 620px); height: auto; overflow-y: visible; font-size: 17px; line-height: 1.9; color: var(--ink); word-break: break-word; overflow-wrap: anywhere; white-space: pre-wrap; }
 .rich-editor .ql-editor.ql-blank::before { color: rgba(75,59,95,.48); font-style: normal; }
 .rich-editor .ql-editor img { display: block; max-width: min(100%, 760px); height: auto; margin: 14px auto; border-radius: 8px; }
 .rich-editor .ql-editor video { max-width: 100%; }
@@ -500,5 +511,5 @@ a { color: inherit; text-decoration: none; }
   .filter-input, .filter-select, .admin-filters .btn-ghost { width: 100%; }
   .article-admin-actions { width: 100%; max-width: none; }
   .inline-field { grid-template-columns: 1fr; }
-  .rich-editor, .rich-editor.ql-container { height: 360px; }
+  .rich-editor-shell { min-height: 360px; }
 }
