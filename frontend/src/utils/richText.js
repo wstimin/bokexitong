@@ -6,7 +6,7 @@ const fontWhitelist = ['system', 'songti', 'heiti', 'kaiti', 'serif', 'mono']
 const sizeWhitelist = ['12px', '14px', '16px', '18px', '20px', '24px', '28px', '32px']
 
 let richTextRegistered = false
-let toolbarObserver = null
+let toolbarLocalizationTimer = null
 
 export const ensureRichTextFormats = async () => {
   if (richTextRegistered) return
@@ -206,22 +206,39 @@ const refreshToolbar = (toolbar) => {
   })
 }
 
-const observeToolbar = (toolbar) => {
-  toolbarObserver?.disconnect()
-  toolbarObserver = new MutationObserver(() => refreshToolbar(toolbar))
-  toolbarObserver.observe(toolbar, { childList: true, subtree: true, characterData: true })
-}
-
 export const localizeRichTextToolbar = (editorRoot) => {
   const container = editorRoot?.container || editorRoot?.$el || editorRoot
   if (!container) return
 
-  const root = container.parentElement || container
-  const toolbar = root.querySelector?.(toolbarSelector) || container.previousElementSibling
-  if (!toolbar) return
+  const locateToolbar = () => {
+    const root = container.parentElement || container
+    return root.querySelector?.(toolbarSelector) || container.previousElementSibling || null
+  }
 
-  refreshToolbar(toolbar)
-  observeToolbar(toolbar)
+  const applyLocalization = () => {
+    const toolbar = locateToolbar()
+    if (!toolbar) return false
+    refreshToolbar(toolbar)
+    return true
+  }
+
+  if (toolbarLocalizationTimer) {
+    window.clearTimeout(toolbarLocalizationTimer)
+    toolbarLocalizationTimer = null
+  }
+
+  if (!applyLocalization()) {
+    toolbarLocalizationTimer = window.setTimeout(() => {
+      applyLocalization()
+      toolbarLocalizationTimer = null
+    }, 0)
+    return
+  }
+
+  toolbarLocalizationTimer = window.setTimeout(() => {
+    applyLocalization()
+    toolbarLocalizationTimer = null
+  }, 0)
 }
 
 export const isRichTextContentType = (contentType) => {
