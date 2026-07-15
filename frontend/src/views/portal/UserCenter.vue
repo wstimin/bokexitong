@@ -332,7 +332,7 @@ import PortalFooter from '../../components/PortalFooter.vue'
 import { articleApi, portalApi, uploadApi, userApi } from '../../api/blog'
 import { useAuthStore } from '../../stores/auth'
 import { normalizeAssetUrl } from '../../utils/assets'
-import { appendHtmlSnippet, fileSnippet, imageSnippet, isEmptyHtml, richToolbar, toEditableHtml, videoSnippet } from '../../utils/richText'
+import { appendHtmlSnippet, ensureRichTextFormats, fileSnippet, imageSnippet, isEmptyHtml, richToolbar, toEditableHtml, videoSnippet } from '../../utils/richText'
 
 const auth = useAuthStore()
 const router = useRouter()
@@ -438,7 +438,8 @@ const resetArticleForm = () => {
   Object.assign(articleForm, { title: '', summary: '', coverUrl: '', content: '', contentType: 'HTML', categoryId: null, tagIds: [] })
 }
 
-const editArticle = (row) => {
+const editArticle = async (row) => {
+  await ensureRichTextFormats()
   editingId.value = row.id
   Object.assign(articleForm, {
     title: row.title || '',
@@ -531,12 +532,14 @@ const loadComments = async (page = commentPage.current) => {
   }
 }
 
-const focusWriter = () => {
+const focusWriter = async () => {
+  await ensureRichTextFormats()
   resetArticleForm()
   activeSection.value = 'write'
 }
 
-const setSection = (section) => {
+const setSection = async (section) => {
+  if (section === 'write') await ensureRichTextFormats()
   activeSection.value = section
   if (section === 'articles') loadMine(articlePage.current)
   if (section === 'favorites') loadFavorites(favoritePage.current)

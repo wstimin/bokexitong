@@ -169,7 +169,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { QuillEditor } from '@vueup/vue-quill'
 import { adminApi, articleApi, uploadApi } from '../../api/blog'
 import { normalizeAssetUrl } from '../../utils/assets'
-import { appendHtmlSnippet, fileSnippet, imageSnippet, isEmptyHtml, richToolbar, toDisplayHtml, toEditableHtml, videoSnippet } from '../../utils/richText'
+import { appendHtmlSnippet, ensureRichTextFormats, fileSnippet, imageSnippet, isEmptyHtml, richToolbar, toDisplayHtml, toEditableHtml, videoSnippet } from '../../utils/richText'
 
 const statusOptions = [
   { label: '草稿', value: 'DRAFT' },
@@ -258,6 +258,7 @@ const openPreview = async (row) => {
 const openEditor = async (row) => {
   resetForm()
   previewVisible.value = false
+  await ensureRichTextFormats()
   editorVisible.value = true
   if (!row?.id) return
   try {

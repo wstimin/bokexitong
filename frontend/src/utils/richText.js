@@ -1,4 +1,4 @@
-import { Quill } from '@vueup/vue-quill'
+import { loadQuill } from '@vueup/vue-quill'
 import { marked } from 'marked'
 import { normalizeAssetUrl } from './assets'
 
@@ -7,8 +7,10 @@ const sizeWhitelist = ['12px', '14px', '16px', '18px', '20px', '24px', '28px', '
 
 let richTextRegistered = false
 
-const registerRichTextFormats = () => {
+export const ensureRichTextFormats = async () => {
   if (richTextRegistered) return
+
+  const Quill = await loadQuill()
 
   const Font = Quill.import('formats/font')
   Font.whitelist = fontWhitelist
@@ -20,8 +22,6 @@ const registerRichTextFormats = () => {
 
   richTextRegistered = true
 }
-
-registerRichTextFormats()
 
 export const richToolbar = [
   [{ font: fontWhitelist }, { size: sizeWhitelist }],
