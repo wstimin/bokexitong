@@ -45,6 +45,8 @@ blog:
     secret: change-this-secret-to-a-long-random-value-for-production
     expiration-minutes: 1440
   upload-dir: uploads
+  article:
+    forbidden-words: ${BLOG_ARTICLE_FORBIDDEN_WORDS:赌博,色情,毒品,诈骗}
   admin:
     initial-password:
   mail:

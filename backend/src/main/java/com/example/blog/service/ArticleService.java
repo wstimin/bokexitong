@@ -21,15 +21,20 @@ import com.example.blog.mapper.CommentMapper;
 import com.example.blog.mapper.FavoriteMapper;
 import com.example.blog.mapper.LikeRecordMapper;
 import com.example.blog.mapper.TagMapper;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Locale;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 public class ArticleService {
@@ -41,10 +46,12 @@ public class ArticleService {
     private final CategoryMapper categoryMapper;
     private final TagMapper tagMapper;
     private final BlogUserMapper blogUserMapper;
+    private final List<String> forbiddenWords;
 
     public ArticleService(ArticleMapper articleMapper, ArticleTagMapper articleTagMapper, CommentMapper commentMapper,
                           LikeRecordMapper likeRecordMapper, FavoriteMapper favoriteMapper,
-                          CategoryMapper categoryMapper, TagMapper tagMapper, BlogUserMapper blogUserMapper) {
+                          CategoryMapper categoryMapper, TagMapper tagMapper, BlogUserMapper blogUserMapper,
+                          @Value("${blog.article.forbidden-words:赌博,色情,毒品,诈骗}") String forbiddenWordsConfig) {
         this.articleMapper = articleMapper;
         this.articleTagMapper = articleTagMapper;
         this.commentMapper = commentMapper;
@@ -53,6 +60,7 @@ public class ArticleService {
         this.categoryMapper = categoryMapper;
         this.tagMapper = tagMapper;
         this.blogUserMapper = blogUserMapper;
+        this.forbiddenWords = parseForbiddenWords(forbiddenWordsConfig);
     }
 
     public Page<Article> page(long current, long size, String keyword, String status, Long categoryId, Long tagId) {
@@ -139,6 +147,8 @@ public class ArticleService {
         if (id != null && !userId.equals(article.getUserId())) {
             throw new IllegalArgumentException("You can only edit your own articles");
         }
+        LocalDateTime now = LocalDateTime.now();
+        String requestedStatus = normalizeUserStatus(request.getStatus());
         article.setUserId(article.getUserId() == null ? userId : article.getUserId());
         article.setCategoryId(request.getCategoryId());
         article.setTitle(request.getTitle());
@@ -146,17 +156,27 @@ public class ArticleService {
         article.setCoverUrl(request.getCoverUrl());
         article.setContent(request.getContent());
         article.setContentType(request.getContentType() == null ? "MARKDOWN" : request.getContentType());
-        article.setStatus(normalizeUserStatus(request.getStatus()));
+        article.setStatus("DRAFT".equals(requestedStatus) ? "DRAFT" : "PENDING");
         article.setRecommended(0);
         article.setRecommendSort(0);
-        article.setReviewReason(null);
-        article.setReviewedAt(null);
-        article.setUpdatedAt(LocalDateTime.now());
+        if ("DRAFT".equals(requestedStatus)) {
+            article.setReviewReason(null);
+            article.setReviewedAt(null);
+        } else {
+            ModerationDecision decision = moderatePublishRequest(request);
+            article.setStatus(decision.status());
+            article.setReviewReason(decision.reviewReason());
+            article.setReviewedAt(now);
+            if ("PUBLISHED".equals(decision.status()) && article.getPublishedAt() == null) {
+                article.setPublishedAt(now);
+            }
+        }
+        article.setUpdatedAt(now);
         if (id == null) {
             article.setViewCount(0);
             article.setLikeCount(0);
             article.setFavoriteCount(0);
-            article.setCreatedAt(LocalDateTime.now());
+            article.setCreatedAt(now);
             articleMapper.insert(article);
         } else {
             articleMapper.updateById(article);
@@ -421,6 +441,49 @@ public class ArticleService {
         if (value == null) return null;
         String trimmed = value.trim();
         return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private ModerationDecision moderatePublishRequest(ArticleRequest request) {
+        String matchedWord = findForbiddenWord(request);
+        if (matchedWord == null) {
+            return new ModerationDecision("PUBLISHED", null);
+        }
+        return new ModerationDecision("PENDING", "命中违禁词：" + matchedWord);
+    }
+
+    private String findForbiddenWord(ArticleRequest request) {
+        if (request == null || forbiddenWords.isEmpty()) {
+            return null;
+        }
+        String source = Stream.of(request.getTitle(), request.getSummary(), request.getContent())
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(text -> !text.isEmpty())
+                .collect(Collectors.joining("\n"))
+                .toLowerCase(Locale.ROOT);
+        if (source.isBlank()) {
+            return null;
+        }
+        for (String word : forbiddenWords) {
+            if (source.contains(word.toLowerCase(Locale.ROOT))) {
+                return word;
+            }
+        }
+        return null;
+    }
+
+    private List<String> parseForbiddenWords(String config) {
+        if (config == null || config.isBlank()) {
+            return List.of();
+        }
+        return Arrays.stream(config.split("[,，;；|\\r\\n]+"))
+                .map(String::trim)
+                .filter(text -> !text.isEmpty())
+                .distinct()
+                .toList();
+    }
+
+    private record ModerationDecision(String status, String reviewReason) {
     }
 
     private Map<Long, List<Tag>> loadTagsByArticle(List<Long> articleIds) {

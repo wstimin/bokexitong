@@ -102,7 +102,7 @@
           <div class="section-title writer-title">
             <div>
               <h2>{{ editingId ? '编辑文章' : '写新文章' }}</h2>
-              <p class="section-subtitle">草稿只有你自己可见，提交审核后由管理员发布。</p>
+              <p class="section-subtitle">草稿只有你自己可见，发布后会自动检测违禁词，合规内容可直接公开。</p>
             </div>
             <span class="anime-tag">富文本</span>
           </div>
@@ -170,7 +170,7 @@
           </div>
 
           <div class="hero-actions writer-actions">
-            <button class="btn-primary" type="button" @click="saveArticle('PENDING')">提交审核</button>
+            <button class="btn-primary" type="button" @click="saveArticle('PUBLISHED')">发布文章</button>
             <button class="btn-ghost" type="button" @click="saveArticle('DRAFT')">保存草稿</button>
             <button v-if="editingId" class="btn-ghost" type="button" @click="resetArticleForm">取消编辑</button>
           </div>
@@ -419,18 +419,26 @@ const saveArticle = async (status) => {
     ElMessage.warning('请填写文章标题')
     return
   }
-  if (status === 'PENDING' && isEmptyHtml(articleForm.content)) {
-    ElMessage.warning('提交审核前请先写正文')
+  if (status !== 'DRAFT' && isEmptyHtml(articleForm.content)) {
+    ElMessage.warning('发布前请先写正文')
     return
   }
   const payload = { ...articleForm, contentType: 'HTML', status }
   try {
+    let res
     if (editingId.value) {
-      await articleApi.update(editingId.value, payload)
+      res = await articleApi.update(editingId.value, payload)
     } else {
-      await articleApi.save(payload)
+      res = await articleApi.save(payload)
     }
-    ElMessage.success(status === 'PENDING' ? '文章已提交审核' : '草稿已保存')
+    const savedArticle = res?.data || {}
+    if (status === 'DRAFT') {
+      ElMessage.success('草稿已保存')
+    } else if (savedArticle.status === 'PUBLISHED') {
+      ElMessage.success('文章已发布')
+    } else {
+      ElMessage.warning(savedArticle.reviewReason ? `内容含违禁词，已转入审核：${savedArticle.reviewReason}` : '内容已转入审核')
+    }
     resetArticleForm()
     await loadMine(1)
     activeSection.value = 'articles'

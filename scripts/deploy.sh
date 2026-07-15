@@ -180,6 +180,7 @@ BLOG_JWT_SECRET=$JWT_SECRET
 BLOG_ADMIN_INITIAL_PASSWORD=$ADMIN_PASSWORD
 BLOG_MAIL_ENABLED=false
 BLOG_MAIL_FROM_NAME=博客系统
+BLOG_ARTICLE_FORBIDDEN_WORDS=赌博,色情,毒品,诈骗
 SPRING_MAIL_HOST=
 SPRING_MAIL_PORT=587
 SPRING_MAIL_USERNAME=
@@ -220,6 +221,7 @@ ensure_env_defaults() {
   append_env_if_missing "BLOG_ADMIN_INITIAL_PASSWORD" "$(generate_admin_password)"
   append_env_if_missing "BLOG_MAIL_ENABLED" "false"
   append_env_if_missing "BLOG_MAIL_FROM_NAME" "博客系统"
+  append_env_if_missing "BLOG_ARTICLE_FORBIDDEN_WORDS" "赌博,色情,毒品,诈骗"
   append_env_if_missing "SPRING_MAIL_HOST" ""
   append_env_if_missing "SPRING_MAIL_PORT" "587"
   append_env_if_missing "SPRING_MAIL_USERNAME" ""
