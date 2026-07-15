@@ -6,6 +6,7 @@ const fontWhitelist = ['system', 'songti', 'heiti', 'kaiti', 'serif', 'mono']
 const sizeWhitelist = ['12px', '14px', '16px', '18px', '20px', '24px', '28px', '32px']
 
 let richTextRegistered = false
+let toolbarObserver = null
 
 export const ensureRichTextFormats = async () => {
   if (richTextRegistered) return
@@ -107,13 +108,33 @@ const setTitle = (el, title) => {
   el.setAttribute('aria-label', title)
 }
 
-export const localizeRichTextToolbar = (editorRoot) => {
-  const root = editorRoot?.container || editorRoot?.$el || editorRoot
-  if (!root?.querySelector) return
+const setPickerText = (picker, values, fallback) => {
+  picker.querySelectorAll('.ql-picker-item').forEach((item) => {
+    const value = item.getAttribute('data-value') ?? ''
+    const text = values[value] || fallback
+    item.textContent = text
+    item.setAttribute('data-label', text)
+    setTitle(item, text)
+  })
+}
 
-  const toolbar = root.querySelector(toolbarSelector)
-  if (!toolbar) return
+const localizePicker = (picker, format) => {
+  const label = picker.querySelector('.ql-picker-label')
+  const title = richToolbarLabels[format]
+  if (label && title) {
+    setTitle(label, title)
+    label.setAttribute('data-label', title)
+  }
 
+  if (format === 'font') setPickerText(picker, fontLabels, '字体')
+  else if (format === 'size') setPickerText(picker, sizeLabels, '字号')
+  else if (format === 'header') setPickerText(picker, headerLabels, '正文')
+  else if (format === 'list') setPickerText(picker, listLabels, '列表')
+  else if (format === 'align') setPickerText(picker, alignLabels, '对齐')
+  else if (format === 'color' || format === 'background') setPickerText(picker, {}, colorLabels[format])
+}
+
+const refreshToolbar = (toolbar) => {
   toolbar.querySelectorAll('button').forEach((button) => {
     const classes = Array.from(button.classList)
     const format = classes.find((cls) => cls.startsWith('ql-') && cls !== 'ql-active')?.replace(/^ql-/, '')
@@ -125,28 +146,26 @@ export const localizeRichTextToolbar = (editorRoot) => {
     const format = Array.from(picker.classList)
       .find((cls) => cls.startsWith('ql-') && cls !== 'ql-picker' && cls !== 'ql-expanded')
       ?.replace(/^ql-/, '')
-    const title = richToolbarLabels[format]
-    if (!title) return
-
-    const label = picker.querySelector('.ql-picker-label')
-    setTitle(label, title)
-    label?.setAttribute('data-label', title)
-
-    picker.querySelectorAll('.ql-picker-item').forEach((item) => {
-      const value = item.getAttribute('data-value') ?? ''
-      const itemTitle = ({
-        font: fontLabels[value] || '字体',
-        size: sizeLabels[value] || '字号',
-        header: headerLabels[value === '' ? false : Number(value)] || '标题',
-        list: listLabels[value] || '列表',
-        align: alignLabels[value] || '对齐',
-        color: colorLabels[format] || '颜色',
-        background: colorLabels[format] || '背景色'
-      })[format] || title
-      setTitle(item, itemTitle)
-      item.setAttribute('data-label', itemTitle)
-    })
+    if (!format) return
+    localizePicker(picker, format)
   })
+}
+
+const observeToolbar = (toolbar) => {
+  toolbarObserver?.disconnect()
+  toolbarObserver = new MutationObserver(() => refreshToolbar(toolbar))
+  toolbarObserver.observe(toolbar, { childList: true, subtree: true, characterData: true })
+}
+
+export const localizeRichTextToolbar = (editorRoot) => {
+  const root = editorRoot?.container || editorRoot?.$el || editorRoot
+  if (!root?.querySelector) return
+
+  const toolbar = root.querySelector(toolbarSelector)
+  if (!toolbar) return
+
+  refreshToolbar(toolbar)
+  observeToolbar(toolbar)
 }
 
 export const isRichTextContentType = (contentType) => {

@@ -287,6 +287,8 @@ button, input, textarea, select { font: inherit; }
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  position: relative;
+  overflow: hidden;
   min-height: 38px;
   border: 1px solid rgba(255,255,255,.62);
   border-radius: 999px;
@@ -303,7 +305,26 @@ button, input, textarea, select { font: inherit; }
 .upload-trigger-wrap.disabled .upload-trigger { opacity: .56; cursor: not-allowed; transform: none; }
 .upload-trigger:hover { transform: translateY(-1px); background: rgba(255,255,255,.72); border-color: rgba(217,54,134,.32); }
 .upload-trigger:disabled { opacity: .56; cursor: not-allowed; transform: none; }
-.upload-hidden-input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.upload-native-input { position: absolute; inset: 0; width: 0; height: 0; opacity: 0; pointer-events: none; }
+.upload-trigger .upload-native-input { width: 0; height: 0; }
+.rich-editor .ql-toolbar.ql-snow .ql-picker-label[data-label]::before,
+.rich-editor .ql-toolbar.ql-snow .ql-picker-item[data-label]::before {
+  content: attr(data-label) !important;
+}
+.rich-editor .ql-toolbar.ql-snow .ql-picker.ql-header .ql-picker-label::before,
+.rich-editor .ql-toolbar.ql-snow .ql-picker.ql-header .ql-picker-item::before,
+.rich-editor .ql-toolbar.ql-snow .ql-picker.ql-font .ql-picker-label::before,
+.rich-editor .ql-toolbar.ql-snow .ql-picker.ql-font .ql-picker-item::before,
+.rich-editor .ql-toolbar.ql-snow .ql-picker.ql-size .ql-picker-label::before,
+.rich-editor .ql-toolbar.ql-snow .ql-picker.ql-size .ql-picker-item::before,
+.rich-editor .ql-toolbar.ql-snow .ql-picker.ql-align .ql-picker-label::before,
+.rich-editor .ql-toolbar.ql-snow .ql-picker.ql-align .ql-picker-item::before,
+.rich-editor .ql-toolbar.ql-snow .ql-picker.ql-color .ql-picker-label::before,
+.rich-editor .ql-toolbar.ql-snow .ql-picker.ql-color .ql-picker-item::before,
+.rich-editor .ql-toolbar.ql-snow .ql-picker.ql-background .ql-picker-label::before,
+.rich-editor .ql-toolbar.ql-snow .ql-picker.ql-background .ql-picker-item::before {
+  content: attr(data-label) !important;
+}
 .ql-font-system { font-family: Inter, "PingFang SC", "Microsoft YaHei", sans-serif; }
 .ql-font-songti { font-family: "Songti SC", serif; }
 .ql-font-heiti { font-family: "SimHei", sans-serif; }
