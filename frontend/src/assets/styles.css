@@ -67,6 +67,8 @@ a { color: inherit; text-decoration: none; }
 }
 .hero::before { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(24, 20, 46, .46), rgba(121, 65, 139, .22), rgba(255, 255, 255, .04)); }
 .hero::after { content: ""; position: absolute; inset: 0; background: linear-gradient(0deg, rgba(246, 247, 251, .22), rgba(246, 247, 251, .04) 34%, transparent 66%); }
+.hero.hero-synced::before { background: linear-gradient(90deg, rgba(24, 20, 46, .30), rgba(121, 65, 139, .12), rgba(255, 255, 255, .03)); }
+.hero.hero-synced::after { background: linear-gradient(0deg, rgba(246, 247, 251, .12), rgba(246, 247, 251, .02) 34%, transparent 68%); }
 .hero-fallback {
   background:
     linear-gradient(120deg, rgba(37,34,53,.92), rgba(77,86,105,.78)),
@@ -316,10 +318,11 @@ a { color: inherit; text-decoration: none; }
 .writer-actions { margin-top: 14px; }
 .writer-mode-tabs { width: 100%; }
 .writer-preview-box { position: relative; isolation: isolate; min-height: 394px; padding: 14px; border-radius: 8px; background: rgba(255,255,255,.28); border: 1px solid rgba(255,255,255,.58); backdrop-filter: blur(16px) saturate(145%); -webkit-backdrop-filter: blur(16px) saturate(145%); }
-.rich-editor { position: relative; isolation: isolate; border-radius: 8px; overflow: hidden; background: rgba(255,255,255,.34); border: 1px solid rgba(255,255,255,.58); backdrop-filter: blur(16px) saturate(145%); -webkit-backdrop-filter: blur(16px) saturate(145%); }
+.rich-editor { position: relative; isolation: isolate; height: clamp(420px, 52vh, 620px); border-radius: 8px; overflow: hidden; background: rgba(255,255,255,.34); border: 1px solid rgba(255,255,255,.58); backdrop-filter: blur(16px) saturate(145%); -webkit-backdrop-filter: blur(16px) saturate(145%); }
 .rich-editor .ql-toolbar.ql-snow { border: 0; border-bottom: 1px solid rgba(40,45,68,.12); background: rgba(248,249,252,.72); padding: 10px 12px; }
-.rich-editor .ql-container.ql-snow { border: 0; font-family: inherit; }
-.rich-editor .ql-editor { min-height: 420px; font-size: 17px; line-height: 1.9; color: var(--ink); }
+.rich-editor.ql-container.ql-snow, .rich-editor .ql-container.ql-snow { border: 0; font-family: inherit; }
+.rich-editor.ql-container { height: clamp(420px, 52vh, 620px); }
+.rich-editor .ql-editor { height: 100%; min-height: 0; overflow-y: auto; font-size: 17px; line-height: 1.9; color: var(--ink); }
 .rich-editor .ql-editor.ql-blank::before { color: rgba(75,59,95,.48); font-style: normal; }
 .rich-editor .ql-editor img { display: block; max-width: min(100%, 760px); height: auto; margin: 14px auto; border-radius: 8px; }
 .rich-editor .ql-editor video { max-width: 100%; }
@@ -344,6 +347,51 @@ a { color: inherit; text-decoration: none; }
 .ql-size-24px { font-size: 24px; }
 .ql-size-28px { font-size: 28px; }
 .ql-size-32px { font-size: 32px; }
+.ql-snow .ql-picker.ql-font { width: 96px; }
+.ql-snow .ql-picker.ql-size { width: 74px; }
+.ql-snow .ql-picker.ql-header { width: 86px; }
+.ql-snow .ql-picker.ql-font .ql-picker-label::before,
+.ql-snow .ql-picker.ql-font .ql-picker-item::before { content: "系统字体"; }
+.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="system"]::before,
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="system"]::before { content: "系统字体"; }
+.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="songti"]::before,
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="songti"]::before { content: "宋体"; }
+.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="heiti"]::before,
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="heiti"]::before { content: "黑体"; }
+.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="kaiti"]::before,
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="kaiti"]::before { content: "楷体"; }
+.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="serif"]::before,
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="serif"]::before { content: "衬线"; }
+.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="mono"]::before,
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="mono"]::before { content: "等宽"; }
+.ql-snow .ql-picker.ql-size .ql-picker-label::before,
+.ql-snow .ql-picker.ql-size .ql-picker-item::before { content: "正文"; }
+.ql-snow .ql-picker.ql-size .ql-picker-label[data-value="12px"]::before,
+.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="12px"]::before { content: "12号"; }
+.ql-snow .ql-picker.ql-size .ql-picker-label[data-value="14px"]::before,
+.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="14px"]::before { content: "14号"; }
+.ql-snow .ql-picker.ql-size .ql-picker-label[data-value="16px"]::before,
+.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="16px"]::before { content: "16号"; }
+.ql-snow .ql-picker.ql-size .ql-picker-label[data-value="18px"]::before,
+.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="18px"]::before { content: "18号"; }
+.ql-snow .ql-picker.ql-size .ql-picker-label[data-value="20px"]::before,
+.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="20px"]::before { content: "20号"; }
+.ql-snow .ql-picker.ql-size .ql-picker-label[data-value="24px"]::before,
+.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="24px"]::before { content: "24号"; }
+.ql-snow .ql-picker.ql-size .ql-picker-label[data-value="28px"]::before,
+.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="28px"]::before { content: "28号"; }
+.ql-snow .ql-picker.ql-size .ql-picker-label[data-value="32px"]::before,
+.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="32px"]::before { content: "32号"; }
+.ql-snow .ql-picker.ql-header .ql-picker-label::before,
+.ql-snow .ql-picker.ql-header .ql-picker-item::before { content: "正文"; }
+.ql-snow .ql-picker.ql-header .ql-picker-label[data-value="1"]::before,
+.ql-snow .ql-picker.ql-header .ql-picker-item[data-value="1"]::before { content: "一级标题"; }
+.ql-snow .ql-picker.ql-header .ql-picker-label[data-value="2"]::before,
+.ql-snow .ql-picker.ql-header .ql-picker-item[data-value="2"]::before { content: "二级标题"; }
+.ql-snow .ql-picker.ql-header .ql-picker-label[data-value="3"]::before,
+.ql-snow .ql-picker.ql-header .ql-picker-item[data-value="3"]::before { content: "三级标题"; }
+.ql-snow .ql-picker.ql-header .ql-picker-label[data-value="4"]::before,
+.ql-snow .ql-picker.ql-header .ql-picker-item[data-value="4"]::before { content: "四级标题"; }
 .content-filters { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
 .review-note { color: var(--muted); }
 .review-note.has-note { color: #b45309; font-weight: 700; }
@@ -452,5 +500,5 @@ a { color: inherit; text-decoration: none; }
   .filter-input, .filter-select, .admin-filters .btn-ghost { width: 100%; }
   .article-admin-actions { width: 100%; max-width: none; }
   .inline-field { grid-template-columns: 1fr; }
-  .rich-editor .ql-editor { min-height: 320px; }
+  .rich-editor, .rich-editor.ql-container { height: 360px; }
 }

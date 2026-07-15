@@ -1,7 +1,11 @@
 <template>
   <div class="page">
     <PortalNav />
-    <section class="hero hero-compact" :class="{ 'hero-fallback': !heroUrl }" :style="heroStyle">
+    <section
+      class="hero hero-compact"
+      :class="{ 'hero-fallback': !heroBackgroundSrc, 'hero-synced': Boolean(site.backgroundSrc) }"
+      :style="heroStyle"
+    >
       <div class="shell hero-feature">
         <div class="hero-content">
           <span class="eyebrow">{{ site.heroBadge }}</span>
@@ -155,7 +159,10 @@ const articleLoading = ref(false)
 const articlePage = reactive({ current: 1, size: 9, total: 0 })
 
 const heroUrl = computed(() => normalizeAssetUrl(hero.value[0]?.url))
-const heroStyle = computed(() => heroUrl.value ? { backgroundImage: `url(${heroUrl.value})` } : {})
+const heroBackgroundSrc = computed(() => site.backgroundSrc || heroUrl.value)
+const heroStyle = computed(() => (!site.backgroundSrc && heroBackgroundSrc.value)
+  ? { backgroundImage: `url("${heroBackgroundSrc.value}")` }
+  : {})
 const activeRecommended = computed(() => recommendedArticles.value[activeRecommendIndex.value] || {})
 const recommendCoverSrc = computed(() => normalizeAssetUrl(activeRecommended.value.coverUrl))
 const filteredCategories = computed(() => {
