@@ -68,6 +68,12 @@ export const escapeHtml = (value) => String(value || '')
 
 export const appendHtmlSnippet = (current, snippet) => `${current || ''}${snippet}`
 
+export const insertHtmlSnippet = (quill, index, snippet) => {
+  if (!quill || typeof index !== 'number' || Number.isNaN(index)) return false
+  quill.clipboard.dangerouslyPasteHTML(index, snippet, 'user')
+  return true
+}
+
 export const imageSnippet = (url, name) => {
   const src = normalizeAssetUrl(url)
   return `<p><img class="article-inline-image" src="${escapeHtml(src)}" alt="${escapeHtml(name || '图片')}" /></p>`

@@ -107,6 +107,8 @@
               content-type="html"
               class="rich-editor"
               :toolbar="richToolbar"
+              @ready="onEditorReady"
+              @selectionChange="onSelectionChange"
               placeholder="开始写正文，支持字体、字号、颜色、对齐、图片、视频和链接。"
             />
           </div>
@@ -171,7 +173,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { QuillEditor } from '@vueup/vue-quill'
 import { adminApi, articleApi, uploadApi } from '../../api/blog'
 import { normalizeAssetUrl } from '../../utils/assets'
-import { appendHtmlSnippet, ensureRichTextFormats, fileSnippet, imageSnippet, isEmptyHtml, richToolbar, toDisplayHtml, toEditableHtml, videoSnippet } from '../../utils/richText'
+import { ensureRichTextFormats, fileSnippet, imageSnippet, insertHtmlSnippet, isEmptyHtml, richToolbar, toDisplayHtml, toEditableHtml, videoSnippet } from '../../utils/richText'
 
 const statusOptions = [
   { label: '草稿', value: 'DRAFT' },
@@ -204,6 +206,8 @@ const previewArticle = ref({})
 const categories = ref([])
 const tags = ref([])
 const editingId = ref(null)
+const editorRef = ref(null)
+const lastSelection = ref(null)
 const form = reactive(emptyForm())
 const query = reactive({ current: 1, size: 10, keyword: '', status: '' })
 const previewHtml = computed(() => toDisplayHtml(previewArticle.value.content, previewArticle.value.contentType))
@@ -261,6 +265,7 @@ const openEditor = async (row) => {
   resetForm()
   previewVisible.value = false
   await ensureRichTextFormats()
+  lastSelection.value = null
   editorVisible.value = true
   if (!row?.id) return
   try {
@@ -285,7 +290,27 @@ const openEditor = async (row) => {
 
 const resetForm = () => {
   editingId.value = null
+  lastSelection.value = null
   Object.assign(form, emptyForm())
+}
+
+const onEditorReady = (quill) => {
+  editorRef.value = quill
+  lastSelection.value = null
+}
+
+const onSelectionChange = ({ range }) => {
+  if (range) lastSelection.value = range
+}
+
+const getInsertIndex = () => {
+  const quill = editorRef.value
+  if (quill) {
+    const selection = quill.getSelection(true) || lastSelection.value
+    if (selection) return selection.index
+    return Math.max(quill.getLength() - 1, 0)
+  }
+  return 0
 }
 
 const saveArticle = async (status) => {
@@ -336,7 +361,9 @@ const uploadFile = async (options, type) => {
 }
 
 const insertSnippet = (text) => {
-  form.content = appendHtmlSnippet(form.content, text)
+  const quill = editorRef.value
+  if (quill && insertHtmlSnippet(quill, getInsertIndex(), text)) return
+  form.content = `${form.content || ''}${text}`
 }
 
 const canPublish = (status) => ['PENDING', 'REJECTED', 'OFFLINE', 'DRAFT'].includes(status)

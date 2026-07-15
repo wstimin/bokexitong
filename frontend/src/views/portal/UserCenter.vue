@@ -149,6 +149,8 @@
                   content-type="html"
                   class="rich-editor"
                   :toolbar="richToolbar"
+                  @ready="onEditorReady"
+                  @selectionChange="onSelectionChange"
                   placeholder="从这里开始写正文，可以调整字体、字号、颜色、对齐，也可以插入图片、视频和链接。"
                 />
               </div>
@@ -334,7 +336,7 @@ import PortalFooter from '../../components/PortalFooter.vue'
 import { articleApi, portalApi, uploadApi, userApi } from '../../api/blog'
 import { useAuthStore } from '../../stores/auth'
 import { normalizeAssetUrl } from '../../utils/assets'
-import { appendHtmlSnippet, ensureRichTextFormats, fileSnippet, imageSnippet, isEmptyHtml, richToolbar, toEditableHtml, videoSnippet } from '../../utils/richText'
+import { ensureRichTextFormats, fileSnippet, imageSnippet, insertHtmlSnippet, isEmptyHtml, richToolbar, toEditableHtml, videoSnippet } from '../../utils/richText'
 
 const auth = useAuthStore()
 const router = useRouter()
@@ -352,6 +354,8 @@ const commentPage = reactive({ current: 1, size: 10, total: 0 })
 const categories = ref([])
 const tags = ref([])
 const editingId = ref(null)
+const editorRef = ref(null)
+const lastSelection = ref(null)
 const avatarPreviewSrc = computed(() => profile.avatar ? normalizeAssetUrl(profile.avatar) : '')
 const coverPreviewSrc = computed(() => normalizeAssetUrl(articleForm.coverUrl))
 const workbenchMenus = [
@@ -455,6 +459,25 @@ const editArticle = async (row) => {
   activeSection.value = 'write'
 }
 
+const onEditorReady = (quill) => {
+  editorRef.value = quill
+  lastSelection.value = null
+}
+
+const onSelectionChange = ({ range }) => {
+  if (range) lastSelection.value = range
+}
+
+const getInsertIndex = () => {
+  const quill = editorRef.value
+  if (quill) {
+    const selection = quill.getSelection(true) || lastSelection.value
+    if (selection) return selection.index
+    return Math.max(quill.getLength() - 1, 0)
+  }
+  return 0
+}
+
 const removeArticle = async (row) => {
   await ElMessageBox.confirm(`确认删除《${row.title}》吗？`, '删除文章', { type: 'warning' })
   await articleApi.removeMine(row.id)
@@ -493,7 +516,9 @@ const uploadArticleFile = async (options, type) => {
 }
 
 const insertSnippet = (text) => {
-  articleForm.content = appendHtmlSnippet(articleForm.content, text)
+  const quill = editorRef.value
+  if (quill && insertHtmlSnippet(quill, getInsertIndex(), text)) return
+  articleForm.content = `${articleForm.content || ''}${text}`
 }
 
 const loadMine = async (page = articlePage.current) => {
