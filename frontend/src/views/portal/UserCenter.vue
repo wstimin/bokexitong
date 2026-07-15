@@ -158,15 +158,12 @@
           </el-form>
 
           <div class="upload-row writer-tools">
-            <el-upload :show-file-list="false" :http-request="(options) => uploadArticleFile(options, 'image')" accept="image/*">
-              <button class="btn-ghost" type="button">插入图片</button>
-            </el-upload>
-            <el-upload :show-file-list="false" :http-request="(options) => uploadArticleFile(options, 'video')" accept="video/*">
-              <button class="btn-ghost" type="button">插入视频</button>
-            </el-upload>
-            <el-upload :show-file-list="false" :http-request="(options) => uploadArticleFile(options, 'file')">
-              <button class="btn-ghost" type="button">插入附件</button>
-            </el-upload>
+            <button class="btn-ghost" type="button" @click="openArticleUpload('image')">插入图片</button>
+            <button class="btn-ghost" type="button" @click="openArticleUpload('video')">插入视频</button>
+            <button class="btn-ghost" type="button" @click="openArticleUpload('file')">插入附件</button>
+            <input ref="articleImageInput" class="hidden-file-input" type="file" accept="image/*" @change="(event) => uploadArticleSelectedFile(event, 'image')" />
+            <input ref="articleVideoInput" class="hidden-file-input" type="file" accept="video/*" @change="(event) => uploadArticleSelectedFile(event, 'video')" />
+            <input ref="articleFileInput" class="hidden-file-input" type="file" @change="(event) => uploadArticleSelectedFile(event, 'file')" />
           </div>
 
           <div class="hero-actions writer-actions">
@@ -356,8 +353,16 @@ const tags = ref([])
 const editingId = ref(null)
 const editorRef = ref(null)
 const lastSelection = ref(null)
+const articleImageInput = ref(null)
+const articleVideoInput = ref(null)
+const articleFileInput = ref(null)
 const avatarPreviewSrc = computed(() => profile.avatar ? normalizeAssetUrl(profile.avatar) : '')
 const coverPreviewSrc = computed(() => normalizeAssetUrl(articleForm.coverUrl))
+const articleUploadInputs = {
+  image: articleImageInput,
+  video: articleVideoInput,
+  file: articleFileInput
+}
 const workbenchMenus = [
   { key: 'dashboard', title: '工作台', desc: '常用入口和账号概览' },
   { key: 'write', title: '写文章', desc: '创作、排版和插入素材' },
@@ -498,10 +503,24 @@ const uploadProfileFile = async (options, field) => {
   try {
     const res = await uploadApi.file(options.file)
     profile[field] = res.data.url
+    options.onSuccess?.(res)
     ElMessage.success('上传成功')
   } catch (error) {
     console.error(error)
+    options.onError?.(error)
   }
+}
+
+const openArticleUpload = (type) => {
+  articleUploadInputs[type]?.value?.click()
+}
+
+const uploadArticleSelectedFile = async (event, type) => {
+  const input = event.target
+  const file = input.files?.[0]
+  input.value = ''
+  if (!file) return
+  await uploadArticleFile({ file }, type)
 }
 
 const uploadArticleFile = async (options, type) => {
@@ -517,9 +536,11 @@ const uploadArticleFile = async (options, type) => {
     } else {
       insertSnippet(fileSnippet(url, name))
     }
+    options.onSuccess?.(res)
     ElMessage.success('上传成功')
   } catch (error) {
     console.error(error)
+    options.onError?.(error)
   }
 }
 

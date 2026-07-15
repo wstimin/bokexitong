@@ -116,15 +116,12 @@
       </el-form>
 
       <div class="upload-row writer-tools">
-        <el-upload :show-file-list="false" :http-request="(options) => uploadFile(options, 'image')" accept="image/*">
-          <button class="btn-ghost" type="button">插入图片</button>
-        </el-upload>
-        <el-upload :show-file-list="false" :http-request="(options) => uploadFile(options, 'video')" accept="video/*">
-          <button class="btn-ghost" type="button">插入视频</button>
-        </el-upload>
-        <el-upload :show-file-list="false" :http-request="(options) => uploadFile(options, 'file')">
-          <button class="btn-ghost" type="button">插入附件</button>
-        </el-upload>
+        <button class="btn-ghost" type="button" @click="openUpload('image')">插入图片</button>
+        <button class="btn-ghost" type="button" @click="openUpload('video')">插入视频</button>
+        <button class="btn-ghost" type="button" @click="openUpload('file')">插入附件</button>
+        <input ref="imageInput" class="hidden-file-input" type="file" accept="image/*" @change="(event) => uploadSelectedFile(event, 'image')" />
+        <input ref="videoInput" class="hidden-file-input" type="file" accept="video/*" @change="(event) => uploadSelectedFile(event, 'video')" />
+        <input ref="fileInput" class="hidden-file-input" type="file" @change="(event) => uploadSelectedFile(event, 'file')" />
       </div>
 
       <template #footer>
@@ -208,11 +205,19 @@ const tags = ref([])
 const editingId = ref(null)
 const editorRef = ref(null)
 const lastSelection = ref(null)
+const imageInput = ref(null)
+const videoInput = ref(null)
+const fileInput = ref(null)
 const form = reactive(emptyForm())
 const query = reactive({ current: 1, size: 10, keyword: '', status: '' })
 const previewHtml = computed(() => toDisplayHtml(previewArticle.value.content, previewArticle.value.contentType))
 const previewCoverSrc = computed(() => normalizeAssetUrl(previewArticle.value.coverUrl))
 const coverPreviewSrc = computed(() => normalizeAssetUrl(form.coverUrl))
+const uploadInputs = {
+  image: imageInput,
+  video: videoInput,
+  file: fileInput
+}
 
 const load = async () => {
   loading.value = true
@@ -354,10 +359,24 @@ const uploadFile = async (options, type) => {
     } else {
       insertSnippet(fileSnippet(url, name))
     }
+    options.onSuccess?.(res)
     ElMessage.success('上传成功')
   } catch (error) {
     console.error(error)
+    options.onError?.(error)
   }
+}
+
+const openUpload = (type) => {
+  uploadInputs[type]?.value?.click()
+}
+
+const uploadSelectedFile = async (event, type) => {
+  const input = event.target
+  const file = input.files?.[0]
+  input.value = ''
+  if (!file) return
+  await uploadFile({ file }, type)
 }
 
 const insertSnippet = (text) => {
