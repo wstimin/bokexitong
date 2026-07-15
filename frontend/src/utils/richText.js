@@ -55,13 +55,36 @@ export const richToolbarLabels = {
   clean: '清除格式'
 }
 
-const fontLabels = {
-  system: '系统字体',
-  songti: '宋体',
-  heiti: '黑体',
-  kaiti: '楷体',
-  serif: '衬线',
-  mono: '等宽'
+const pickerValueLabels = {
+  font: {
+    system: '系统字体',
+    songti: '宋体',
+    heiti: '黑体',
+    kaiti: '楷体',
+    serif: '衬线',
+    mono: '等宽'
+  },
+  header: {
+    '': '正文',
+    1: '标题 1',
+    2: '标题 2',
+    3: '标题 3',
+    4: '标题 4'
+  },
+  list: {
+    ordered: '有序列表',
+    bullet: '无序列表'
+  },
+  align: {
+    '': '默认对齐',
+    center: '居中',
+    right: '右对齐',
+    justify: '两端对齐'
+  },
+  color: {
+    color: '文字颜色',
+    background: '背景色'
+  }
 }
 
 const sizeLabels = {
@@ -75,32 +98,47 @@ const sizeLabels = {
   '32px': '32px'
 }
 
-const headerLabels = {
-  1: '标题 1',
-  2: '标题 2',
-  3: '标题 3',
-  4: '标题 4',
-  false: '正文'
-}
+const toolbarSelector = '.ql-toolbar.ql-snow'
 
-const listLabels = {
-  ordered: '有序列表',
-  bullet: '无序列表'
-}
-
-const alignLabels = {
-  '': '默认对齐',
-  center: '居中',
-  right: '右对齐',
-  justify: '两端对齐'
-}
-
-const colorLabels = {
+const pickerLabelTexts = {
+  font: {
+    system: '系统字体',
+    songti: '宋体',
+    heiti: '黑体',
+    kaiti: '楷体',
+    serif: '衬线',
+    mono: '等宽'
+  },
+  size: {
+    '12px': '12px',
+    '14px': '14px',
+    '16px': '16px',
+    '18px': '18px',
+    '20px': '20px',
+    '24px': '24px',
+    '28px': '28px',
+    '32px': '32px'
+  },
+  header: {
+    '': '正文',
+    1: '标题 1',
+    2: '标题 2',
+    3: '标题 3',
+    4: '标题 4'
+  },
+  list: {
+    ordered: '有序列表',
+    bullet: '无序列表'
+  },
+  align: {
+    '': '默认对齐',
+    center: '居中',
+    right: '右对齐',
+    justify: '两端对齐'
+  },
   color: '文字颜色',
   background: '背景色'
 }
-
-const toolbarSelector = '.ql-toolbar.ql-snow'
 
 const setTitle = (el, title) => {
   if (!el) return
@@ -111,27 +149,44 @@ const setTitle = (el, title) => {
 const setPickerText = (picker, values, fallback) => {
   picker.querySelectorAll('.ql-picker-item').forEach((item) => {
     const value = item.getAttribute('data-value') ?? ''
-    const text = values[value] || fallback
+    const text = values[value] || fallback || item.textContent || ''
     item.textContent = text
     item.setAttribute('data-label', text)
     setTitle(item, text)
   })
 }
 
+const getPickerText = (format, value) => {
+  if (format === 'font') return pickerLabelTexts.font[value] || '字体'
+  if (format === 'size') return pickerLabelTexts.size[value] || '字号'
+  if (format === 'header') return pickerLabelTexts.header[value] || '正文'
+  if (format === 'list') return pickerLabelTexts.list[value] || '列表'
+  if (format === 'align') return pickerLabelTexts.align[value] || '对齐'
+  if (format === 'color') return pickerLabelTexts.color
+  if (format === 'background') return pickerLabelTexts.background
+  return richToolbarLabels[format] || ''
+}
+
 const localizePicker = (picker, format) => {
   const label = picker.querySelector('.ql-picker-label')
   const title = richToolbarLabels[format]
   if (label && title) {
-    setTitle(label, title)
-    label.setAttribute('data-label', title)
+    const value = label.getAttribute('data-value') ?? ''
+    const labelText = getPickerText(format, value)
+    setTitle(label, labelText || title)
+    label.setAttribute('data-label', labelText || title)
   }
 
-  if (format === 'font') setPickerText(picker, fontLabels, '字体')
-  else if (format === 'size') setPickerText(picker, sizeLabels, '字号')
-  else if (format === 'header') setPickerText(picker, headerLabels, '正文')
-  else if (format === 'list') setPickerText(picker, listLabels, '列表')
-  else if (format === 'align') setPickerText(picker, alignLabels, '对齐')
-  else if (format === 'color' || format === 'background') setPickerText(picker, {}, colorLabels[format])
+  if (format === 'font') setPickerText(picker, pickerLabelTexts.font, '字体')
+  else if (format === 'size') setPickerText(picker, pickerLabelTexts.size, '字号')
+  else if (format === 'header') setPickerText(picker, pickerLabelTexts.header, '正文')
+  else if (format === 'list') setPickerText(picker, pickerLabelTexts.list, '列表')
+  else if (format === 'align') setPickerText(picker, pickerLabelTexts.align, '对齐')
+  else if (format === 'color') {
+    setTitle(picker, pickerLabelTexts.color)
+  } else if (format === 'background') {
+    setTitle(picker, pickerLabelTexts.background)
+  }
 }
 
 const refreshToolbar = (toolbar) => {
@@ -158,10 +213,11 @@ const observeToolbar = (toolbar) => {
 }
 
 export const localizeRichTextToolbar = (editorRoot) => {
-  const root = editorRoot?.container || editorRoot?.$el || editorRoot
-  if (!root?.querySelector) return
+  const container = editorRoot?.container || editorRoot?.$el || editorRoot
+  if (!container) return
 
-  const toolbar = root.querySelector(toolbarSelector)
+  const root = container.parentElement || container
+  const toolbar = root.querySelector?.(toolbarSelector) || container.previousElementSibling
   if (!toolbar) return
 
   refreshToolbar(toolbar)

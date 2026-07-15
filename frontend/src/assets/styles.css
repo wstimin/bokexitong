@@ -305,8 +305,7 @@ button, input, textarea, select { font: inherit; }
 .upload-trigger-wrap.disabled .upload-trigger { opacity: .56; cursor: not-allowed; transform: none; }
 .upload-trigger:hover { transform: translateY(-1px); background: rgba(255,255,255,.72); border-color: rgba(217,54,134,.32); }
 .upload-trigger:disabled { opacity: .56; cursor: not-allowed; transform: none; }
-.upload-native-input { position: absolute; inset: 0; width: 0; height: 0; opacity: 0; pointer-events: none; }
-.upload-trigger .upload-native-input { width: 0; height: 0; }
+.upload-native-input { display: none; }
 .rich-editor .ql-toolbar.ql-snow .ql-picker-label[data-label]::before,
 .rich-editor .ql-toolbar.ql-snow .ql-picker-item[data-label]::before {
   content: attr(data-label) !important;
