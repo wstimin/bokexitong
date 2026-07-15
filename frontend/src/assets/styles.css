@@ -85,15 +85,45 @@ a { color: inherit; text-decoration: none; }
 .hero p { margin: 0; color: rgba(255, 255, 255, .94); font-size: 17px; line-height: 1.75; text-shadow: 0 3px 18px rgba(0, 0, 0, .48); }
 .hero-actions { display: flex; gap: 12px; flex-wrap: wrap; }
 .recommend-panel {
+  position: relative;
+  isolation: isolate;
   min-width: 0;
   padding: 14px;
   border-radius: 8px;
-  background:
-    linear-gradient(rgba(255,255,255,.66), rgba(255,255,255,.66)) padding-box,
-    conic-gradient(from var(--border-angle), #f45b9b, #4f8df7, #2fc5b5, #f2b84b, #f45b9b) border-box;
-  border: 2px solid transparent;
+  background: rgba(255,255,255,.66);
+  border: 1px solid rgba(255,255,255,.58);
   box-shadow: 0 20px 46px rgba(15, 20, 35, .22);
+}
+.recommend-panel::before,
+.article-card::before,
+.image-resource-card::before,
+.admin-card::before,
+.form-panel::before,
+.login-box::before,
+.stat-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  padding: 2px;
+  border-radius: inherit;
+  background: conic-gradient(from var(--border-angle), #f45b9b, #4f8df7, #2fc5b5, #f2b84b, #f45b9b);
+  pointer-events: none;
   animation: borderFlow 9s linear infinite;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+}
+.recommend-panel > *,
+.article-card > *,
+.image-resource-card > *,
+.admin-card > *,
+.form-panel > *,
+.login-box > *,
+.stat-card > * {
+  position: relative;
+  z-index: 1;
 }
 .recommend-head { display: flex; justify-content: space-between; gap: 12px; align-items: center; margin-bottom: 12px; color: #252235; }
 .recommend-head strong { display: block; margin-top: 2px; font-size: 13px; color: var(--muted); }
@@ -130,15 +160,14 @@ a { color: inherit; text-decoration: none; }
   -webkit-backdrop-filter: blur(16px) saturate(145%);
 }
 .article-card, .image-resource-card, .admin-card, .form-panel, .login-box, .stat-card {
-  background:
-    linear-gradient(rgba(255,255,255,.68), rgba(255,255,255,.68)) padding-box,
-    conic-gradient(from var(--border-angle), #f45b9b, #4f8df7, #2fc5b5, #f2b84b, #f45b9b) border-box;
-  border: 2px solid transparent;
+  position: relative;
+  isolation: isolate;
+  background: rgba(255,255,255,.68);
+  border: 1px solid rgba(255,255,255,.58);
   border-radius: 8px;
   box-shadow: 0 16px 34px rgba(32, 37, 58, .1);
   backdrop-filter: blur(18px) saturate(150%);
   -webkit-backdrop-filter: blur(18px) saturate(150%);
-  animation: borderFlow 9s linear infinite;
 }
 .article-card { overflow: hidden; transition: transform .2s ease, box-shadow .2s ease; }
 .article-card:hover { transform: translateY(-3px); box-shadow: 0 24px 48px rgba(32, 37, 58, .14); }
@@ -275,7 +304,7 @@ a { color: inherit; text-decoration: none; }
 .pager { display: flex; justify-content: flex-end; margin-top: 14px; }
 .image-preview { width: 116px; height: 66px; object-fit: cover; border-radius: 8px; border: 1px solid var(--line); background: #fff0f7; }
 .image-resource-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; min-height: 180px; }
-.image-resource-card { overflow: hidden; background-color: transparent; }
+.image-resource-card { overflow: hidden; }
 .image-resource-thumb { width: 100%; aspect-ratio: 16 / 10; object-fit: cover; display: block; background: #eef2f7; }
 .image-resource-body { padding: 14px; display: grid; gap: 10px; }
 .image-resource-title { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
@@ -443,7 +472,7 @@ a { color: inherit; text-decoration: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .article-card, .image-resource-card, .admin-card, .form-panel, .login-box, .stat-card, .recommend-panel { animation: none; }
+  .article-card::before, .image-resource-card::before, .admin-card::before, .form-panel::before, .login-box::before, .stat-card::before, .recommend-panel::before { animation: none; }
 }
 
 @media (max-width: 900px) {
