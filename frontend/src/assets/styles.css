@@ -468,14 +468,52 @@ a { color: inherit; text-decoration: none; }
 .el-dialog__header, .el-dialog__body, .el-dialog__footer { background: transparent; }
 .el-tabs__item, .el-form-item__label, .el-table, .el-dialog { color: var(--ink); }
 .el-overlay { z-index: 4000 !important; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); background-color: rgba(34, 24, 48, .24) !important; }
-.el-popper, .el-select__popper, .el-picker__popper {
+.el-popper,
+.el-select__popper,
+.el-picker__popper,
+.el-cascader__dropdown,
+.el-dropdown__popper,
+.el-autocomplete__popper,
+.el-time-picker__popper {
+  z-index: 5001 !important;
   background: rgba(255, 255, 255, .78) !important;
   border: 1px solid rgba(255,255,255,.72) !important;
   box-shadow: 0 18px 44px rgba(55, 38, 82, .18) !important;
   backdrop-filter: blur(22px) saturate(155%);
   -webkit-backdrop-filter: blur(22px) saturate(155%);
 }
-.el-select-dropdown__item.hover, .el-select-dropdown__item:hover { background: rgba(255, 119, 183, .13) !important; }
+.el-popper,
+.el-popper .el-select-dropdown,
+.el-popper .el-dropdown-menu,
+.el-popper .el-cascader-panel,
+.el-popper .el-autocomplete-suggestion,
+.el-popper .el-picker-panel {
+  color: var(--ink) !important;
+}
+.el-select-dropdown,
+.el-dropdown-menu,
+.el-cascader-panel,
+.el-autocomplete-suggestion,
+.el-picker-panel {
+  background: transparent !important;
+}
+.el-select-dropdown__item,
+.el-dropdown-menu__item,
+.el-cascader-node,
+.el-autocomplete-suggestion__list li,
+.el-time-spinner__item {
+  color: var(--ink) !important;
+}
+.el-select-dropdown__item.hover,
+.el-select-dropdown__item:hover,
+.el-dropdown-menu__item:hover,
+.el-cascader-node.is-active,
+.el-cascader-node.in-active-path,
+.el-cascader-node:hover,
+.el-autocomplete-suggestion__list li:hover,
+.el-time-spinner__item:hover {
+  background: rgba(255, 119, 183, .13) !important;
+}
 .el-pagination.is-background .btn-prev, .el-pagination.is-background .btn-next, .el-pagination.is-background .el-pager li {
   background: rgba(255,255,255,.44) !important;
   border: 1px solid rgba(255,255,255,.58);
