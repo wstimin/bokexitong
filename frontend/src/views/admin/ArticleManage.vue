@@ -250,12 +250,7 @@ const onEditorReady = (quill) => {
 const onSelectionChange = ({ range }) => { if (range) lastSelection.value = range }
 const getInsertIndex = () => {
   const quill = editorRef.value
-  if (quill) {
-    const selection = quill.getSelection(true) || lastSelection.value
-    if (selection) return selection.index
-    return Math.max(quill.getLength() - 1, 0)
-  }
-  return 0
+  return quill ? Math.max(quill.getLength() - 1, 0) : 0
 }
 
 const saveArticle = async (status) => {
