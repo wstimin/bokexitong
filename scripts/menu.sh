@@ -171,19 +171,41 @@ uninstall_project() {
 
 show_status() {
   ensure_project_dir
-  printf '\n当前项目目录：%s\n' "$PROJECT_DIR"
-  printf '前台访问域名：%s\n' "$(env_value BLOG_DOMAIN || true)"
-  printf '前端监听端口：%s\n' "$(env_value FRONTEND_HTTP_BIND || true)"
+  domain="$(env_value BLOG_DOMAIN || true)"
+  frontend_bind="$(env_value FRONTEND_HTTP_BIND || true)"
+  admin_password="$(env_value BLOG_ADMIN_INITIAL_PASSWORD || true)"
+  [ -n "$frontend_bind" ] || frontend_bind="80"
+
+  printf '\n当前配置：\n'
+  printf '  项目目录：%s\n' "$PROJECT_DIR"
+  printf '  绑定域名：%s\n' "${domain:-未配置}"
+  printf '  前端监听：%s\n' "$frontend_bind"
+  if [ -n "$domain" ]; then
+    printf '  反向代理：已配置域名后建议使用 Nginx / 面板反向代理到 127.0.0.1:18080\n'
+  else
+    printf '  反向代理：未配置\n'
+  fi
   printf '\n后台账号：\n'
   printf '  用户名：admin\n'
-  printf '  密码：%s\n' "$(env_value BLOG_ADMIN_INITIAL_PASSWORD || true)"
-  printf '\n常用地址：\n'
-  if [ -n "$(env_value BLOG_DOMAIN || true)" ]; then
-    printf '  前台：https://%s/\n' "$(env_value BLOG_DOMAIN)"
+  printf '  密码：%s\n' "${admin_password:-未读取到，请检查 .env}"
+
+  printf '\n访问地址：\n'
+  if [ -n "$domain" ]; then
+    printf '  前台：https://%s/\n' "$domain"
+    printf '  前台备用：http://%s/\n' "$domain"
+    printf '  后台：https://%s/admin/login\n' "$domain"
+    printf '  后台备用：http://%s/admin/login\n' "$domain"
   else
     printf '  前台：http://服务器IP/\n'
+    printf '  后台：http://服务器IP/admin/login\n'
   fi
-  printf '  后台：/admin/login 或后台设置中的自定义入口\n\n'
+  case "$frontend_bind" in
+    127.0.0.1:*) printf '  本机前端：http://127.0.0.1:%s/\n' "${frontend_bind#127.0.0.1:}" ;;
+    *:*) printf '  端口访问：http://服务器IP:%s/\n' "${frontend_bind##*:}" ;;
+    80) printf '  端口访问：http://服务器IP/\n' ;;
+    *) printf '  端口访问：http://服务器IP:%s/\n' "$frontend_bind" ;;
+  esac
+  printf '\n'
   if has_cmd docker; then
     compose_cmd ps || true
   fi
@@ -339,7 +361,7 @@ show_menu() {
 1. 安装 / 重新部署
 2. 更新系统
 3. 卸载系统
-4. 查看当前用户名密码
+4. 查看当前配置
 5. 配置域名
 6. 申请并启用 SSL 证书
 7. 查看容器状态
@@ -370,7 +392,7 @@ usage() {
   install             安装或重新部署
   update              更新代码并重新部署
   uninstall           卸载系统
-  status              查看当前配置、用户名和密码
+  status              查看当前配置、访问地址、用户名和密码
   domain <域名>       配置域名和 Nginx 反向代理
   ssl [域名]          申请并启用 HTTPS 证书
   help                查看帮助
