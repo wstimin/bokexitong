@@ -181,6 +181,8 @@ BLOG_ADMIN_INITIAL_PASSWORD=$ADMIN_PASSWORD
 BLOG_MAIL_ENABLED=false
 BLOG_MAIL_FROM_NAME=博客系统
 BLOG_ARTICLE_FORBIDDEN_WORDS=赌博,色情,毒品,诈骗
+BLOG_DOMAIN=
+FRONTEND_HTTP_BIND=80
 SPRING_MAIL_HOST=
 SPRING_MAIL_PORT=587
 SPRING_MAIL_USERNAME=
@@ -222,6 +224,8 @@ ensure_env_defaults() {
   append_env_if_missing "BLOG_MAIL_ENABLED" "false"
   append_env_if_missing "BLOG_MAIL_FROM_NAME" "博客系统"
   append_env_if_missing "BLOG_ARTICLE_FORBIDDEN_WORDS" "赌博,色情,毒品,诈骗"
+  append_env_if_missing "BLOG_DOMAIN" ""
+  append_env_if_missing "FRONTEND_HTTP_BIND" "80"
   append_env_if_missing "SPRING_MAIL_HOST" ""
   append_env_if_missing "SPRING_MAIL_PORT" "587"
   append_env_if_missing "SPRING_MAIL_USERNAME" ""
@@ -357,19 +361,29 @@ show_status() {
   info "Current service status:"
   compose_cmd ps
 
+  frontend_url="http://127.0.0.1/"
+  public_url="http://YOUR_SERVER_IP/"
+  if [ -n "$(env_value BLOG_DOMAIN)" ]; then
+    public_url="https://$(env_value BLOG_DOMAIN)/"
+  fi
+  if [ "$(env_value FRONTEND_HTTP_BIND)" = "127.0.0.1:18080" ]; then
+    frontend_url="http://127.0.0.1:18080/"
+  fi
+
   info "Waiting for frontend to respond..."
   for _ in $(seq 1 30); do
-    if curl -fsS http://127.0.0.1/ >/dev/null 2>&1; then
-      ok "Frontend is available: http://127.0.0.1/"
+    if curl -fsS "$frontend_url" >/dev/null 2>&1; then
+      ok "Frontend is available: $frontend_url"
       break
     fi
     sleep 2
   done
 
   info "Waiting for backend API to respond..."
+  backend_check_url="${frontend_url%/}/api/portal/home"
   for _ in $(seq 1 30); do
-    if curl -fsS http://127.0.0.1/api/portal/home >/dev/null 2>&1; then
-      ok "Backend API is available: http://127.0.0.1/api/portal/home"
+    if curl -fsS "$backend_check_url" >/dev/null 2>&1; then
+      ok "Backend API is available: $backend_check_url"
       break
     fi
     sleep 2
@@ -380,7 +394,10 @@ show_status() {
 Deployment finished.
 
 Open in browser:
-  http://YOUR_SERVER_IP/
+  $public_url
+
+Menu command after installation:
+  shiye-bk
 
 Initial admin account:
   username: admin
@@ -393,6 +410,7 @@ Email verification:
 This is a clean installation. Create categories, tags, images and articles in the admin panel.
 
 Useful commands:
+  shiye-bk
   docker compose ps
   docker compose logs -f backend
   docker compose logs -f frontend

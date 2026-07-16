@@ -124,11 +124,27 @@ run_project_deploy() {
   DEPLOY_AUTO_YES=1 bash scripts/deploy.sh
 }
 
+install_menu_command() {
+  cd "$INSTALL_DIR"
+  chmod +x scripts/menu.sh
+  tmp_file="$(mktemp)"
+  cat > "$tmp_file" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+INSTALL_DIR="$INSTALL_DIR"
+exec bash "\$INSTALL_DIR/scripts/menu.sh" "\$@"
+EOF
+  chmod +x "$tmp_file"
+  sudo_cmd mv "$tmp_file" /usr/local/bin/shiye-bk
+  ok "Menu command installed: shiye-bk"
+}
+
 main() {
   info "Starting one-click pull and deployment for $APP_NAME."
   install_base_tools
   clone_or_update_repo
   run_project_deploy
+  install_menu_command
 }
 
 main "$@"

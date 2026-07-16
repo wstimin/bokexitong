@@ -185,6 +185,14 @@ remove_project_files() {
   fi
 }
 
+remove_menu_command() {
+  [ "$PURGE" = "1" ] || return
+  if [ -f /usr/local/bin/shiye-bk ]; then
+    sudo_cmd rm -f /usr/local/bin/shiye-bk
+    ok "Removed command: shiye-bk"
+  fi
+}
+
 remove_docker_packages() {
   [ "$REMOVE_DOCKER" = "1" ] || return
   if ! has_cmd docker; then
@@ -225,6 +233,7 @@ main() {
   fi
   stop_project_services
   remove_project_files
+  remove_menu_command
   remove_docker_packages
   ok "Uninstall finished."
 }
