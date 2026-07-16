@@ -36,6 +36,7 @@ public class SiteSettingService {
     public static final String MAIL_SMTP_AUTH = "mailSmtpAuth";
     public static final String MAIL_STARTTLS_ENABLE = "mailStarttlsEnable";
     public static final String MAIL_SSL_ENABLE = "mailSslEnable";
+    public static final String INSTALLATION_COMPLETE = "installationComplete";
 
     private static final Set<String> PUBLIC_KEYS = Set.of(
             SITE_NAME, HERO_TITLE, HERO_SUBTITLE, HERO_BADGE, BACKGROUND_URL, LOGO_URL,
@@ -152,6 +153,21 @@ public class SiteSettingService {
 
     public boolean allowRegister() {
         return "true".equalsIgnoreCase(publicSettings().get(ALLOW_REGISTER));
+    }
+
+    public boolean isInstalled() {
+        try {
+            SiteSetting row = siteSettingMapper.selectOne(new LambdaQueryWrapper<SiteSetting>()
+                    .eq(SiteSetting::getSettingKey, INSTALLATION_COMPLETE)
+                    .last("LIMIT 1"));
+            return row != null && "true".equalsIgnoreCase(String.valueOf(row.getSettingValue()));
+        } catch (Exception ignored) {
+            return false;
+        }
+    }
+
+    public void markInstalled() {
+        upsert(INSTALLATION_COMPLETE, "true");
     }
 
     public List<String> forbiddenWords() {

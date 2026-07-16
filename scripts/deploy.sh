@@ -297,10 +297,6 @@ check_project_files() {
   [ -f frontend/Dockerfile ] || fail "frontend/Dockerfile not found."
 }
 
-compose_cmd() {
-  sudo_cmd docker compose "$@"
-}
-
 wait_for_mysql() {
   cd "$PROJECT_DIR"
   info "Waiting for MySQL to be ready..."
@@ -354,6 +350,14 @@ deploy() {
   info "Building and starting application services..."
   compose_cmd up -d --build backend frontend
   ok "Services started."
+}
+
+sync_domain_runtime() {
+  domain_value="$(env_value BLOG_DOMAIN || true)"
+  if [ -n "$domain_value" ]; then
+    set_env_value "FRONTEND_HTTP_BIND" "127.0.0.1:18080"
+    ok "Domain detected, frontend binding set to 127.0.0.1:18080"
+  fi
 }
 
 show_status() {
@@ -426,6 +430,7 @@ main() {
   check_project_files
   install_docker
   create_env_file
+  sync_domain_runtime
   deploy
   show_status
 }

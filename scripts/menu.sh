@@ -115,6 +115,11 @@ compose_cmd() {
   fi
 }
 
+refresh_frontend_service() {
+  info "重新应用前端监听配置，仅重建前端容器..."
+  compose_cmd up -d --no-deps --force-recreate frontend
+}
+
 install_command() {
   ensure_project_dir
   wrapper='#!/usr/bin/env bash
@@ -312,6 +317,15 @@ EOF
   ok "Nginx 域名反向代理已配置：$domain -> http://127.0.0.1:18080"
 }
 
+apply_domain_configuration() {
+  domain="$1"
+  validate_domain "$domain"
+  set_env_value BLOG_DOMAIN "$domain"
+  set_env_value FRONTEND_HTTP_BIND "127.0.0.1:18080"
+  refresh_frontend_service
+  write_nginx_http_site "$domain"
+}
+
 configure_domain() {
   ensure_project_dir
   current_domain="$(env_value BLOG_DOMAIN || true)"
@@ -320,13 +334,8 @@ configure_domain() {
     [ -t 0 ] || fail "请提供域名，例如：shiye-bk domain example.com"
     domain="$(prompt '请输入要绑定的域名' "$current_domain")"
   fi
-  validate_domain "$domain"
-  set_env_value BLOG_DOMAIN "$domain"
-  set_env_value FRONTEND_HTTP_BIND "127.0.0.1:18080"
-  info "切换容器前端为本机监听端口 18080..."
-  cd "$PROJECT_DIR"
-  DEPLOY_AUTO_YES=1 bash scripts/deploy.sh
-  write_nginx_http_site "$domain"
+  info "仅更新域名和前端监听配置，不重装数据库或后端..."
+  apply_domain_configuration "$domain"
   ok "域名配置完成。解析生效后访问：http://$domain/"
 }
 
@@ -336,11 +345,10 @@ issue_ssl() {
   if [ -z "$domain" ]; then
     [ -t 0 ] || fail "请先配置域名，例如：shiye-bk domain example.com"
     domain="$(prompt '请输入要申请证书的域名')"
-    configure_domain "$domain"
   else
     validate_domain "$domain"
-    write_nginx_http_site "$domain"
   fi
+  apply_domain_configuration "$domain"
   email="${SSL_EMAIL:-}"
   if [ -z "$email" ]; then
     if [ -t 0 ]; then

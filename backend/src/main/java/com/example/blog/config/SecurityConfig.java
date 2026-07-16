@@ -36,6 +36,7 @@ public class SecurityConfig {
         return http.csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/install/**").permitAll()
                         .requestMatchers("/auth/**", "/portal/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/comments").permitAll()
                         .requestMatchers(HttpMethod.GET, "/categories/**", "/tags/**", "/images/**", "/uploads/**").permitAll()

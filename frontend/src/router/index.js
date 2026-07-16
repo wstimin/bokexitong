@@ -1,8 +1,10 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useSiteStore } from '../stores/site'
+import { installApi } from '../api/blog'
 
 const routes = [
+  { path: '/install', component: () => import('../views/InstallView.vue') },
   { path: '/', component: () => import('../views/portal/HomeView.vue') },
   { path: '/article/:id', component: () => import('../views/portal/ArticleDetail.vue') },
   { path: '/create', redirect: '/user' },
@@ -34,7 +36,18 @@ const router = createRouter({ history: createWebHistory(), routes })
 router.beforeEach(async (to) => {
   const auth = useAuthStore()
   const site = useSiteStore()
-  await site.loadSite()
+  if (to.path !== '/install') {
+    try {
+      const res = await installApi.status()
+      const installed = Boolean(res.data?.installed)
+      if (!installed) {
+        return '/install'
+      }
+    } catch (error) {
+      console.error(error)
+    }
+    await site.loadSite()
+  }
   const adminLoginPath = site.adminLoginPath || '/admin/login'
   if (to.meta.dynamicAdminLogin) {
     if (to.path === adminLoginPath) {

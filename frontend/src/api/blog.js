@@ -21,6 +21,11 @@ export const portalApi = {
   detail: (id) => http.get(`/portal/articles/${id}`)
 }
 
+export const installApi = {
+  status: () => http.get('/install/status'),
+  install: (data) => http.post('/install', data)
+}
+
 export const articleApi = {
   page: (params) => http.get('/articles', { params }),
   adminDetail: (id) => http.get(`/articles/${id}`),
