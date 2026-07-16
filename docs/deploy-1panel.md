@@ -7,7 +7,7 @@
 ## 前提
 
 - 服务器已经安装 1Panel。
-- 服务器已经安装 Docker 和 Compose 插件。
+- 服务器已经安装 Docker，且 1Panel 可以管理容器或编排。
 - 域名已经解析到服务器 IP。
 - 已经放行 `80` 和 `443` 端口。
 
@@ -31,7 +31,7 @@ frontend/Dockerfile.runtime
 sql/personal_blog.sql
 ```
 
-## 第二步: 启动 Compose
+## 第二步: 启动容器
 
 在 1Panel 页面中依次点击：
 
@@ -49,7 +49,7 @@ sql/personal_blog.sql
 FRONTEND_HTTP_BIND=18080
 ```
 
-启动后先用下面的地址确认安装向导能打开：
+容器启动后先用下面的地址确认安装向导能打开：
 
 ```text
 http://127.0.0.1:18080/install
@@ -87,7 +87,7 @@ http://127.0.0.1:18080
 
 ## 第五步: 打开安装页
 
-Compose 启动后，访问你的域名：
+容器启动后，访问你的域名：
 
 ```text
 https://你的域名/
