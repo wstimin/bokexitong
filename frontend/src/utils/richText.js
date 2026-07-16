@@ -156,6 +156,15 @@ const setPickerText = (picker, values, fallback) => {
   })
 }
 
+const setPickerTitles = (picker, values, fallback) => {
+  picker.querySelectorAll('.ql-picker-item').forEach((item) => {
+    const value = item.getAttribute('data-value') ?? ''
+    const text = values[value] || fallback || item.textContent || ''
+    item.removeAttribute('data-label')
+    setTitle(item, text)
+  })
+}
+
 const getPickerText = (format, value) => {
   if (format === 'font') return pickerLabelTexts.font[value] || '字体'
   if (format === 'size') return pickerLabelTexts.size[value] || '字号'
@@ -174,14 +183,18 @@ const localizePicker = (picker, format) => {
     const value = label.getAttribute('data-value') ?? ''
     const labelText = getPickerText(format, value)
     setTitle(label, labelText || title)
-    label.setAttribute('data-label', labelText || title)
+    if (format === 'align' || format === 'color' || format === 'background') {
+      label.removeAttribute('data-label')
+    } else {
+      label.setAttribute('data-label', labelText || title)
+    }
   }
 
   if (format === 'font') setPickerText(picker, pickerLabelTexts.font, '字体')
   else if (format === 'size') setPickerText(picker, pickerLabelTexts.size, '字号')
   else if (format === 'header') setPickerText(picker, pickerLabelTexts.header, '正文')
   else if (format === 'list') setPickerText(picker, pickerLabelTexts.list, '列表')
-  else if (format === 'align') setPickerText(picker, pickerLabelTexts.align, '对齐')
+  else if (format === 'align') setPickerTitles(picker, pickerLabelTexts.align, '对齐')
   else if (format === 'color') {
     setTitle(picker, pickerLabelTexts.color)
   } else if (format === 'background') {

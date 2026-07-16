@@ -279,10 +279,6 @@ button, input, textarea, select { font: inherit; }
 .rich-editor .ql-editor { min-height: clamp(380px, 48vh, 560px); font-size: 17px; line-height: 1.9; color: var(--ink); word-break: break-word; }
 .rich-editor .ql-editor img { display: block; max-width: min(100%, 760px); height: auto; margin: 14px auto; border-radius: 8px; }
 .rich-editor .ql-editor a { color: var(--pink); text-decoration: underline; text-underline-offset: 3px; }
-.rich-editor .ql-toolbar.ql-snow .ql-picker .ql-picker-label[data-label]::before,
-.rich-editor .ql-toolbar.ql-snow .ql-picker .ql-picker-item[data-label]::before {
-  content: attr(data-label) !important;
-}
 .upload-trigger {
   display: inline-flex;
   align-items: center;
@@ -306,10 +302,6 @@ button, input, textarea, select { font: inherit; }
 .upload-trigger:hover { transform: translateY(-1px); background: rgba(255,255,255,.72); border-color: rgba(217,54,134,.32); }
 .upload-trigger:disabled { opacity: .56; cursor: not-allowed; transform: none; }
 .upload-native-input { display: none; }
-.rich-editor .ql-toolbar.ql-snow .ql-picker-label[data-label]::before,
-.rich-editor .ql-toolbar.ql-snow .ql-picker-item[data-label]::before {
-  content: attr(data-label) !important;
-}
 .rich-editor .ql-toolbar.ql-snow .ql-picker.ql-header .ql-picker-label::before,
 .rich-editor .ql-toolbar.ql-snow .ql-picker.ql-header .ql-picker-item::before,
 .rich-editor .ql-toolbar.ql-snow .ql-picker.ql-font .ql-picker-label::before,
