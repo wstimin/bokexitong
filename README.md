@@ -7,8 +7,8 @@
 项目提供三种独立部署方式：
 
 - 一键脚本部署：适合纯净 Linux 服务器，安装后使用 `shiye-bk` 菜单管理。
-- 1Panel 部署：上传项目后，在 1Panel 网页向导中创建 Compose 应用、反向代理和证书。
-- 宝塔部署：上传项目后，在宝塔网页向导中创建 Compose 应用、反向代理和证书。
+- 1Panel 部署：上传项目后，全程在 1Panel 网页里完成 Compose、反向代理和证书。
+- 宝塔部署：上传项目后，全程在宝塔网页里完成 Compose、反向代理和证书。
 
 详细说明见 [docs/deployment.md](docs/deployment.md)。
 
