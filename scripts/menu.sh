@@ -23,6 +23,7 @@ else
 fi
 ENV_FILE="$PROJECT_DIR/.env"
 NGINX_SITE_NAME="shiye-bk-${APP_NAME}"
+NGINX_MARKER="/etc/shiye-bk/nginx-installed-by-shiye-bk"
 
 info() { printf '\033[1;34m[信息]\033[0m %s\n' "$*"; }
 ok() { printf '\033[1;32m[完成]\033[0m %s\n' "$*"; }
@@ -213,6 +214,10 @@ show_status() {
 
 install_nginx() {
   if has_cmd nginx; then
+    if has_cmd systemctl; then
+      sudo_cmd systemctl enable nginx >/dev/null 2>&1 || true
+      sudo_cmd systemctl start nginx >/dev/null 2>&1 || true
+    fi
     return
   fi
   info "安装 Nginx..."
@@ -236,8 +241,12 @@ install_nginx() {
   else
     fail "无法识别系统，请先手动安装 Nginx。"
   fi
-  sudo_cmd systemctl enable nginx
-  sudo_cmd systemctl start nginx
+  sudo_cmd mkdir -p "$(dirname "$NGINX_MARKER")"
+  printf '%s\n' "$APP_NAME" | sudo_cmd tee "$NGINX_MARKER" >/dev/null
+  if has_cmd systemctl; then
+    sudo_cmd systemctl enable nginx
+    sudo_cmd systemctl start nginx
+  fi
 }
 
 install_certbot() {

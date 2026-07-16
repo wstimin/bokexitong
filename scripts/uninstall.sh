@@ -4,6 +4,8 @@ set -euo pipefail
 APP_NAME="bokexitong"
 LEGACY_APP_NAME="anime-blog"
 DEFAULT_INSTALL_DIR="/opt/bokexitong"
+NGINX_SITE_NAME="shiye-bk-${APP_NAME}"
+NGINX_MARKER="/etc/shiye-bk/nginx-installed-by-shiye-bk"
 
 SOURCE_PATH="${0:-}"
 if [ "${BASH_SOURCE+x}" = "x" ] && [ "${#BASH_SOURCE[@]}" -gt 0 ]; then
@@ -193,6 +195,50 @@ remove_menu_command() {
   fi
 }
 
+remove_nginx_site() {
+  removed=0
+  for path in \
+    "/etc/nginx/conf.d/${NGINX_SITE_NAME}.conf" \
+    "/etc/nginx/conf.d/${NGINX_SITE_NAME}.conf.save" \
+    "/etc/nginx/conf.d/${NGINX_SITE_NAME}.conf.bak" \
+    "/etc/nginx/sites-enabled/${NGINX_SITE_NAME}" \
+    "/etc/nginx/sites-available/${NGINX_SITE_NAME}"; do
+    if [ -e "$path" ] || [ -L "$path" ]; then
+      sudo_cmd rm -f "$path"
+      ok "Removed Nginx site config: $path"
+      removed=1
+    fi
+  done
+
+  if [ "$removed" = "1" ] && has_cmd nginx; then
+    if sudo_cmd nginx -t >/dev/null 2>&1; then
+      if has_cmd systemctl; then
+        sudo_cmd systemctl reload nginx >/dev/null 2>&1 || true
+      else
+        sudo_cmd nginx -s reload >/dev/null 2>&1 || true
+      fi
+      ok "Reloaded Nginx after removing project site config."
+    else
+      warn "Nginx config test failed after cleanup. Please check: nginx -t"
+    fi
+  fi
+}
+
+stop_project_nginx_if_owned() {
+  [ "$PURGE" = "1" ] || return
+  if [ -f "$NGINX_MARKER" ]; then
+    sudo_cmd rm -f "$NGINX_MARKER"
+    if [ -d /etc/shiye-bk ]; then
+      sudo_cmd rmdir /etc/shiye-bk >/dev/null 2>&1 || true
+    fi
+    if has_cmd systemctl && has_cmd nginx; then
+      sudo_cmd systemctl stop nginx >/dev/null 2>&1 || true
+      sudo_cmd systemctl disable nginx >/dev/null 2>&1 || true
+      ok "Stopped Nginx installed by shiye-bk."
+    fi
+  fi
+}
+
 remove_docker_packages() {
   [ "$REMOVE_DOCKER" = "1" ] || return
   if ! has_cmd docker; then
@@ -232,8 +278,10 @@ main() {
     confirm "Continue with purge uninstall?"
   fi
   stop_project_services
+  remove_nginx_site
   remove_project_files
   remove_menu_command
+  stop_project_nginx_if_owned
   remove_docker_packages
   ok "Uninstall finished."
 }
