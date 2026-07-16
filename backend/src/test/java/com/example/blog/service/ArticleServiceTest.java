@@ -10,6 +10,7 @@ import com.example.blog.mapper.CommentMapper;
 import com.example.blog.mapper.FavoriteMapper;
 import com.example.blog.mapper.LikeRecordMapper;
 import com.example.blog.mapper.TagMapper;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,6 +35,7 @@ class ArticleServiceTest {
     @Mock private CategoryMapper categoryMapper;
     @Mock private TagMapper tagMapper;
     @Mock private BlogUserMapper blogUserMapper;
+    @Mock private SiteSettingService siteSettingService;
 
     private ArticleService service;
 
@@ -48,7 +50,7 @@ class ArticleServiceTest {
                 categoryMapper,
                 tagMapper,
                 blogUserMapper,
-                "\u8d4c\u535a,\u8272\u60c5,\u6bd2\u54c1,\u8bc8\u9a97"
+                siteSettingService
         );
     }
 
@@ -73,15 +75,16 @@ class ArticleServiceTest {
     void saveArticle_shouldSendToReview_whenForbiddenWordMatched() {
         ArticleRequest request = baseRequest("\u53d1\u5e03\u6807\u9898", "\u6b63\u5e38\u6458\u8981", "<p>\u8fd9\u91cc\u5305\u542b\u8d4c\u535a\u76f8\u5173\u5185\u5bb9</p>");
         ArgumentCaptor<Article> captor = ArgumentCaptor.forClass(Article.class);
+        when(siteSettingService.forbiddenWords()).thenReturn(List.of("\u8d4c\u535a"));
         when(articleMapper.insert(captor.capture())).thenReturn(1);
 
         Article article = service.saveArticle(null, 7L, request);
 
-        assertEquals("PENDING", article.getStatus());
+        assertEquals("REJECTED", article.getStatus());
         assertEquals("\u547d\u4e2d\u8fdd\u7981\u8bcd\uff1a\u8d4c\u535a", article.getReviewReason());
         assertNotNull(article.getReviewedAt());
         assertNull(article.getPublishedAt());
-        assertEquals("PENDING", captor.getValue().getStatus());
+        assertEquals("REJECTED", captor.getValue().getStatus());
         assertEquals("\u547d\u4e2d\u8fdd\u7981\u8bcd\uff1a\u8d4c\u535a", captor.getValue().getReviewReason());
         verifyNoInteractions(articleTagMapper);
     }

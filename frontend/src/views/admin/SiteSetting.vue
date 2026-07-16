@@ -3,7 +3,7 @@
     <div class="toolbar user-toolbar">
       <div>
         <h2>站点设置</h2>
-        <p class="section-subtitle">配置站点名称、Logo、首页文案、全站背景、SEO 和前台展示信息。</p>
+        <p class="section-subtitle">配置站点名称、Logo、首页文案、全站背景、SEO、登录入口和违禁词规则。</p>
       </div>
       <button class="btn-primary" type="button" :disabled="loading" @click="save">保存设置</button>
     </div>
@@ -12,7 +12,7 @@
       <div class="setting-group">
         <div class="setting-group-info">
           <h3>基础信息</h3>
-          <p>控制站点名称、顶部 Logo 和浏览器图标。</p>
+          <p>控制站点名称、Logo 和浏览器图标。</p>
         </div>
         <div class="setting-group-fields">
           <el-form-item label="站点名称">
@@ -34,7 +34,7 @@
       <div class="setting-group">
         <div class="setting-group-info">
           <h3>首页展示</h3>
-          <p>配置首页标题、描述和全站背景图。背景图直接显示，不叠加额外遮罩。</p>
+          <p>首页大标题、说明和全站背景图直接显示，不叠加额外遮罩。</p>
         </div>
         <div class="setting-group-fields">
           <el-form-item label="首页徽标文案">
@@ -57,8 +57,30 @@
 
       <div class="setting-group">
         <div class="setting-group-info">
-          <h3>SEO 与页脚</h3>
-          <p>用于搜索引擎、备案展示和页脚文字。</p>
+          <h3>内容审核</h3>
+          <p>文章和评论共用同一份违禁词。命中后直接驳回，不再进入待审队列。</p>
+        </div>
+        <div class="setting-group-fields">
+          <el-form-item label="违禁词设置" class="field-full">
+            <el-input
+              v-model="form.forbiddenWords"
+              type="textarea"
+              :rows="4"
+              maxlength="1000"
+              show-word-limit
+              placeholder="一行或用逗号分隔，例如：赌博,色情,毒品,诈骗"
+            />
+          </el-form-item>
+          <el-form-item label="审核说明" class="field-full">
+            <el-input v-model="form.contactHtml" type="textarea" :rows="6" maxlength="2000" show-word-limit placeholder="可填写联系方式、版权说明或站点公告" />
+          </el-form-item>
+        </div>
+      </div>
+
+      <div class="setting-group">
+        <div class="setting-group-info">
+          <h3>SEO 与入口</h3>
+          <p>用于搜索引擎、页脚文字和后台登录路径。</p>
         </div>
         <div class="setting-group-fields">
           <el-form-item label="SEO 描述" class="field-full">
@@ -68,22 +90,10 @@
             <el-input v-model="form.seoKeywords" maxlength="180" show-word-limit placeholder="例如：博客,技术文章,生活记录" />
           </el-form-item>
           <el-form-item label="备案号">
-            <el-input v-model="form.icpBeian" maxlength="80" show-word-limit placeholder="例如：粤ICP备xxxx号" />
+            <el-input v-model="form.icpBeian" maxlength="80" show-word-limit placeholder="例如：粤ICP备xxxxxx号" />
           </el-form-item>
           <el-form-item label="页脚文字">
             <el-input v-model="form.footerText" maxlength="120" show-word-limit placeholder="例如：Copyright 2026 博客系统" />
-          </el-form-item>
-        </div>
-      </div>
-
-      <div class="setting-group">
-        <div class="setting-group-info">
-          <h3>前台与入口</h3>
-          <p>补充前台页脚内容，并设置后台登录入口路径。</p>
-        </div>
-        <div class="setting-group-fields">
-          <el-form-item label="联系信息 / 自定义展示内容" class="field-full">
-            <el-input v-model="form.contactHtml" type="textarea" :rows="6" maxlength="2000" show-word-limit placeholder="可填写邮箱、微信、商务合作、站长简介等 HTML 内容" />
           </el-form-item>
           <el-form-item label="后台登录路径">
             <el-input v-model="form.adminLoginPath" maxlength="80" placeholder="例如：/admin/login 或 /manage-login" />
@@ -113,7 +123,22 @@ import { normalizeAssetUrl } from '../../utils/assets'
 
 const site = useSiteStore()
 const loading = ref(false)
-const form = reactive({ siteName: '', logoUrl: '', heroTitle: '', heroSubtitle: '', heroBadge: '', backgroundUrl: '', seoDescription: '', seoKeywords: '', icpBeian: '', footerText: '', contactHtml: '', adminLoginPath: '/admin/login', allowRegister: true })
+const form = reactive({
+  siteName: '',
+  logoUrl: '',
+  heroTitle: '',
+  heroSubtitle: '',
+  heroBadge: '',
+  backgroundUrl: '',
+  forbiddenWords: '',
+  seoDescription: '',
+  seoKeywords: '',
+  icpBeian: '',
+  footerText: '',
+  contactHtml: '',
+  adminLoginPath: '/admin/login',
+  allowRegister: true
+})
 
 const previewStyle = computed(() => form.backgroundUrl ? { backgroundImage: `url("${normalizeAssetUrl(form.backgroundUrl)}")` } : {})
 const logoPreviewSrc = computed(() => normalizeAssetUrl(form.logoUrl))
@@ -125,6 +150,7 @@ const apply = (settings = {}) => {
   form.heroSubtitle = settings.heroSubtitle || '用透明卡片浏览公开文章，点开后阅读完整内容。登录后可进入用户中心创作和管理自己的文章。'
   form.heroBadge = settings.heroBadge || '博客'
   form.backgroundUrl = settings.backgroundUrl || ''
+  form.forbiddenWords = settings.forbiddenWords || '赌博,色情,毒品,诈骗'
   form.seoDescription = settings.seoDescription || ''
   form.seoKeywords = settings.seoKeywords || ''
   form.icpBeian = settings.icpBeian || ''

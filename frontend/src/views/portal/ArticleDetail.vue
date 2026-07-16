@@ -33,7 +33,7 @@
       <section class="detail-article comment-section">
         <div class="section-title">
           <h2>评论</h2>
-          <span class="section-subtitle">评论通过审核后会公开显示</span>
+          <span class="section-subtitle">评论可直接发布，命中违禁词会自动驳回</span>
         </div>
         <el-input v-model="commentText" type="textarea" :rows="3" placeholder="写下你的评论" />
         <button class="btn-primary comment-submit" type="button" :disabled="!commentText.trim()" @click="submitComment">提交评论</button>
@@ -111,9 +111,14 @@ const favorite = async () => {
 const submitComment = async () => {
   if (!requireLogin() || !commentText.value.trim()) return
   try {
-    await commentApi.save({ articleId: route.params.id, content: commentText.value.trim() })
+    const res = await commentApi.save({ articleId: route.params.id, content: commentText.value.trim() })
     commentText.value = ''
-    ElMessage.success('评论已提交，审核通过后会显示')
+    if (res.data?.status === 'APPROVED') {
+      comments.value = [res.data, ...comments.value]
+      ElMessage.success('评论已提交并直接显示')
+    } else {
+      ElMessage.warning(res.data?.reviewReason || '评论因违禁词被驳回')
+    }
   } catch (error) {
     console.error(error)
   }

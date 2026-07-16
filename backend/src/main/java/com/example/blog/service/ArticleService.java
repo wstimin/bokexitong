@@ -21,7 +21,6 @@ import com.example.blog.mapper.CommentMapper;
 import com.example.blog.mapper.FavoriteMapper;
 import com.example.blog.mapper.LikeRecordMapper;
 import com.example.blog.mapper.TagMapper;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -46,12 +45,12 @@ public class ArticleService {
     private final CategoryMapper categoryMapper;
     private final TagMapper tagMapper;
     private final BlogUserMapper blogUserMapper;
-    private final List<String> forbiddenWords;
+    private final SiteSettingService siteSettingService;
 
     public ArticleService(ArticleMapper articleMapper, ArticleTagMapper articleTagMapper, CommentMapper commentMapper,
                           LikeRecordMapper likeRecordMapper, FavoriteMapper favoriteMapper,
                           CategoryMapper categoryMapper, TagMapper tagMapper, BlogUserMapper blogUserMapper,
-                          @Value("${blog.article.forbidden-words:赌博,色情,毒品,诈骗}") String forbiddenWordsConfig) {
+                          SiteSettingService siteSettingService) {
         this.articleMapper = articleMapper;
         this.articleTagMapper = articleTagMapper;
         this.commentMapper = commentMapper;
@@ -60,7 +59,7 @@ public class ArticleService {
         this.categoryMapper = categoryMapper;
         this.tagMapper = tagMapper;
         this.blogUserMapper = blogUserMapper;
-        this.forbiddenWords = parseForbiddenWords(forbiddenWordsConfig);
+        this.siteSettingService = siteSettingService;
     }
 
     public Page<Article> page(long current, long size, String keyword, String status, Long categoryId, Long tagId) {
@@ -448,10 +447,11 @@ public class ArticleService {
         if (matchedWord == null) {
             return new ModerationDecision("PUBLISHED", null);
         }
-        return new ModerationDecision("PENDING", "命中违禁词：" + matchedWord);
+        return new ModerationDecision("REJECTED", "命中违禁词：" + matchedWord);
     }
 
     private String findForbiddenWord(ArticleRequest request) {
+        List<String> forbiddenWords = siteSettingService.forbiddenWords();
         if (request == null || forbiddenWords.isEmpty()) {
             return null;
         }
@@ -470,17 +470,6 @@ public class ArticleService {
             }
         }
         return null;
-    }
-
-    private List<String> parseForbiddenWords(String config) {
-        if (config == null || config.isBlank()) {
-            return List.of();
-        }
-        return Arrays.stream(config.split("[,，;；|\\r\\n]+"))
-                .map(String::trim)
-                .filter(text -> !text.isEmpty())
-                .distinct()
-                .toList();
     }
 
     private record ModerationDecision(String status, String reviewReason) {

@@ -28,13 +28,16 @@ public class InteractionService {
     private final CommentMapper commentMapper;
     private final LikeRecordMapper likeRecordMapper;
     private final FavoriteMapper favoriteMapper;
+    private final SiteSettingService siteSettingService;
 
     public InteractionService(ArticleMapper articleMapper, CommentMapper commentMapper,
-                              LikeRecordMapper likeRecordMapper, FavoriteMapper favoriteMapper) {
+                              LikeRecordMapper likeRecordMapper, FavoriteMapper favoriteMapper,
+                              SiteSettingService siteSettingService) {
         this.articleMapper = articleMapper;
         this.commentMapper = commentMapper;
         this.likeRecordMapper = likeRecordMapper;
         this.favoriteMapper = favoriteMapper;
+        this.siteSettingService = siteSettingService;
     }
 
     public Page<Comment> comments(Long articleId, long current, long size) {
@@ -70,9 +73,16 @@ public class InteractionService {
         comment.setArticleId(article.getId());
         comment.setParentId(comment.getParentId() == null || comment.getParentId() < 0 ? 0 : comment.getParentId());
         comment.setContent(content);
-        comment.setStatus("PENDING");
-        comment.setReviewReason(null);
-        comment.setReviewedAt(null);
+        String matchedWord = findForbiddenWord(content);
+        if (matchedWord == null) {
+            comment.setStatus("APPROVED");
+            comment.setReviewReason(null);
+            comment.setReviewedAt(LocalDateTime.now());
+        } else {
+            comment.setStatus("REJECTED");
+            comment.setReviewReason("命中违禁词：" + matchedWord);
+            comment.setReviewedAt(LocalDateTime.now());
+        }
         comment.setCreatedAt(LocalDateTime.now());
         commentMapper.insert(comment);
         return comment;
@@ -201,5 +211,22 @@ public class InteractionService {
         if (value == null) return null;
         String trimmed = value.trim();
         return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private String findForbiddenWord(String content) {
+        List<String> forbiddenWords = siteSettingService.forbiddenWords();
+        if (content == null || forbiddenWords.isEmpty()) {
+            return null;
+        }
+        String source = content.trim().toLowerCase();
+        if (source.isBlank()) {
+            return null;
+        }
+        for (String word : forbiddenWords) {
+            if (source.contains(word.toLowerCase())) {
+                return word;
+            }
+        }
+        return null;
     }
 }

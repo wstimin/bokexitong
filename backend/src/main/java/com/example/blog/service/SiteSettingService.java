@@ -26,6 +26,7 @@ public class SiteSettingService {
     public static final String CONTACT_HTML = "contactHtml";
     public static final String ALLOW_REGISTER = "allowRegister";
     public static final String ADMIN_LOGIN_PATH = "adminLoginPath";
+    public static final String FORBIDDEN_WORDS = "forbiddenWords";
     public static final String MAIL_ENABLED = "mailEnabled";
     public static final String MAIL_HOST = "mailHost";
     public static final String MAIL_PORT = "mailPort";
@@ -42,7 +43,8 @@ public class SiteSettingService {
     );
     private static final Set<String> SITE_FORM_KEYS = Set.of(
             SITE_NAME, HERO_TITLE, HERO_SUBTITLE, HERO_BADGE, BACKGROUND_URL, LOGO_URL,
-            SEO_DESCRIPTION, SEO_KEYWORDS, ICP_BEIAN, FOOTER_TEXT, CONTACT_HTML, ALLOW_REGISTER, ADMIN_LOGIN_PATH
+            SEO_DESCRIPTION, SEO_KEYWORDS, ICP_BEIAN, FOOTER_TEXT, CONTACT_HTML, ALLOW_REGISTER, ADMIN_LOGIN_PATH,
+            FORBIDDEN_WORDS
     );
     private static final Set<String> MAIL_FORM_KEYS = Set.of(
             MAIL_ENABLED, MAIL_HOST, MAIL_PORT, MAIL_USERNAME, MAIL_PASSWORD, MAIL_FROM_NAME,
@@ -126,7 +128,20 @@ public class SiteSettingService {
     }
 
     public Map<String, String> saveSite(Map<String, String> payload) {
-        save(filter(payload, SITE_FORM_KEYS));
+        Map<String, String> next = adminSiteSettings();
+        Map<String, String> filtered = filter(payload, SITE_FORM_KEYS);
+        for (String key : next.keySet()) {
+            if (filtered.containsKey(key)) {
+                if (ALLOW_REGISTER.equals(key)) {
+                    next.put(key, normalizeBoolean(filtered.get(key), next.get(key)));
+                } else if (ADMIN_LOGIN_PATH.equals(key)) {
+                    next.put(key, normalizeAdminLoginPath(filtered.get(key), next.get(key)));
+                } else {
+                    next.put(key, clean(filtered.get(key), next.get(key), REQUIRED_TEXT_KEYS.contains(key)));
+                }
+            }
+            upsert(key, next.get(key));
+        }
         return adminSiteSettings();
     }
 
@@ -137,6 +152,10 @@ public class SiteSettingService {
 
     public boolean allowRegister() {
         return "true".equalsIgnoreCase(publicSettings().get(ALLOW_REGISTER));
+    }
+
+    public List<String> forbiddenWords() {
+        return parseList(adminSiteSettings().get(FORBIDDEN_WORDS));
     }
 
     private Map<String, String> defaults() {
@@ -154,6 +173,7 @@ public class SiteSettingService {
         settings.put(CONTACT_HTML, "");
         settings.put(ALLOW_REGISTER, "true");
         settings.put(ADMIN_LOGIN_PATH, "/admin/login");
+        settings.put(FORBIDDEN_WORDS, "赌博,色情,毒品,诈骗");
         settings.put(MAIL_ENABLED, "false");
         settings.put(MAIL_HOST, "");
         settings.put(MAIL_PORT, "587");
@@ -198,6 +218,17 @@ public class SiteSettingService {
             return fallback == null || fallback.isBlank() ? "/admin/login" : fallback;
         }
         return trimmed;
+    }
+
+    private List<String> parseList(String config) {
+        if (config == null || config.isBlank()) {
+            return List.of();
+        }
+        return java.util.Arrays.stream(config.split("[,，;；\\r\\n]+"))
+                .map(String::trim)
+                .filter(text -> !text.isEmpty())
+                .distinct()
+                .toList();
     }
 
     private Map<String, String> filter(Map<String, String> payload, Set<String> allowedKeys) {
