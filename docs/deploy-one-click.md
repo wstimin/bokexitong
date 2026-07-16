@@ -8,6 +8,8 @@ shiye-bk
 
 后续安装、更新、卸载、查看当前配置、域名和证书都从这个菜单进入。
 
+一键脚本是一条独立部署路线，不需要你手动上传压缩包。脚本会优先下载 GitHub Release 里的 `bokexitong-linux.tar.gz` 构建包，服务器只需要构建轻量 Docker 运行镜像，所以安装更快。如果构建包暂时不存在，脚本会自动回退到源码拉取和服务器本地构建。
+
 ## 服务器要求
 
 - Ubuntu 22.04、Debian 12、Rocky Linux 9、CentOS Stream 9 或同类 Linux。
@@ -119,7 +121,11 @@ shiye-bk status
 shiye-bk update
 ```
 
-更新会拉取最新代码，重新构建前端和后端容器，并自动执行数据库升级脚本。
+如果当前是构建包安装，更新会下载最新 `bokexitong-linux.tar.gz`，保留 `.env`、数据库卷和上传文件卷，然后重新启动服务并自动执行数据库升级脚本。
+
+如果当前是源码安装，更新会拉取最新代码，重新构建前端和后端容器，并自动执行数据库升级脚本。
+
+配置域名或申请证书不需要重新安装。`shiye-bk domain example.com` 和 `shiye-bk ssl example.com` 只会热更新 `.env`、前端监听端口和 Nginx 反向代理。
 
 ## 卸载
 

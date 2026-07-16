@@ -204,6 +204,15 @@ append_env_if_missing() {
   fi
 }
 
+set_env_if_blank() {
+  key="$1"
+  value="$2"
+  current="$(env_value "$key" || true)"
+  if [ -z "$current" ]; then
+    set_env_value "$key" "$value"
+  fi
+}
+
 set_env_value() {
   key="$1"
   value="$2"
@@ -233,6 +242,10 @@ ensure_env_defaults() {
   append_env_if_missing "SPRING_MAIL_SMTP_AUTH" "true"
   append_env_if_missing "SPRING_MAIL_STARTTLS_ENABLE" "true"
   append_env_if_missing "SPRING_MAIL_SSL_ENABLE" "false"
+
+  set_env_if_blank "MYSQL_ROOT_PASSWORD" "$(generate_mysql_password)"
+  set_env_if_blank "BLOG_JWT_SECRET" "$(generate_jwt_secret)"
+  set_env_if_blank "BLOG_ADMIN_INITIAL_PASSWORD" "$(generate_admin_password)"
 
   if [ "$(env_value BLOG_JWT_SECRET)" = "$JWT_PLACEHOLDER_OLD" ] || [ "$(env_value BLOG_JWT_SECRET)" = "$JWT_PLACEHOLDER_COMPOSE" ]; then
     warn "BLOG_JWT_SECRET is still a placeholder. Replacing it with a generated secret."
@@ -293,8 +306,56 @@ check_project_files() {
   cd "$PROJECT_DIR"
   [ -f docker-compose.yml ] || fail "docker-compose.yml not found. Run this script inside the project package."
   [ -f sql/personal_blog.sql ] || fail "sql/personal_blog.sql not found."
-  [ -f backend/Dockerfile ] || fail "backend/Dockerfile not found."
-  [ -f frontend/Dockerfile ] || fail "frontend/Dockerfile not found."
+  if is_build_package; then
+    [ -f backend/Dockerfile.runtime ] || fail "backend/Dockerfile.runtime not found."
+    [ -f frontend/Dockerfile.runtime ] || fail "frontend/Dockerfile.runtime not found."
+  else
+    [ -f backend/Dockerfile ] || fail "backend/Dockerfile not found."
+    [ -f frontend/Dockerfile ] || fail "frontend/Dockerfile not found."
+  fi
+}
+
+compose_cmd() {
+  cd "$PROJECT_DIR"
+  if [ -f "$ENV_FILE" ]; then
+    sudo_cmd docker compose --env-file "$ENV_FILE" "$@"
+  else
+    sudo_cmd docker compose "$@"
+  fi
+}
+
+is_build_package() {
+  [ -f "$PROJECT_DIR/backend/app.jar" ] && [ -d "$PROJECT_DIR/frontend/dist" ]
+}
+
+write_runtime_compose_override() {
+  cat > "$PROJECT_DIR/docker-compose.override.yml" <<'EOF'
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.runtime
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.runtime
+EOF
+  ok "Build package detected. Runtime Dockerfiles will be used."
+}
+
+remove_runtime_compose_override() {
+  if [ -f "$PROJECT_DIR/docker-compose.override.yml" ]; then
+    rm -f "$PROJECT_DIR/docker-compose.override.yml"
+  fi
+}
+
+prepare_compose_mode() {
+  if is_build_package; then
+    write_runtime_compose_override
+  else
+    remove_runtime_compose_override
+    ok "Source package detected. Docker will build frontend and backend from source."
+  fi
 }
 
 wait_for_mysql() {
@@ -342,12 +403,13 @@ run_database_upgrades() {
 
 deploy() {
   cd "$PROJECT_DIR"
-  info "Building and starting database..."
+  prepare_compose_mode
+  info "Starting database..."
   compose_cmd up -d --build mysql
   wait_for_mysql
   run_database_upgrades
 
-  info "Building and starting application services..."
+  info "Starting application services..."
   compose_cmd up -d --build backend frontend
   ok "Services started."
 }

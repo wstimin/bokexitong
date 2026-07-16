@@ -1,0 +1,6 @@
+FROM eclipse-temurin:17-jre
+WORKDIR /app
+ENV TZ=Asia/Shanghai
+COPY app.jar /app/blog-backend.jar
+EXPOSE 8080
+ENTRYPOINT ["java", "-jar", "/app/blog-backend.jar", "--spring.profiles.active=prod"]

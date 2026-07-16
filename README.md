@@ -7,10 +7,28 @@
 项目提供三种独立部署方式：
 
 - 一键脚本部署：适合纯净 Linux 服务器，安装后使用 `shiye-bk` 菜单管理。
-- 1Panel 部署：上传项目后，全程在 1Panel 网页里完成 Compose、反向代理和证书。
-- 宝塔部署：上传项目后，全程在宝塔网页里完成 Compose、反向代理和证书。
+- 1Panel 部署：上传 `bokexitong-linux.tar.gz` 构建包后，全程在 1Panel 网页里完成 Compose、反向代理、证书和首次安装向导。
+- 宝塔部署：上传 `bokexitong-linux.tar.gz` 构建包后，全程在宝塔网页里完成 Compose、反向代理、证书和首次安装向导。
+
+三种方式是分开的：一键脚本不需要手动上传压缩包；1Panel / 宝塔不需要执行一键脚本。
 
 详细说明见 [docs/deployment.md](docs/deployment.md)。
+
+## 构建 Linux 上传包
+
+在有 Node.js、Maven 和 tar 的开发机上执行：
+
+```bash
+bash scripts/build-package.sh
+```
+
+生成文件：
+
+```text
+package/bokexitong-linux.tar.gz
+```
+
+这个包适合上传到 1Panel / 宝塔，也可以上传到 GitHub Release 供一键脚本自动下载。
 
 ## 一键脚本
 

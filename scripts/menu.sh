@@ -5,6 +5,7 @@ APP_NAME="bokexitong"
 REPO_URL="${REPO_URL:-https://github.com/wstimin/bokexitong.git}"
 BRANCH="${BRANCH:-main}"
 DEFAULT_INSTALL_DIR="/opt/bokexitong"
+PACKAGE_URL="${PACKAGE_URL:-https://github.com/wstimin/bokexitong/releases/latest/download/bokexitong-linux.tar.gz}"
 
 SOURCE_PATH="${0:-}"
 if [ "${BASH_SOURCE+x}" = "x" ] && [ "${#BASH_SOURCE[@]}" -gt 0 ]; then
@@ -115,6 +116,60 @@ compose_cmd() {
   fi
 }
 
+is_build_package() {
+  [ -f "$PROJECT_DIR/backend/app.jar" ] && [ -d "$PROJECT_DIR/frontend/dist" ]
+}
+
+safe_project_dir_for_replace() {
+  resolved="$(cd "$PROJECT_DIR" && pwd -P)"
+  case "$resolved" in
+    /|/opt|/usr|/var|/home|/root|/tmp) fail "项目目录不安全，拒绝更新：$resolved" ;;
+  esac
+  [ -f "$resolved/docker-compose.yml" ] || fail "项目目录缺少 docker-compose.yml，拒绝更新：$resolved"
+}
+
+download_build_package() {
+  tmp_file="$(mktemp)"
+  tmp_dir="$(mktemp -d)"
+  info "下载最新构建包：$PACKAGE_URL"
+  if ! curl -fL --connect-timeout 10 --retry 2 "$PACKAGE_URL" -o "$tmp_file"; then
+    rm -f "$tmp_file"
+    rm -rf "$tmp_dir"
+    fail "构建包下载失败，请确认 GitHub Release 已上传 bokexitong-linux.tar.gz。"
+  fi
+  tar -xzf "$tmp_file" -C "$tmp_dir"
+  package_root="$tmp_dir/$APP_NAME"
+  [ -d "$package_root" ] || package_root="$(find "$tmp_dir" -mindepth 1 -maxdepth 1 -type d | head -n 1)"
+  [ -n "$package_root" ] && [ -d "$package_root" ] || fail "构建包格式不正确。"
+  [ -f "$package_root/docker-compose.yml" ] || fail "构建包格式不正确：缺少 docker-compose.yml。"
+  [ -f "$package_root/backend/app.jar" ] || fail "构建包格式不正确：缺少 backend/app.jar。"
+  [ -d "$package_root/frontend/dist" ] || fail "构建包格式不正确：缺少 frontend/dist。"
+  [ -f "$package_root/scripts/deploy.sh" ] || fail "构建包格式不正确：缺少 scripts/deploy.sh。"
+}
+
+update_from_build_package() {
+  ensure_project_dir
+  safe_project_dir_for_replace
+  env_backup=""
+  if [ -f "$ENV_FILE" ]; then
+    env_backup="$(mktemp)"
+    cp "$ENV_FILE" "$env_backup"
+  fi
+  download_build_package
+  find "$PROJECT_DIR" -mindepth 1 -maxdepth 1 \
+    ! -name '.env' \
+    ! -name 'docker-compose.override.yml' \
+    -exec rm -rf {} +
+  cp -R "$package_root"/. "$PROJECT_DIR"/
+  if [ -n "$env_backup" ]; then
+    cp "$env_backup" "$ENV_FILE"
+    rm -f "$env_backup"
+  fi
+  rm -f "$tmp_file"
+  rm -rf "$tmp_dir"
+  ok "构建包已更新到项目目录。"
+}
+
 refresh_frontend_service() {
   info "重新应用前端监听配置，仅重建前端容器..."
   compose_cmd up -d --no-deps --force-recreate frontend
@@ -157,6 +212,9 @@ update_project() {
     git fetch origin "$BRANCH"
     git checkout "$BRANCH"
     git pull --ff-only origin "$BRANCH"
+  elif is_build_package; then
+    info "当前是构建包安装，使用最新构建包更新。"
+    update_from_build_package
   else
     warn "当前目录不是 Git 仓库，跳过 git pull：$PROJECT_DIR"
   fi

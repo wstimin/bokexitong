@@ -5,3 +5,6 @@ backend/target/
 .idea/
 .vscode/
 uploads/
+package/
+.build-package/
+docker-compose.override.yml
