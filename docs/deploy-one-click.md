@@ -146,3 +146,17 @@ docker compose logs -f mysql
 ```
 
 如果页面打不开，先看 `docker compose ps`。如果接口报错，先看 `backend` 日志。如果是域名和证书问题，先确认域名解析、服务器安全组和 `80/443` 端口。
+
+## 一键卸载
+
+如果想彻底清理本项目并重新安装，可以直接执行：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/wstimin/bokexitong/main/uninstall.sh | bash -s -- --purge -y
+```
+
+执行后再重新安装即可：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/wstimin/bokexitong/main/install.sh | bash
+```
