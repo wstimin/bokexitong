@@ -80,9 +80,12 @@
           </el-form>
 
           <div class="upload-row writer-tools">
-            <FileUploadButton accept="image/*" :disabled="articleUploading" @select="(file) => uploadArticleFile({ file }, 'image')">插入图片</FileUploadButton>
-            <FileUploadButton accept="video/*" :disabled="articleUploading" @select="(file) => uploadArticleFile({ file }, 'video')">插入视频</FileUploadButton>
-            <FileUploadButton :disabled="articleUploading" @select="(file) => uploadArticleFile({ file }, 'file')">插入附件</FileUploadButton>
+            <button class="upload-trigger" type="button" :disabled="articleUploading" @click="openWriterUpload('image')">插入图片</button>
+            <input ref="writerImageInput" class="upload-native-input" type="file" accept="image/*" :disabled="articleUploading" @change="(event) => handleWriterUpload(event, 'image')" />
+            <button class="upload-trigger" type="button" :disabled="articleUploading" @click="openWriterUpload('video')">插入视频</button>
+            <input ref="writerVideoInput" class="upload-native-input" type="file" accept="video/*" :disabled="articleUploading" @change="(event) => handleWriterUpload(event, 'video')" />
+            <button class="upload-trigger" type="button" :disabled="articleUploading" @click="openWriterUpload('file')">插入附件</button>
+            <input ref="writerFileInput" class="upload-native-input" type="file" :disabled="articleUploading" @change="(event) => handleWriterUpload(event, 'file')" />
           </div>
           <div class="hero-actions writer-actions">
             <button class="btn-primary" type="button" @click="saveArticle('PUBLISHED')">发布文章</button>
@@ -163,6 +166,10 @@ const editingId = ref(null)
 const editorRef = ref(null)
 const lastSelection = ref(null)
 const articleUploading = ref(false)
+const writerImageInput = ref(null)
+const writerVideoInput = ref(null)
+const writerFileInput = ref(null)
+const writerUploadInputs = { image: writerImageInput, video: writerVideoInput, file: writerFileInput }
 const avatarPreviewSrc = computed(() => profile.avatar ? normalizeAssetUrl(profile.avatar) : '')
 const coverPreviewSrc = computed(() => normalizeAssetUrl(articleForm.coverUrl))
 const statusOptions = [{ label: '草稿', value: 'DRAFT' }, { label: '待审核', value: 'PENDING' }, { label: '已发布', value: 'PUBLISHED' }, { label: '已驳回', value: 'REJECTED' }, { label: '已下架', value: 'OFFLINE' }]
@@ -204,6 +211,8 @@ const getInsertIndex = () => { const quill = editorRef.value; if (quill) { const
 const removeArticle = async (row) => { await ElMessageBox.confirm(`确认删除《${row.title}》吗？`, '删除文章', { type: 'warning' }); await articleApi.removeMine(row.id); if (editingId.value === row.id) resetArticleForm(); ElMessage.success('文章已删除'); loadMine(Math.min(articlePage.current, pageCount(articlePage.total - 1, articlePage.size))) }
 const uploadProfileFile = async (options, field) => { try { const res = await uploadApi.file(options.file); profile[field] = res.data.url; options.onSuccess?.(res); ElMessage.success('上传成功') } catch (error) { console.error(error); options.onError?.(error) } }
 const uploadArticleFile = async (options, type) => { articleUploading.value = true; try { const res = await uploadApi.file(options.file); const { url, name } = res.data; if (type === 'cover') articleForm.coverUrl = url; else if (type === 'image') insertSnippet(imageSnippet(url, name)); else if (type === 'video') insertSnippet(videoSnippet(url, name)); else insertSnippet(fileSnippet(url, name)); options.onSuccess?.(res); ElMessage.success('上传成功') } catch (error) { console.error(error); options.onError?.(error) } finally { articleUploading.value = false } }
+const openWriterUpload = (type) => { if (articleUploading.value) return; const input = writerUploadInputs[type]?.value; if (!input) return; input.value = ''; input.click() }
+const handleWriterUpload = async (event, type) => { const file = event?.target?.files?.[0]; if (event?.target) event.target.value = ''; if (!file) return; await uploadArticleFile({ file }, type) }
 const insertSnippet = (text) => { const quill = editorRef.value; if (quill && insertHtmlSnippet(quill, getInsertIndex(), text)) return; articleForm.content = `${articleForm.content || ''}${text}` }
 const loadMine = async (page = articlePage.current) => { articlePage.current = page; try { const res = await articleApi.mine({ current: articlePage.current, size: articlePage.size, keyword: articleQuery.keyword?.trim() || undefined, status: articleQuery.status || undefined }); mineRows.value = res.data.records || []; articlePage.total = res.data.total || 0 } catch (error) { console.error(error) } }
 const loadFavorites = async (page = favoritePage.current) => { favoritePage.current = page; try { const res = await userApi.favorites({ current: favoritePage.current, size: favoritePage.size }); favoriteRows.value = res.data.records || []; favoritePage.total = res.data.total || 0 } catch (error) { console.error(error) } }
