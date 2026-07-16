@@ -287,10 +287,57 @@ export const escapeHtml = (value) => String(value || '')
 
 export const appendHtmlSnippet = (current, snippet) => `${current || ''}${snippet}`
 
+const parseInsertSnippet = (snippet) => {
+  if (typeof DOMParser === 'undefined') return null
+  const doc = new DOMParser().parseFromString(String(snippet || ''), 'text/html')
+  const img = doc.querySelector('img')
+  if (img) {
+    return {
+      type: 'image',
+      src: img.getAttribute('src') || ''
+    }
+  }
+
+  const link = doc.querySelector('a')
+  if (link) {
+    const text = (link.textContent || '').trim()
+    return {
+      type: link.getAttribute('href') ? 'link' : null,
+      href: link.getAttribute('href') || '',
+      text: text || '附件'
+    }
+  }
+
+  return null
+}
+
 export const insertHtmlSnippet = (quill, index, snippet) => {
   if (!quill || typeof index !== 'number' || Number.isNaN(index)) return false
-  quill.clipboard.dangerouslyPasteHTML(index, snippet, 'user')
-  return true
+  const parsed = parseInsertSnippet(snippet)
+  try {
+    quill.focus?.()
+
+    if (parsed?.type === 'image' && parsed.src && typeof quill.insertEmbed === 'function') {
+      quill.insertEmbed(index, 'image', parsed.src, 'user')
+      quill.insertText(index + 1, '\n', 'user')
+      return true
+    }
+
+    if (parsed?.type === 'link' && parsed.href && typeof quill.insertText === 'function') {
+      quill.insertText(index, parsed.text, 'link', parsed.href, 'user')
+      quill.insertText(index + parsed.text.length, '\n', 'user')
+      return true
+    }
+
+    if (snippet && quill.clipboard?.dangerouslyPasteHTML) {
+      quill.clipboard.dangerouslyPasteHTML(index, snippet, 'user')
+      return true
+    }
+  } catch (error) {
+    console.error(error)
+  }
+
+  return false
 }
 
 export const imageSnippet = (url, name) => {
