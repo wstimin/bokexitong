@@ -351,6 +351,28 @@ issue_ssl() {
   ok "证书已申请并启用：https://$domain/"
 }
 
+domain_ssl_menu() {
+  while true; do
+    clear || true
+    cat <<EOF
+域名 / SSL
+项目目录：$PROJECT_DIR
+
+1. 配置域名
+2. 申请并启用 SSL 证书
+0. 返回
+EOF
+    printf '\n请选择操作: ' > /dev/tty
+    read -r choice < /dev/tty || true
+    case "$choice" in
+      1) configure_domain; pause ;;
+      2) issue_ssl; pause ;;
+      0) return 0 ;;
+      *) warn "无效选项：$choice"; pause ;;
+    esac
+  done
+}
+
 show_menu() {
   while true; do
     clear || true
@@ -362,9 +384,8 @@ show_menu() {
 2. 更新系统
 3. 卸载系统
 4. 查看当前配置
-5. 配置域名
-6. 申请并启用 SSL 证书
-7. 查看容器状态
+5. 域名 / SSL
+6. 查看容器状态
 0. 退出
 EOF
     printf '\n请选择操作: ' > /dev/tty
@@ -374,9 +395,8 @@ EOF
       2) update_project; pause ;;
       3) uninstall_project; pause ;;
       4) show_status; pause ;;
-      5) configure_domain; pause ;;
-      6) issue_ssl; pause ;;
-      7) compose_cmd ps; pause ;;
+      5) domain_ssl_menu ;;
+      6) compose_cmd ps; pause ;;
       0) exit 0 ;;
       *) warn "无效选项：$choice"; pause ;;
     esac
@@ -393,7 +413,7 @@ usage() {
   update              更新代码并重新部署
   uninstall           卸载系统
   status              查看当前配置、访问地址、用户名和密码
-  domain <域名>       配置域名和 Nginx 反向代理
+  domain [域名]       配置域名和 Nginx 反向代理
   ssl [域名]          申请并启用 HTTPS 证书
   help                查看帮助
 
