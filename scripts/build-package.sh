@@ -100,6 +100,7 @@ main() {
   [ -n "$jar_file" ] || fail "Backend jar was not found in backend/target."
   cp "$jar_file" "$BUILD_DIR/backend/app.jar"
   cp backend/Dockerfile.runtime "$BUILD_DIR/backend/Dockerfile.runtime"
+  cp backend/entrypoint.sh "$BUILD_DIR/backend/entrypoint.sh"
   cp -R frontend/dist "$BUILD_DIR/frontend/dist"
   cp frontend/nginx.conf "$BUILD_DIR/frontend/nginx.conf"
   cp frontend/Dockerfile.runtime "$BUILD_DIR/frontend/Dockerfile.runtime"

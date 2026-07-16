@@ -47,6 +47,7 @@ services:
       SPRING_MAIL_SSL_ENABLE: ${SPRING_MAIL_SSL_ENABLE:-false}
     volumes:
       - upload-data:/app/uploads
+      - app-config:/app/config
 
   frontend:
     build:
@@ -61,3 +62,4 @@ services:
 volumes:
   mysql-data:
   upload-data:
+  app-config:

@@ -8,5 +8,7 @@ FROM eclipse-temurin:17-jre
 WORKDIR /app
 ENV TZ=Asia/Shanghai
 COPY --from=build /app/target/*.jar /app/blog-backend.jar
+COPY entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "/app/blog-backend.jar", "--spring.profiles.active=prod"]
+ENTRYPOINT ["/app/entrypoint.sh"]

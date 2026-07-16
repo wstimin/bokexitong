@@ -401,6 +401,16 @@ run_database_upgrades() {
   ok "Database upgrades applied."
 }
 
+mark_installed_for_script_deploy() {
+  info "Marking script deployment as installed..."
+  compose_cmd exec -T mysql sh -c 'mysql --protocol=TCP -h127.0.0.1 -P3306 --default-character-set=utf8mb4 -uroot -p"$MYSQL_ROOT_PASSWORD" personal_blog' <<'SQL'
+INSERT INTO site_setting(setting_key, setting_value, description)
+VALUES ('installationComplete', 'true', '安装完成标记')
+ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value), description = VALUES(description);
+SQL
+  ok "Script deployment install marker is ready."
+}
+
 deploy() {
   cd "$PROJECT_DIR"
   prepare_compose_mode
@@ -408,6 +418,7 @@ deploy() {
   compose_cmd up -d --build mysql
   wait_for_mysql
   run_database_upgrades
+  mark_installed_for_script_deploy
 
   info "Starting application services..."
   compose_cmd up -d --build backend frontend

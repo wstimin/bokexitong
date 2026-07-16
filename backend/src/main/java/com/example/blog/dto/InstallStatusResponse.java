@@ -9,4 +9,6 @@ public class InstallStatusResponse {
     private boolean installed;
     private String siteName;
     private String domain;
+    private boolean databaseReady;
+    private boolean runtimeConfigured;
 }

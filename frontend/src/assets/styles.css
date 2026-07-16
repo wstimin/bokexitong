@@ -173,6 +173,11 @@ button, input, textarea, select { font: inherit; }
 
 .login-page { min-height: 100vh; display: grid; place-items: center; padding: 24px; }
 .login-box { width: min(430px, 100%); padding: 28px; }
+.install-box { width: min(760px, 100%); }
+.install-section { margin-top: 18px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,.48); }
+.install-section h2 { margin: 0 0 14px; font-size: 18px; }
+.install-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 14px; }
+.install-restart-tip { margin: 12px 0 0; color: var(--muted); line-height: 1.6; text-align: center; }
 .auth-title { margin: 20px 0 18px; }
 .auth-title h1 { margin: 0 0 8px; font-size: 30px; }
 .auth-title p { margin: 0; color: var(--muted); line-height: 1.6; }
@@ -379,7 +384,7 @@ button, input, textarea, select { font: inherit; }
   .nav { align-items: flex-start; flex-direction: column; padding: 14px 0; }
   .nav-links { justify-content: flex-start; }
   .hero-feature, .main-grid { padding-top: 24px; }
-  .article-grid, .stats, .shortcut-grid, .image-resource-grid, .user-action-grid, .user-form-grid, .settings-grid.two-cols, .setting-group, .setting-group-fields, .writer-meta-grid, .cover-picker, .inline-field, .article-search { grid-template-columns: 1fr; }
+  .article-grid, .stats, .shortcut-grid, .image-resource-grid, .user-action-grid, .user-form-grid, .settings-grid.two-cols, .setting-group, .setting-group-fields, .writer-meta-grid, .cover-picker, .inline-field, .article-search, .install-grid { grid-template-columns: 1fr; }
   .admin-main { padding: 16px; }
   .hero h1 { font-size: 34px; }
   .recommend-card { grid-template-columns: 1fr; }
