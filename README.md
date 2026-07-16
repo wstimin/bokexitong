@@ -7,8 +7,8 @@
 项目提供三种独立部署方式：
 
 - 一键脚本部署：适合纯净 Linux 服务器，安装后使用 `shiye-bk` 菜单管理。
-- 1Panel 部署：上传 `bokexitong-linux.tar.gz` 构建包后，全程在 1Panel 网页里完成 Compose、反向代理、证书和首次安装向导。
-- 宝塔部署：上传 `bokexitong-linux.tar.gz` 构建包后，全程在宝塔网页里完成 Compose、反向代理、证书和首次安装向导。
+- 1Panel 部署：上传 `bokexitong-linux.tar.gz` 构建包后，全程在 1Panel 网页里完成 Compose、反向代理、证书和首次安装向导，首次访问会自动进入 `/install`。
+- 宝塔部署：上传 `bokexitong-linux.tar.gz` 构建包后，全程在宝塔网页里完成 Compose、反向代理、证书和首次安装向导，首次访问会自动进入 `/install`。
 
 三种方式是分开的：一键脚本不需要手动上传压缩包；1Panel / 宝塔不需要执行一键脚本。
 
@@ -28,7 +28,7 @@ bash scripts/build-package.sh
 package/bokexitong-linux.tar.gz
 ```
 
-这个包适合上传到 1Panel / 宝塔，也可以上传到 GitHub Release 供一键脚本自动下载。
+这个包适合上传到 1Panel / 宝塔，也可以上传到 GitHub Release 供一键脚本自动下载。包内会自动生成可用的 `.env`，上传后可直接启动并打开安装向导。
 
 ## 一键脚本
 
@@ -74,7 +74,10 @@ shiye-bk ssl example.com
 admin
 ```
 
-后台初始密码由部署脚本生成，保存在项目目录 `.env` 中：
+后台初始密码来源取决于部署方式：
+
+- 一键脚本：安装时由脚本生成，保存在项目目录 `.env` 中。
+- 1Panel / 宝塔：构建包里已经生成好，保存在项目目录 `.env` 中。
 
 ```text
 BLOG_ADMIN_INITIAL_PASSWORD=...

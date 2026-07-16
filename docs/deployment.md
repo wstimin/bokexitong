@@ -7,8 +7,8 @@
 ## 选择方式
 
 - 一键脚本部署：适合纯净 Linux 服务器，直接执行安装命令。脚本会优先下载 GitHub Release 的构建包，下载不到时自动回退到源码构建，安装后使用 `shiye-bk` 菜单完成更新、卸载、域名和证书配置。
-- 1Panel 部署：上传 `bokexitong-linux.tar.gz` 后，全程在 1Panel 网页里完成 Compose、站点、证书和首次安装向导。
-- 宝塔部署：上传 `bokexitong-linux.tar.gz` 后，全程在宝塔网页里完成 Compose、站点、证书和首次安装向导。
+- 1Panel 部署：上传 `bokexitong-linux.tar.gz` 后，全程在 1Panel 网页里完成 Compose、站点、证书和首次安装向导，首次访问会自动进入 `/install`。
+- 宝塔部署：上传 `bokexitong-linux.tar.gz` 后，全程在宝塔网页里完成 Compose、站点、证书和首次安装向导，首次访问会自动进入 `/install`。
 
 这三种方式是分开的：一键脚本不需要你手动上传压缩包；1Panel / 宝塔不需要执行一键脚本。
 
@@ -36,7 +36,10 @@
 admin
 ```
 
-初始密码由部署脚本生成，保存在项目目录的 `.env` 文件中：
+初始密码来源取决于部署方式：
+
+- 一键脚本：安装时由脚本生成，保存在项目目录的 `.env` 文件中。
+- 1Panel / 宝塔：构建包里已经生成好，保存在项目目录的 `.env` 文件中。
 
 ```text
 BLOG_ADMIN_INITIAL_PASSWORD=...

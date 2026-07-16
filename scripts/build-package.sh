@@ -29,6 +29,58 @@ copy_path() {
   cp -R "$src" "$dest"
 }
 
+generate_secret_hex() {
+  bytes="$1"
+  secret=""
+  if has_cmd openssl; then
+    secret="$(openssl rand -hex "$bytes" 2>/dev/null || true)"
+  fi
+
+  if [ -n "$secret" ]; then
+    printf '%s' "$secret"
+    return
+  fi
+
+  seed="$(date +%s%N)-$$-${RANDOM:-0}-$APP_NAME-$bytes"
+  if has_cmd sha256sum; then
+    printf '%s' "$seed" | sha256sum | awk '{print $1}'
+  else
+    printf '%s%s%s' "$seed" "$seed" "$seed" | tr -cd 'A-Za-z0-9'
+  fi
+}
+
+generate_mysql_password() {
+  printf 'Db-%s' "$(generate_secret_hex 18)"
+}
+
+generate_jwt_secret() {
+  generate_secret_hex 32
+}
+
+generate_admin_password() {
+  printf 'Admin-%s' "$(generate_secret_hex 18)"
+}
+
+write_env_file() {
+  cat > "$BUILD_DIR/.env" <<EOF
+MYSQL_ROOT_PASSWORD=$(generate_mysql_password)
+BLOG_JWT_SECRET=$(generate_jwt_secret)
+BLOG_ADMIN_INITIAL_PASSWORD=$(generate_admin_password)
+BLOG_MAIL_ENABLED=false
+BLOG_MAIL_FROM_NAME=博客系统
+BLOG_ARTICLE_FORBIDDEN_WORDS=赌博,色情,毒品,诈骗
+BLOG_DOMAIN=
+FRONTEND_HTTP_BIND=18080
+SPRING_MAIL_HOST=
+SPRING_MAIL_PORT=587
+SPRING_MAIL_USERNAME=
+SPRING_MAIL_PASSWORD=
+SPRING_MAIL_SMTP_AUTH=true
+SPRING_MAIL_STARTTLS_ENABLE=true
+SPRING_MAIL_SSL_ENABLE=false
+EOF
+}
+
 main() {
   cd "$PROJECT_DIR"
   has_cmd npm || fail "npm is required to build the frontend."
@@ -55,7 +107,7 @@ main() {
   cp -R scripts/. "$BUILD_DIR/scripts/"
   copy_path docker-compose.runtime.yml "$BUILD_DIR/docker-compose.yml"
   copy_path docker-compose.yml "$BUILD_DIR/docker-compose.source.yml"
-  copy_path .env.example "$BUILD_DIR/.env"
+  write_env_file
   copy_path .env.example "$BUILD_DIR/.env.example"
   copy_path README.md "$BUILD_DIR/README.md"
   copy_path deploy.sh "$BUILD_DIR/deploy.sh"
