@@ -2,7 +2,7 @@
   <div class="page">
     <PortalNav />
 
-    <section class="hero" :class="{ 'hero-fallback': !heroBackgroundSrc }" :style="heroStyle">
+    <section class="hero">
       <div class="shell hero-feature">
         <div class="hero-content">
           <span class="eyebrow">{{ site.heroBadge }}</span>
@@ -147,9 +147,6 @@ const selectedTagId = ref(null)
 const articleLoading = ref(false)
 const articlePage = reactive({ current: 1, size: 9, total: 0 })
 
-const heroUrl = computed(() => normalizeAssetUrl(hero.value[0]?.url))
-const heroBackgroundSrc = computed(() => heroUrl.value || site.backgroundSrc)
-const heroStyle = computed(() => heroBackgroundSrc.value ? { backgroundImage: `url("${heroBackgroundSrc.value}")` } : {})
 const activeRecommended = computed(() => recommendedArticles.value[activeRecommendIndex.value] || {})
 const recommendCoverSrc = computed(() => normalizeAssetUrl(activeRecommended.value.coverUrl))
 const filteredCategories = computed(() => {
