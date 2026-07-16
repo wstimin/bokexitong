@@ -100,14 +100,31 @@ prepare_install_dir() {
   fi
 }
 
+is_build_package() {
+  [ -f "$INSTALL_DIR/backend/app.jar" ] && [ -d "$INSTALL_DIR/frontend/dist" ]
+}
+
+set_env_value() {
+  env_file="$1"
+  key="$2"
+  value="$3"
+  [ -f "$env_file" ] || return 0
+  tmp_file="${env_file}.tmp.$$"
+  awk -v key="$key" -v value="$value" '
+    BEGIN { replaced = 0 }
+    $0 ~ "^" key "=" { print key "=" value; replaced = 1; next }
+    { print }
+    END { if (!replaced) print key "=" value }
+  ' "$env_file" > "$tmp_file"
+  mv "$tmp_file" "$env_file"
+}
+
 install_from_package() {
   prepare_install_dir
-  if [ -e "$INSTALL_DIR" ] && [ "$(find "$INSTALL_DIR" -mindepth 1 -maxdepth 1 2>/dev/null | wc -l)" -gt 0 ]; then
-    return 1
-  fi
 
   tmp_file="$(mktemp)"
   tmp_dir="$(mktemp -d)"
+  env_backup=""
 
   info "Trying build package: $PACKAGE_URL"
   if ! curl -fL --connect-timeout 10 --retry 2 "$PACKAGE_URL" -o "$tmp_file"; then
@@ -125,10 +142,21 @@ install_from_package() {
   [ -d "$package_root/frontend/dist" ] || fail "Invalid build package: frontend/dist is missing."
   [ -f "$package_root/scripts/deploy.sh" ] || fail "Invalid build package: scripts/deploy.sh is missing."
 
+  if [ -f "$INSTALL_DIR/.env" ]; then
+    env_backup="$(mktemp)"
+    cp "$INSTALL_DIR/.env" "$env_backup"
+  fi
+
   rm -rf "$INSTALL_DIR"
   sudo_cmd mkdir -p "$INSTALL_DIR"
   sudo_cmd chown "$(id -u):$(id -g)" "$INSTALL_DIR" 2>/dev/null || true
   cp -R "$package_root"/. "$INSTALL_DIR"/
+  if [ -n "$env_backup" ]; then
+    cp "$env_backup" "$INSTALL_DIR/.env"
+    rm -f "$env_backup"
+  else
+    set_env_value "$INSTALL_DIR/.env" "FRONTEND_HTTP_BIND" "80"
+  fi
   rm -f "$tmp_file"
   rm -rf "$tmp_dir"
   ok "Build package is ready: $INSTALL_DIR"
@@ -154,8 +182,8 @@ clone_or_update_repo() {
 }
 
 prepare_project_files() {
-  if [ -f "$INSTALL_DIR/scripts/deploy.sh" ] && [ -f "$INSTALL_DIR/docker-compose.yml" ]; then
-    ok "Project files already exist: $INSTALL_DIR"
+  if is_build_package; then
+    ok "Build package already exists: $INSTALL_DIR"
     return
   fi
   if install_from_package; then

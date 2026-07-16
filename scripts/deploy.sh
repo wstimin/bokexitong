@@ -437,23 +437,33 @@ show_status() {
   fi
 
   info "Waiting for frontend to respond..."
+  frontend_ready=0
   for _ in $(seq 1 30); do
     if curl -fsS "$frontend_url" >/dev/null 2>&1; then
       ok "Frontend is available: $frontend_url"
+      frontend_ready=1
       break
     fi
     sleep 2
   done
+  if [ "$frontend_ready" != "1" ]; then
+    warn "Frontend did not respond at $frontend_url. Check with: docker compose logs -f frontend"
+  fi
 
-  info "Waiting for backend API to respond..."
-  backend_check_url="${frontend_url%/}/api/portal/home"
+  info "Waiting for install API to respond..."
+  backend_check_url="${frontend_url%/}/api/install/status"
+  backend_ready=0
   for _ in $(seq 1 30); do
     if curl -fsS "$backend_check_url" >/dev/null 2>&1; then
-      ok "Backend API is available: $backend_check_url"
+      ok "Install API is available: $backend_check_url"
+      backend_ready=1
       break
     fi
     sleep 2
   done
+  if [ "$backend_ready" != "1" ]; then
+    warn "Install API did not respond at $backend_check_url. Check with: docker compose logs -f backend"
+  fi
 
   cat <<EOF
 

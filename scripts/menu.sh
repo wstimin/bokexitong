@@ -223,6 +223,48 @@ update_project() {
   install_command
 }
 
+install_or_update_from_build_package() {
+  if [ -d "$PROJECT_DIR" ] && [ -f "$PROJECT_DIR/docker-compose.yml" ]; then
+    update_from_build_package
+    return
+  fi
+
+  if [ -e "$PROJECT_DIR" ] && [ "$(find "$PROJECT_DIR" -mindepth 1 -maxdepth 1 2>/dev/null | wc -l)" -gt 0 ]; then
+    fail "$PROJECT_DIR already exists and is not empty. Move it away or set INSTALL_DIR=/your/path."
+  fi
+
+  sudo_cmd mkdir -p "$(dirname "$PROJECT_DIR")"
+  sudo_cmd mkdir -p "$PROJECT_DIR"
+  sudo_cmd chown "$(id -u):$(id -g)" "$PROJECT_DIR" 2>/dev/null || true
+  download_build_package
+  cp -R "$package_root"/. "$PROJECT_DIR"/
+  rm -f "$tmp_file"
+  rm -rf "$tmp_dir"
+  ok "Build package is ready: $PROJECT_DIR"
+}
+
+install_project() {
+  if is_build_package; then
+    info "Build package detected. Deploying current package."
+  else
+    info "Installing from GitHub Release build package."
+    install_or_update_from_build_package
+  fi
+
+  cd "$PROJECT_DIR"
+  DEPLOY_AUTO_YES=1 bash scripts/deploy.sh
+  install_command
+}
+
+update_project() {
+  ensure_project_dir
+  info "Updating from GitHub Release build package."
+  update_from_build_package
+  cd "$PROJECT_DIR"
+  DEPLOY_AUTO_YES=1 bash scripts/deploy.sh
+  install_command
+}
+
 uninstall_project() {
   ensure_project_dir
   warn "卸载会停止并删除容器。选择彻底卸载会删除数据库、上传文件和项目目录。"
