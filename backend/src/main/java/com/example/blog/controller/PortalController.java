@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/portal")
+@RequestMapping("/api/portal")
 public class PortalController {
     private final ArticleService articleService;
     private final CategoryMapper categoryMapper;

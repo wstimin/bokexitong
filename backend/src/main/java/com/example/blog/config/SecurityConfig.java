@@ -5,13 +5,16 @@ import com.example.blog.security.JwtAuthenticationFilter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.web.util.matcher.AndRequestMatcher;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.security.web.util.matcher.NegatedRequestMatcher;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -36,11 +39,13 @@ public class SecurityConfig {
         return http.csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/install/**").permitAll()
-                        .requestMatchers("/auth/**", "/portal/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/comments").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/categories/**", "/tags/**", "/images/**", "/uploads/**").permitAll()
-                        .requestMatchers("/admin/**").hasRole("ADMIN")
+                        .requestMatchers(new AndRequestMatcher(
+                                new AntPathRequestMatcher("/**", HttpMethod.GET.name()),
+                                new NegatedRequestMatcher(new AntPathRequestMatcher("/api/**"))
+                        )).permitAll()
+                        .requestMatchers("/api/install/**", "/api/auth/**", "/api/portal/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/comments", "/api/categories/**", "/api/tags/**", "/api/images/**", "/api/uploads/**").permitAll()
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(exception -> exception

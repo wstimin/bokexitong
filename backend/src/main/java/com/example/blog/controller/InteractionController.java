@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.Duration;
 
 @RestController
+@RequestMapping("/api")
 public class InteractionController {
     private final InteractionService interactionService;
     private final RateLimitService rateLimitService;

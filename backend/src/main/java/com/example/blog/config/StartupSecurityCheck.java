@@ -2,7 +2,10 @@ package com.example.blog.config;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.example.blog.entity.BlogUser;
+import com.example.blog.entity.SiteSetting;
 import com.example.blog.mapper.BlogUserMapper;
+import com.example.blog.mapper.SiteSettingMapper;
+import com.example.blog.service.SiteSettingService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
@@ -19,6 +22,7 @@ public class StartupSecurityCheck implements ApplicationRunner {
     private static final String COMPOSE_DEFAULT_JWT_SECRET = "please-change-this-secret-to-at-least-32-characters";
 
     private final Environment environment;
+    private final SiteSettingMapper siteSettingMapper;
     private final BlogUserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
 
@@ -40,15 +44,19 @@ public class StartupSecurityCheck implements ApplicationRunner {
     @Value("${spring.mail.password:}")
     private String mailPassword;
 
-    public StartupSecurityCheck(Environment environment, BlogUserMapper userMapper, PasswordEncoder passwordEncoder) {
+    public StartupSecurityCheck(Environment environment, SiteSettingMapper siteSettingMapper,
+                                BlogUserMapper userMapper, PasswordEncoder passwordEncoder) {
         this.environment = environment;
+        this.siteSettingMapper = siteSettingMapper;
         this.userMapper = userMapper;
         this.passwordEncoder = passwordEncoder;
     }
 
     @Override
     public void run(ApplicationArguments args) {
-        if (!isProd()) return;
+        if (!isProd() || !installationComplete()) {
+            return;
+        }
         if (DEFAULT_JWT_SECRET.equals(jwtSecret) || COMPOSE_DEFAULT_JWT_SECRET.equals(jwtSecret) || jwtSecret == null || jwtSecret.length() < 32) {
             throw new IllegalStateException("生产环境必须配置长度不少于 32 位的 BLOG_JWT_SECRET");
         }
@@ -74,6 +82,17 @@ public class StartupSecurityCheck implements ApplicationRunner {
 
     private boolean isProd() {
         return Arrays.asList(environment.getActiveProfiles()).contains("prod");
+    }
+
+    private boolean installationComplete() {
+        try {
+            SiteSetting row = siteSettingMapper.selectOne(new LambdaQueryWrapper<SiteSetting>()
+                    .eq(SiteSetting::getSettingKey, SiteSettingService.INSTALLATION_COMPLETE)
+                    .last("LIMIT 1"));
+            return row != null && "true".equalsIgnoreCase(String.valueOf(row.getSettingValue()));
+        } catch (Exception ignored) {
+            return false;
+        }
     }
 
     private boolean blank(String value) {

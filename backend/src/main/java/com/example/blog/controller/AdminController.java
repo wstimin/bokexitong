@@ -46,7 +46,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/admin")
+@RequestMapping("/api/admin")
 public class AdminController {
     private final DashboardService dashboardService;
     private final CategoryMapper categoryMapper;

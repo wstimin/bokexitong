@@ -2,6 +2,7 @@
 set -euo pipefail
 
 APP_NAME="bokexitong"
+WEB_APP_NAME="bokexitong-web"
 SOURCE_PATH="${0:-}"
 if [ "${BASH_SOURCE+x}" = "x" ] && [ "${#BASH_SOURCE[@]}" -gt 0 ]; then
   SOURCE_PATH="${BASH_SOURCE[0]}"
@@ -14,7 +15,9 @@ fi
 PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 PACKAGE_DIR="$PROJECT_DIR/package"
 BUILD_DIR="$PROJECT_DIR/.build-package/$APP_NAME"
+WEB_BUILD_DIR="$PROJECT_DIR/.build-package/$WEB_APP_NAME"
 PACKAGE_FILE="$PACKAGE_DIR/${APP_NAME}-linux.tar.gz"
+WEB_PACKAGE_FILE="$PACKAGE_DIR/${WEB_APP_NAME}.tar.gz"
 
 info() { printf '\033[1;34m[INFO]\033[0m %s\n' "$*"; }
 ok() { printf '\033[1;32m[ OK ]\033[0m %s\n' "$*"; }
@@ -95,6 +98,8 @@ main() {
 
   rm -rf "$BUILD_DIR"
   mkdir -p "$BUILD_DIR/backend" "$BUILD_DIR/frontend" "$BUILD_DIR/sql" "$BUILD_DIR/scripts" "$PACKAGE_DIR"
+  rm -rf "$WEB_BUILD_DIR"
+  mkdir -p "$WEB_BUILD_DIR/backend" "$WEB_BUILD_DIR/frontend" "$WEB_BUILD_DIR/config" "$WEB_BUILD_DIR/uploads" "$PACKAGE_DIR"
 
   jar_file="$(find backend/target -maxdepth 1 -type f -name '*.jar' ! -name '*-sources.jar' ! -name '*-javadoc.jar' | head -n 1)"
   [ -n "$jar_file" ] || fail "Backend jar was not found in backend/target."
@@ -117,10 +122,22 @@ main() {
   copy_path shiye-bk "$BUILD_DIR/shiye-bk"
   copy_path docs "$BUILD_DIR/docs"
 
+  cp "$BUILD_DIR/backend/app.jar" "$WEB_BUILD_DIR/backend/app.jar"
+  cp -R "$BUILD_DIR/frontend/dist" "$WEB_BUILD_DIR/frontend/dist"
+  cp "$PROJECT_DIR/scripts/web-start.sh" "$WEB_BUILD_DIR/web-start.sh"
+  copy_path "$PROJECT_DIR/docs/web-package-readme.md" "$WEB_BUILD_DIR/README.md"
+  : > "$WEB_BUILD_DIR/config/.gitkeep"
+  : > "$WEB_BUILD_DIR/uploads/.gitkeep"
+
   chmod +x "$BUILD_DIR"/*.sh "$BUILD_DIR/scripts"/*.sh "$BUILD_DIR/shiye-bk" 2>/dev/null || true
   rm -f "$PACKAGE_FILE"
   tar -C "$(dirname "$BUILD_DIR")" -czf "$PACKAGE_FILE" "$APP_NAME"
   ok "Package created: $PACKAGE_FILE"
+
+  chmod +x "$WEB_BUILD_DIR"/*.sh 2>/dev/null || true
+  rm -f "$WEB_PACKAGE_FILE"
+  tar -C "$(dirname "$WEB_BUILD_DIR")" -czf "$WEB_PACKAGE_FILE" "$WEB_APP_NAME"
+  ok "Web package created: $WEB_PACKAGE_FILE"
 }
 
 main "$@"

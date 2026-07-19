@@ -1,7 +1,6 @@
 server:
-  port: 8080
-  servlet:
-    context-path: /api
+  address: ${SERVER_ADDRESS:0.0.0.0}
+  port: ${SERVER_PORT:8080}
 
 spring:
   datasource:
@@ -41,7 +40,11 @@ blog:
   jwt:
     secret: ${BLOG_JWT_SECRET:change-this-secret-to-a-long-random-value-for-production}
     expiration-minutes: ${BLOG_JWT_EXPIRATION_MINUTES:1440}
-  upload-dir: ${BLOG_UPLOAD_DIR:/app/uploads}
+  upload-dir: ${BLOG_UPLOAD_DIR:./uploads}
+  web-root: ${BLOG_WEB_ROOT:file:./frontend/dist/}
+  install:
+    runtime-config-path: ${BOKEXITONG_RUNTIME_CONFIG:./config/bokexitong-runtime.properties}
+    restart-after-install: ${BLOG_INSTALL_RESTART_AFTER_INSTALL:false}
   admin:
     initial-password: ${BLOG_ADMIN_INITIAL_PASSWORD:}
   mail:

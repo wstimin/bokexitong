@@ -36,18 +36,25 @@ const router = createRouter({ history: createWebHistory(), routes })
 router.beforeEach(async (to) => {
   const auth = useAuthStore()
   const site = useSiteStore()
-  if (to.path !== '/install') {
-    try {
-      const res = await installApi.status()
-      const installed = Boolean(res.data?.installed)
-      if (!installed) {
-        return '/install'
-      }
-    } catch (error) {
-      console.error(error)
-    }
-    await site.loadSite()
+
+  // The install form must render even when the initial datasource is unavailable.
+  // The install view performs its status check in the background.
+  if (to.path === '/install') {
+    return undefined
   }
+
+  try {
+    const res = await installApi.status()
+    const installed = Boolean(res.data?.installed)
+    if (!installed) {
+      return '/install'
+    }
+  } catch (error) {
+    console.error(error)
+    return '/install'
+  }
+
+  await site.loadSite()
   const adminLoginPath = site.adminLoginPath || '/admin/login'
   if (to.meta.dynamicAdminLogin) {
     if (to.path === adminLoginPath) {

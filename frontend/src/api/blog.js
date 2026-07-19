@@ -22,8 +22,8 @@ export const portalApi = {
 }
 
 export const installApi = {
-  status: () => http.get('/install/status'),
-  install: (data) => http.post('/install', data)
+  status: (config = {}) => http.get('/install/status', config),
+  install: (data) => http.post('/install', data, { timeout: 30000, silentRestartError: true })
 }
 
 export const articleApi = {

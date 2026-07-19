@@ -1,7 +1,5 @@
 server:
   port: 8080
-  servlet:
-    context-path: /api
 
 spring:
   application:
@@ -45,6 +43,10 @@ blog:
     secret: change-this-secret-to-a-long-random-value-for-production
     expiration-minutes: 1440
   upload-dir: uploads
+  web-root: file:./frontend/dist/
+  install:
+    runtime-config-path: ./config/bokexitong-runtime.properties
+    restart-after-install: false
   article:
     forbidden-words: ${BLOG_ARTICLE_FORBIDDEN_WORDS:赌博,色情,毒品,诈骗}
   admin:

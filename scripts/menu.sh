@@ -189,40 +189,6 @@ exec bash "$INSTALL_DIR/scripts/menu.sh" "$@"
   ok "菜单命令已安装：shiye-bk"
 }
 
-install_project() {
-  if [ -f "$PROJECT_DIR/scripts/deploy.sh" ]; then
-    info "检测到已有项目，直接执行部署。"
-    cd "$PROJECT_DIR"
-    DEPLOY_AUTO_YES=1 bash scripts/deploy.sh
-  else
-    info "开始拉取并安装项目到 $PROJECT_DIR"
-    tmp_file="$(mktemp)"
-    curl -fsSL "https://raw.githubusercontent.com/wstimin/bokexitong/${BRANCH}/scripts/install.sh" -o "$tmp_file"
-    INSTALL_DIR="$PROJECT_DIR" REPO_URL="$REPO_URL" BRANCH="$BRANCH" bash "$tmp_file"
-    rm -f "$tmp_file"
-  fi
-  install_command
-}
-
-update_project() {
-  ensure_project_dir
-  cd "$PROJECT_DIR"
-  if [ -d .git ]; then
-    info "拉取最新代码..."
-    git fetch origin "$BRANCH"
-    git checkout "$BRANCH"
-    git pull --ff-only origin "$BRANCH"
-  elif is_build_package; then
-    info "当前是构建包安装，使用最新构建包更新。"
-    update_from_build_package
-  else
-    warn "当前目录不是 Git 仓库，跳过 git pull：$PROJECT_DIR"
-  fi
-  info "重新构建并启动服务..."
-  DEPLOY_AUTO_YES=1 bash scripts/deploy.sh
-  install_command
-}
-
 install_or_update_from_build_package() {
   if [ -d "$PROJECT_DIR" ] && [ -f "$PROJECT_DIR/docker-compose.yml" ]; then
     update_from_build_package

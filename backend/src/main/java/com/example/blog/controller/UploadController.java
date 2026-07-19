@@ -24,7 +24,7 @@ import java.util.Set;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/uploads")
+@RequestMapping("/api/uploads")
 public class UploadController {
     private static final long MAX_FILE_SIZE = 50L * 1024 * 1024;
     private static final Set<String> ALLOWED_EXTENSIONS = Set.of(

@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/install")
+@RequestMapping("/api/install")
 public class InstallController {
     private final SiteSettingService siteSettingService;
     private final SiteSettingMapper siteSettingMapper;
@@ -30,12 +30,24 @@ public class InstallController {
 
     @GetMapping("/status")
     public Result<InstallStatusResponse> status() {
-        return Result.ok(new InstallStatusResponse(siteSettingService.isInstalled(), currentSiteName(), currentDomain(), databaseReady(), installService.hasRuntimeConfig()));
+        if (installService.hasRuntimeConfig()) {
+            return Result.ok(new InstallStatusResponse(true, currentSiteName(), currentDomain(), true, true));
+        }
+        if (installService.isRestartAfterInstallEnabled()) {
+            // A supervised web package without a runtime config is still waiting
+            // for its first installation. Avoid querying the placeholder startup
+            // datasource because it may not be reachable from the panel runtime.
+            return Result.ok(new InstallStatusResponse(false, "博客系统", "", false, false));
+        }
+        return Result.ok(new InstallStatusResponse(siteSettingService.isInstalled(), currentSiteName(), currentDomain(), databaseReady(), false));
     }
 
     @PostMapping
     public Result<InstallStatusResponse> install(@RequestBody InstallRequest request) {
-        if (siteSettingService.isInstalled()) {
+        // A supervised web installation must use the submitted database details.
+        // Other deployment modes retain their existing datasource-based check.
+        if (installService.hasRuntimeConfig()
+                || (!installService.isRestartAfterInstallEnabled() && siteSettingService.isInstalled())) {
             return Result.ok(new InstallStatusResponse(true, currentSiteName(), currentDomain(), true, installService.hasRuntimeConfig()));
         }
         installService.install(request);
