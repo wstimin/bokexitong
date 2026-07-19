@@ -6,10 +6,36 @@
 
 项目提供两种独立部署方式：
 
-1. `bokexitong-web.tar.gz`：给 1Panel / 宝塔使用。解压后启动一个 Java Web 服务，浏览器直接打开站点根路径就进入网页安装向导。这里不需要 Compose，也不需要一键脚本。
-2. `bokexitong-linux.tar.gz`：给纯 Linux 服务器的一键脚本使用。保留菜单式交互和 Compose 编排部署。
+1. `bokexitong-linux.tar.gz`：给纯 Linux 服务器的一键脚本使用。保留菜单式交互和 Compose 编排部署。
+2. `bokexitong-web.tar.gz`：给 1Panel / 宝塔使用。解压后启动一个 Java Web 服务，浏览器直接打开站点根路径就进入网页安装向导。这里不需要 Compose，也不需要一键脚本。
 
 两种方式彼此独立，请根据服务器环境选择其中一种，不要混用。
+
+## Linux 一键脚本
+
+Linux 一键脚本继续保留菜单交互和 Compose 部署。该版本包含包内 MySQL、SQL 初始化脚本和 `.env`，不使用 Web 包的网页安装向导。
+
+安装：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/wstimin/bokexitong/main/install.sh | bash
+```
+
+默认安装目录：
+
+```text
+/opt/bokexitong
+```
+
+安装完成后运行：
+
+```bash
+shiye-bk
+```
+
+一键脚本首次部署会自动生成数据库密码、JWT 密钥和管理员初始密码，并写入 `/opt/bokexitong/.env`。脚本会把数据库初始化为已安装状态，因此首次启动不会进入 `/install`。
+
+完整说明见 [Linux 一键部署](./docs/deploy-one-click.md)。
 
 ## 1Panel / 宝塔 Web 包
 
@@ -100,30 +126,6 @@ http://127.0.0.1:18080/install
 3. 反向代理目标先用 `http://127.0.0.1:18080`。
 4. 如果面板环境访问不了回环地址，再改成服务器内网 IP。
 5. 如果本机也打不开，查看 `web-start.sh` 启动日志。
-
-## Linux 一键脚本
-
-Linux 一键脚本继续保留菜单交互和 Compose 部署。该版本包含包内 MySQL、SQL 初始化脚本和 `.env`，不使用 Web 包的网页安装向导。
-
-安装：
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/wstimin/bokexitong/main/install.sh | bash
-```
-
-默认安装目录：
-
-```text
-/opt/bokexitong
-```
-
-安装完成后运行：
-
-```bash
-shiye-bk
-```
-
-一键脚本首次部署会自动生成数据库密码、JWT 密钥和管理员初始密码，并写入 `/opt/bokexitong/.env`。脚本会把数据库初始化为已安装状态，因此首次启动不会进入 `/install`。
 
 ## 后台账号
 

@@ -2,15 +2,42 @@
 
 项目提供两种独立部署路径：
 
-1. `bokexitong-web.tar.gz`：给 1Panel / 宝塔使用。解压后启动 Java 服务，浏览器直接打开网页安装向导。
-2. `bokexitong-linux.tar.gz`：给 Linux 一键脚本使用。保留菜单交互和 Compose 部署。
+1. `bokexitong-linux.tar.gz`：给 Linux 一键脚本使用。保留菜单交互和 Compose 部署。
+2. `bokexitong-web.tar.gz`：给 1Panel / 宝塔使用。解压后启动 Java 服务，浏览器直接打开网页安装向导。
 
 这两种方式彼此独立，请根据服务器环境选择其中一种，不要混用。
 
 ## 推荐选择
 
-- 你想要“上传解压后直接打开网页安装向导”，选 `bokexitong-web.tar.gz`。
 - 你想要“一键脚本自动拉取、菜单交互、Compose 编排”，选 `bokexitong-linux.tar.gz`。
+- 你想要“上传解压后直接打开网页安装向导”，选 `bokexitong-web.tar.gz`。
+
+## Linux 一键脚本
+
+安装：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/wstimin/bokexitong/main/install.sh | bash
+```
+
+安装完成后运行：
+
+```bash
+shiye-bk
+```
+
+详见：
+
+- [Linux 一键部署](./deploy-one-click.md)
+
+这条路径的特征是：
+
+- 首次执行安装脚本时自动下载 `bokexitong-linux.tar.gz` 构建包；构建包下载失败时回退到源码部署。
+- 使用菜单管理服务、域名和证书。
+- 保留 Compose 部署。
+- 使用包内 MySQL、SQL 初始化脚本和 `.env`。
+- 一键部署会自动标记为已安装，不进入网页安装向导。
+- 使用 `shiye-bk update` 更新时需要能够下载最新 Release 构建包；下载失败会停止更新，不会自动改用源码覆盖现有部署。
 
 ## 1Panel / 宝塔
 
@@ -42,21 +69,6 @@ Java 版本：17
 ```
 
 访问域名由面板网站和反向代理管理，网页安装向导中的“访问域名”可以留空。
-
-## Linux 一键脚本
-
-详见：
-
-- [Linux 一键部署](./deploy-one-click.md)
-
-这条路径的特征是：
-
-- 首次执行安装脚本时自动下载 `bokexitong-linux.tar.gz` 构建包；构建包下载失败时回退到源码部署。
-- 使用菜单管理服务、域名和证书。
-- 保留 Compose 部署。
-- 使用包内 MySQL、SQL 初始化脚本和 `.env`。
-- 一键部署会自动标记为已安装，不进入网页安装向导。
-- 使用 `shiye-bk update` 更新时需要能够下载最新 Release 构建包；下载失败会停止更新，不会自动改用源码覆盖现有部署。
 
 ## 本机验证地址
 
