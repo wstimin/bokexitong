@@ -178,6 +178,25 @@ button, input, textarea, select { font: inherit; }
 .article-body code, .markdown code { padding: 2px 5px; border-radius: 6px; background: rgba(40,45,68,.08); }
 .article-body blockquote, .markdown blockquote { padding: 10px 16px; border-left: 4px solid rgba(217,54,134,.35); background: rgba(255,255,255,.44); }
 .article-inline-file { color: var(--pink); font-weight: 900; text-decoration: underline; text-underline-offset: 3px; }
+.article-link-button-block { display: block; }
+.article-body .article-link-button, .markdown .article-link-button, .rich-editor .ql-editor .article-link-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  max-width: 100%;
+  min-height: 40px;
+  margin: 8px 0 18px;
+  padding: 9px 16px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  font-weight: 900;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+.article-body .article-link-button--primary, .markdown .article-link-button--primary, .rich-editor .ql-editor .article-link-button--primary { color: #fff; background: var(--pink); }
+.article-body .article-link-button--secondary, .markdown .article-link-button--secondary, .rich-editor .ql-editor .article-link-button--secondary { color: var(--ink); background: rgba(255,255,255,.72); border-color: rgba(40,45,68,.18); }
+.article-body .article-link-button--download, .markdown .article-link-button--download, .rich-editor .ql-editor .article-link-button--download { color: #fff; background: var(--mint); }
 .comment-section { margin-top: 18px; }
 .comment-submit { margin-top: 12px; }
 .comment-list { display: grid; gap: 12px; margin-top: 16px; }
@@ -291,9 +310,14 @@ button, input, textarea, select { font: inherit; }
 .settings-preview h1 { margin: 14px 0 10px; font-size: 36px; line-height: 1.08; }
 .settings-preview p { margin: 0; max-width: 640px; line-height: 1.8; color: #fff; text-shadow: 0 3px 16px rgba(0,0,0,.45); }
 
+.writer-panel { overflow: visible; }
 .rich-editor-shell { width: 100%; min-height: clamp(420px, 52vh, 620px); }
-.rich-editor { width: 100%; min-height: clamp(420px, 52vh, 620px); border-radius: 8px; overflow: hidden; background: rgba(255,255,255,.36); border: 1px solid var(--glass-border); }
-.rich-editor .ql-toolbar.ql-snow { border: 0; border-bottom: 1px solid rgba(40,45,68,.12); background: rgba(255,255,255,.58); }
+.rich-editor { width: 100%; min-height: clamp(420px, 52vh, 620px); border-radius: 8px; overflow: visible; background: rgba(255,255,255,.36); border: 1px solid var(--glass-border); }
+.rich-editor .ql-toolbar.ql-snow { position: sticky; top: 68px; z-index: 12; border: 0; border-bottom: 1px solid rgba(40,45,68,.12); border-radius: 8px 8px 0 0; background: rgba(255,255,255,.9); box-shadow: 0 8px 22px rgba(26,31,52,.1); backdrop-filter: blur(22px) saturate(145%); -webkit-backdrop-filter: blur(22px) saturate(145%); }
+.article-editor-dialog { max-height: calc(100vh - 32px); display: flex; flex-direction: column; }
+.article-editor-dialog .el-dialog__body { min-height: 0; overflow-y: auto; }
+.article-editor-dialog .rich-editor .ql-toolbar.ql-snow { top: 0; }
+.rich-editor .ql-toolbar.ql-snow .ql-picker-options { z-index: 20; }
 .rich-editor.ql-container.ql-snow, .rich-editor .ql-container.ql-snow { border: 0; font-family: inherit; }
 .rich-editor .ql-editor { min-height: clamp(380px, 48vh, 560px); font-size: 17px; line-height: 1.9; color: var(--ink); word-break: break-word; }
 .rich-editor .ql-editor img { display: block; max-width: min(100%, 760px); height: auto; margin: 14px auto; border-radius: 8px; }
@@ -302,6 +326,7 @@ button, input, textarea, select { font: inherit; }
 .rich-editor .ql-toolbar .ql-undo::after, .rich-editor .ql-toolbar .ql-redo::after { display: block; color: #444; font-size: 18px; line-height: 18px; font-weight: 800; }
 .rich-editor .ql-toolbar .ql-undo::after { content: "↶"; }
 .rich-editor .ql-toolbar .ql-redo::after { content: "↷"; }
+.rich-editor .ql-toolbar .ql-linkButton::after { content: "↗"; display: block; color: #444; font-size: 17px; line-height: 18px; font-weight: 900; }
 .rich-editor .ql-tooltip[data-mode="link"]::before { content: "输入链接："; }
 .rich-editor .ql-tooltip.ql-editing a.ql-action::after { content: "保存"; }
 .rich-editor .ql-tooltip:not(.ql-editing) a.ql-action::after { content: "编辑"; }
@@ -329,6 +354,8 @@ button, input, textarea, select { font: inherit; }
 .upload-trigger:hover { transform: translateY(-1px); background: rgba(255,255,255,.72); border-color: rgba(217,54,134,.32); }
 .upload-trigger:disabled { opacity: .56; cursor: not-allowed; transform: none; }
 .upload-native-input { display: none; }
+.upload-status { color: var(--muted); font-size: 13px; font-weight: 800; }
+.article-upload-placeholder { display: block; width: min(100%, 420px); margin: 12px 0; padding: 12px 14px; border: 1px dashed rgba(54,119,230,.5); border-radius: 8px; color: #245fb8; background: rgba(232,241,255,.84); font-weight: 800; }
 .rich-editor .ql-toolbar.ql-snow .ql-picker.ql-header .ql-picker-label::before,
 .rich-editor .ql-toolbar.ql-snow .ql-picker.ql-header .ql-picker-item::before,
 .rich-editor .ql-toolbar.ql-snow .ql-picker.ql-font .ql-picker-label::before,
@@ -414,7 +441,8 @@ button, input, textarea, select { font: inherit; }
   .admin-main { padding: 16px; }
   .hero h1 { font-size: 34px; }
   .recommend-card { grid-template-columns: 1fr; }
-  .rich-editor .ql-toolbar.ql-snow { display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 2px; padding-bottom: 10px; }
+  .rich-editor .ql-toolbar.ql-snow { top: 122px; display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 2px; padding-bottom: 10px; }
+  .article-editor-dialog .rich-editor .ql-toolbar.ql-snow { top: 0; }
   .rich-editor .ql-toolbar.ql-snow .ql-formats { display: inline-flex; flex: 0 0 auto; margin-right: 4px; }
   .article-body .ql-indent-3, .article-body .ql-indent-4, .article-body .ql-indent-5, .article-body .ql-indent-6, .article-body .ql-indent-7, .article-body .ql-indent-8 { padding-left: 3em; }
 }

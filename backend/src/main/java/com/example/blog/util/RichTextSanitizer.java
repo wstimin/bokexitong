@@ -21,7 +21,7 @@ public final class RichTextSanitizer {
             .removeProtocols("img", "src", "http", "https")
             .addTags("video", "source")
             .addAttributes(":all", "class", "style", "title", "data-list")
-            .addAttributes("a", "target", "rel")
+            .addAttributes("a", "target", "rel", "download")
             .addAttributes("video", "src", "controls", "preload")
             .addAttributes("source", "src", "type")
             .preserveRelativeLinks(true);

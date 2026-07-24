@@ -7,6 +7,7 @@ const fontWhitelist = ['system', 'songti', 'heiti', 'kaiti', 'serif', 'mono']
 const sizeWhitelist = ['12px', '14px', '16px', '18px', '20px', '24px', '28px', '32px']
 
 let richTextRegistered = false
+let registeredQuill = null
 let toolbarLocalizationTimer = null
 const autoLinkTimers = new WeakMap()
 
@@ -25,6 +26,7 @@ export const ensureRichTextFormats = async () => {
   if (richTextRegistered) return
 
   const Quill = await loadQuill()
+  registeredQuill = Quill
 
   const Font = Quill.import('formats/font')
   Font.whitelist = fontWhitelist
@@ -54,6 +56,65 @@ export const ensureRichTextFormats = async () => {
   }
   Quill.register(UploadedVideoBlot, true)
 
+  class UploadPlaceholderBlot extends BlockEmbed {
+    static blotName = 'uploadPlaceholder'
+    static tagName = 'div'
+    static className = 'article-upload-placeholder'
+
+    static create(value) {
+      const node = super.create()
+      const uploadId = String(value?.id || '')
+      const type = String(value?.type || 'file')
+      node.setAttribute('data-upload-id', uploadId)
+      node.setAttribute('data-upload-type', type)
+      node.setAttribute('contenteditable', 'false')
+      node.setAttribute('role', 'status')
+      node.textContent = `${mediaTypeLabel(type)}上传中...`
+      return node
+    }
+
+    static value(node) {
+      return {
+        id: node.getAttribute('data-upload-id') || '',
+        type: node.getAttribute('data-upload-type') || 'file'
+      }
+    }
+  }
+  Quill.register(UploadPlaceholderBlot, true)
+
+  class ArticleLinkButtonBlot extends BlockEmbed {
+    static blotName = 'articleLinkButton'
+    static tagName = 'div'
+    static className = 'article-link-button-block'
+
+    static create(value) {
+      const node = super.create()
+      const style = ['primary', 'secondary', 'download'].includes(value?.style) ? value.style : 'primary'
+      const link = document.createElement('a')
+      link.setAttribute('href', String(value?.href || ''))
+      link.setAttribute('class', `article-link-button article-link-button--${style}`)
+      link.setAttribute('rel', 'noopener noreferrer')
+      if (value?.newWindow !== false) link.setAttribute('target', '_blank')
+      if (style === 'download') link.setAttribute('download', '')
+      link.textContent = String(value?.text || '查看链接')
+      node.setAttribute('contenteditable', 'false')
+      node.appendChild(link)
+      return node
+    }
+
+    static value(node) {
+      const link = node.querySelector('a')
+      const styleClass = Array.from(link?.classList || []).find((item) => item.startsWith('article-link-button--'))
+      return {
+        href: link?.getAttribute('href') || '',
+        text: link?.textContent || '查看链接',
+        style: styleClass?.replace('article-link-button--', '') || 'primary',
+        newWindow: link?.getAttribute('target') === '_blank'
+      }
+    }
+  }
+  Quill.register(ArticleLinkButtonBlot, true)
+
   richTextRegistered = true
 }
 
@@ -65,7 +126,7 @@ export const richToolbar = [
   [{ header: [1, 2, 3, 4, false] }],
   [{ list: 'ordered' }, { list: 'bullet' }],
   ['blockquote', 'code-block'],
-  ['link'],
+  ['link', 'linkButton'],
   ['undo', 'redo'],
   ['clean']
 ]
@@ -85,6 +146,7 @@ export const richToolbarLabels = {
   blockquote: '引用',
   'code-block': '代码块',
   link: '链接',
+  linkButton: '链接按钮',
   undo: '撤销',
   redo: '重做',
   clean: '清除格式'
@@ -309,6 +371,7 @@ export const setupRichTextEditor = (quill, options = {}) => {
   const toolbar = quill.getModule?.('toolbar')
   toolbar?.addHandler?.('undo', () => quill.history?.undo?.())
   toolbar?.addHandler?.('redo', () => quill.history?.redo?.())
+  toolbar?.addHandler?.('linkButton', () => quill.__blogEditorOptions?.onLinkButton?.())
 
   if (quill.__blogAutoLinkReady) return
   quill.__blogAutoLinkReady = true
@@ -325,10 +388,16 @@ export const setupRichTextEditor = (quill, options = {}) => {
 
   const uploadClipboardImage = (event) => {
     const files = Array.from(event.clipboardData?.files || event.dataTransfer?.files || [])
-    const image = files.find((file) => file.type?.startsWith('image/'))
-    if (!image) return
+    const images = files.filter((file) => file.type?.startsWith('image/'))
+    if (!images.length) return
     event.preventDefault()
-    quill.__blogEditorOptions?.onImageFile?.(image)
+    const range = event.type === 'drop'
+      ? getRangeFromPoint(quill, event.clientX, event.clientY)
+      : quill.getSelection?.() || quill.__blogEditorOptions?.getLastSelection?.() || null
+    images.forEach((image, offset) => {
+      const nextRange = range ? { index: range.index + (offset * 2), length: 0 } : null
+      quill.__blogEditorOptions?.onImageFile?.(image, nextRange)
+    })
   }
   quill.root?.addEventListener('paste', uploadClipboardImage, true)
   quill.root?.addEventListener('drop', uploadClipboardImage, true)
@@ -339,6 +408,71 @@ export const getSafeInsertIndex = (quill, range) => {
   const end = Math.max((quill.getLength?.() || 1) - 1, 0)
   const requested = Number(range?.index)
   return Number.isFinite(requested) ? Math.min(Math.max(requested, 0), end) : end
+}
+
+const mediaTypeLabel = (type) => ({ image: '图片', video: '视频', file: '附件' }[type] || '文件')
+
+const createUploadId = () => globalThis.crypto?.randomUUID?.() || `upload-${Date.now()}-${Math.random().toString(16).slice(2)}`
+
+const createEditorInsertError = (message) => Object.assign(new Error(message), { code: 'EDITOR_INSERT_FAILED' })
+
+export const insertUploadPlaceholder = (quill, type, range) => {
+  if (!quill?.insertEmbed) return null
+  const id = createUploadId()
+  const index = getSafeInsertIndex(quill, range || quill.getSelection?.())
+  quill.insertEmbed(index, 'uploadPlaceholder', { id, type }, 'user')
+  quill.insertText(index + 1, '\n', 'user')
+  quill.setSelection?.(index + 2, 0, 'silent')
+  return id
+}
+
+const findUploadPlaceholder = (quill, uploadId) => {
+  if (!quill?.root || !uploadId || !registeredQuill) return null
+  const nodes = quill.root.querySelectorAll('[data-upload-id]')
+  const node = Array.from(nodes).find((item) => item.getAttribute('data-upload-id') === uploadId)
+  if (!node) return null
+  const blot = registeredQuill.find(node)
+  if (!blot) return null
+  return { node, index: quill.getIndex(blot) }
+}
+
+export const replaceUploadPlaceholder = (quill, uploadId, snippet) => {
+  const placeholder = findUploadPlaceholder(quill, uploadId)
+  if (!placeholder) {
+    throw createEditorInsertError('文件已上传，但原插入位置已被删除，请重新插入')
+  }
+  quill.deleteText(placeholder.index, 1, 'user')
+  const nextIndex = insertHtmlSnippet(quill, placeholder.index, snippet)
+  if (nextIndex === null) {
+    throw createEditorInsertError('文件已上传，但插入正文失败，请重新插入')
+  }
+  return nextIndex
+}
+
+export const removeUploadPlaceholder = (quill, uploadId) => {
+  const placeholder = findUploadPlaceholder(quill, uploadId)
+  if (!placeholder) return false
+  quill.deleteText(placeholder.index, 1, 'user')
+  return true
+}
+
+const getRangeFromPoint = (quill, clientX, clientY) => {
+  if (!quill?.root || !Number.isFinite(clientX) || !Number.isFinite(clientY)) return null
+  const nativeRange = document.caretRangeFromPoint?.(clientX, clientY)
+    || (() => {
+      const position = document.caretPositionFromPoint?.(clientX, clientY)
+      if (!position) return null
+      const range = document.createRange()
+      range.setStart(position.offsetNode, position.offset)
+      range.collapse(true)
+      return range
+    })()
+  if (!nativeRange || !quill.root.contains(nativeRange.startContainer)) return null
+  const selection = window.getSelection?.()
+  if (!selection) return null
+  selection.removeAllRanges()
+  selection.addRange(nativeRange)
+  return quill.getSelection?.() || null
 }
 
 export const isRichTextContentType = (contentType) => {
@@ -359,7 +493,7 @@ export const toDisplayHtml = (content, contentType) => {
 
 export const sanitizeRichTextHtml = (html) => DOMPurify.sanitize(String(html || ''), {
   ADD_TAGS: ['video', 'source'],
-  ADD_ATTR: ['controls', 'preload', 'data-list', 'target'],
+  ADD_ATTR: ['controls', 'preload', 'data-list', 'target', 'download'],
   ALLOW_DATA_ATTR: true,
   FORBID_TAGS: ['form', 'input', 'button', 'iframe', 'object', 'embed', 'svg', 'math'],
   FORBID_ATTR: ['srcdoc']
@@ -500,6 +634,31 @@ export const insertHtmlSnippet = (quill, index, snippet) => {
   }
 
   return null
+}
+
+export const normalizeLinkButtonUrl = (value) => {
+  const url = String(value || '').trim()
+  if (/^https?:\/\/[^\s]+$/i.test(url)) return url
+  if (/^\/(?!\/)[^\s]*$/.test(url)) return url
+  throw new Error('链接地址只支持 http、https 或站内路径')
+}
+
+export const insertLinkButton = (quill, range, values) => {
+  if (!quill?.insertEmbed) return null
+  const href = normalizeLinkButtonUrl(values?.href)
+  const text = String(values?.text || '').trim()
+  if (!text) throw new Error('请填写按钮文字')
+  const index = getSafeInsertIndex(quill, range || quill.getSelection?.())
+  quill.insertEmbed(index, 'articleLinkButton', {
+    href,
+    text,
+    style: values?.style,
+    newWindow: values?.newWindow
+  }, 'user')
+  quill.insertText(index + 1, '\n', 'user')
+  quill.setSelection?.(index + 2, 0, 'silent')
+  quill.focus?.()
+  return index + 2
 }
 
 export const imageSnippet = (url, name) => {

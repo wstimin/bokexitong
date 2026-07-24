@@ -21,6 +21,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
@@ -36,6 +37,7 @@ class ArticleServiceTest {
     @Mock private TagMapper tagMapper;
     @Mock private BlogUserMapper blogUserMapper;
     @Mock private SiteSettingService siteSettingService;
+    @Mock private RichTextMediaMigrationService richTextMediaMigrationService;
 
     private ArticleService service;
 
@@ -50,8 +52,11 @@ class ArticleServiceTest {
                 categoryMapper,
                 tagMapper,
                 blogUserMapper,
-                siteSettingService
+                siteSettingService,
+                richTextMediaMigrationService
         );
+        when(richTextMediaMigrationService.migrateEmbeddedImages(any(), any()))
+                .thenAnswer(invocation -> invocation.getArgument(0));
     }
 
     @Test

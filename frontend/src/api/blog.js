@@ -26,15 +26,17 @@ export const installApi = {
   install: (data) => http.post('/install', data, { timeout: 30000, silentRestartError: true })
 }
 
+const articleSaveConfig = { timeout: 120000 }
+
 export const articleApi = {
   page: (params) => http.get('/articles', { params }),
   adminDetail: (id) => http.get(`/articles/${id}`),
-  adminSave: (data) => http.post('/articles/admin', data),
-  adminUpdate: (id, data) => http.put(`/articles/admin/${id}`, data),
+  adminSave: (data) => http.post('/articles/admin', data, articleSaveConfig),
+  adminUpdate: (id, data) => http.put(`/articles/admin/${id}`, data, articleSaveConfig),
   updateRecommendation: (id, recommended, recommendSort) => http.put(`/articles/${id}/recommendation`, null, { params: { recommended, recommendSort } }),
   mine: (params) => http.get('/articles/mine', { params }),
-  save: (data) => http.post('/articles', data),
-  update: (id, data) => http.put(`/articles/${id}`, data),
+  save: (data) => http.post('/articles', data, articleSaveConfig),
+  update: (id, data) => http.put(`/articles/${id}`, data, articleSaveConfig),
   removeMine: (id) => http.delete(`/articles/${id}`),
   remove: (ids) => http.delete('/articles', { data: ids }),
   updateStatus: (id, status, reason) => http.put(`/articles/${id}/status`, null, { params: { status, reason } }),
@@ -83,6 +85,6 @@ export const uploadApi = {
     const form = new FormData()
     if (!file) throw new Error('未选择上传文件')
     form.append('file', file, file.name || 'file')
-    return http.post('/uploads', form)
+    return http.post('/uploads', form, { timeout: 120000 })
   }
 }

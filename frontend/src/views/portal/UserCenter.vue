@@ -60,7 +60,7 @@
             <span class="anime-tag">富文本</span>
           </div>
 
-          <el-form label-position="top">
+          <el-form label-position="top" :disabled="articleSaving">
             <el-form-item label="标题"><el-input v-model="articleForm.title" maxlength="180" show-word-limit placeholder="给文章起一个清晰的标题" /></el-form-item>
             <el-form-item label="摘要"><el-input v-model="articleForm.summary" type="textarea" :rows="2" maxlength="500" show-word-limit placeholder="用一两句话介绍这篇文章" /></el-form-item>
             <div class="writer-meta-grid">
@@ -71,26 +71,27 @@
               <div class="cover-picker">
                 <img v-if="articleForm.coverUrl" :src="coverPreviewSrc" alt="文章封面" />
                 <div v-else class="cover-empty">封面预览</div>
-                <div class="cover-fields"><el-input v-model="articleForm.coverUrl" placeholder="上传封面或粘贴图片地址" /><FileUploadButton accept="image/*" @select="(file) => uploadArticleFile({ file }, 'cover')">上传封面</FileUploadButton></div>
+                <div class="cover-fields"><el-input v-model="articleForm.coverUrl" placeholder="上传封面或粘贴图片地址" /><FileUploadButton accept="image/*" :disabled="articleSaving" @select="(file) => uploadArticleFile({ file }, 'cover')">上传封面</FileUploadButton></div>
               </div>
             </el-form-item>
             <el-form-item label="正文">
-              <div class="rich-editor-shell"><QuillEditor v-model:content="articleForm.content" theme="snow" content-type="html" class="rich-editor" :toolbar="richToolbar" @ready="onEditorReady" @selectionChange="onSelectionChange" placeholder="从这里开始写正文，可以调整字体、字号、颜色、对齐，也可以插入图片、视频和链接。" /></div>
+              <div class="rich-editor-shell"><QuillEditor v-model:content="articleForm.content" theme="snow" content-type="html" class="rich-editor" :toolbar="richToolbar" :enable="!articleSaving" @ready="onEditorReady" @selectionChange="onSelectionChange" placeholder="从这里开始写正文，可以调整字体、字号、颜色、对齐，也可以插入图片、视频和链接。" /></div>
             </el-form-item>
           </el-form>
 
           <div class="upload-row writer-tools">
-            <button class="upload-trigger" type="button" :disabled="articleUploading" @click="openWriterUpload('image')">插入图片</button>
-            <input ref="writerImageInput" class="upload-native-input" type="file" accept="image/*" :disabled="articleUploading" @change="(event) => handleWriterUpload(event, 'image')" />
-            <button class="upload-trigger" type="button" :disabled="articleUploading" @click="openWriterUpload('video')">插入视频</button>
-            <input ref="writerVideoInput" class="upload-native-input" type="file" accept="video/*" :disabled="articleUploading" @change="(event) => handleWriterUpload(event, 'video')" />
-            <button class="upload-trigger" type="button" :disabled="articleUploading" @click="openWriterUpload('file')">插入附件</button>
-            <input ref="writerFileInput" class="upload-native-input" type="file" :disabled="articleUploading" @change="(event) => handleWriterUpload(event, 'file')" />
+            <button class="upload-trigger" type="button" :disabled="articleSaving" @click="openWriterUpload('image')">插入图片</button>
+            <input ref="writerImageInput" class="upload-native-input" type="file" accept="image/*" :disabled="articleSaving" @change="(event) => handleWriterUpload(event, 'image')" />
+            <button class="upload-trigger" type="button" :disabled="articleSaving" @click="openWriterUpload('video')">插入视频</button>
+            <input ref="writerVideoInput" class="upload-native-input" type="file" accept="video/*" :disabled="articleSaving" @change="(event) => handleWriterUpload(event, 'video')" />
+            <button class="upload-trigger" type="button" :disabled="articleSaving" @click="openWriterUpload('file')">插入附件</button>
+            <input ref="writerFileInput" class="upload-native-input" type="file" :disabled="articleSaving" @change="(event) => handleWriterUpload(event, 'file')" />
+            <span v-if="pendingUploads" class="upload-status">{{ pendingUploads }} 个文件上传中</span>
           </div>
           <div class="hero-actions writer-actions">
-            <button class="btn-primary" type="button" @click="saveArticle('PUBLISHED')">发布文章</button>
-            <button class="btn-ghost" type="button" @click="saveArticle('DRAFT')">保存草稿</button>
-            <button v-if="editingId" class="btn-ghost" type="button" @click="cancelArticleEdit">取消编辑</button>
+            <button class="btn-primary" type="button" :disabled="articleSaving || pendingUploads > 0" @click="saveArticle('PUBLISHED')">发布文章</button>
+            <button class="btn-ghost" type="button" :disabled="articleSaving || pendingUploads > 0" @click="saveArticle('DRAFT')">保存草稿</button>
+            <button v-if="editingId" class="btn-ghost" type="button" :disabled="articleSaving || pendingUploads > 0" @click="cancelArticleEdit">取消编辑</button>
           </div>
         </section>
 
@@ -114,6 +115,15 @@
         </section>
       </div>
     </main>
+    <el-dialog v-model="linkButtonVisible" title="插入链接按钮" width="460px" append-to-body>
+      <el-form label-position="top">
+        <el-form-item label="按钮文字"><el-input v-model="linkButtonForm.text" maxlength="60" placeholder="例如：查看文档" /></el-form-item>
+        <el-form-item label="链接地址"><el-input v-model="linkButtonForm.href" placeholder="https://example.com 或 /article/1" /></el-form-item>
+        <el-form-item label="按钮样式"><el-radio-group v-model="linkButtonForm.style"><el-radio-button value="primary">主要</el-radio-button><el-radio-button value="secondary">次要</el-radio-button><el-radio-button value="download">下载</el-radio-button></el-radio-group></el-form-item>
+        <el-form-item><el-checkbox v-model="linkButtonForm.newWindow">在新窗口打开</el-checkbox></el-form-item>
+      </el-form>
+      <template #footer><button class="btn-ghost" type="button" @click="linkButtonVisible = false">取消</button><button class="btn-primary" type="button" @click="confirmLinkButton">插入</button></template>
+    </el-dialog>
     <PortalFooter />
   </div>
 </template>
@@ -129,7 +139,7 @@ import PortalFooter from '../../components/PortalFooter.vue'
 import { articleApi, portalApi, uploadApi, userApi } from '../../api/blog'
 import { useAuthStore } from '../../stores/auth'
 import { normalizeAssetUrl } from '../../utils/assets'
-import { ensureRichTextFormats, fileSnippet, getSafeInsertIndex, imageSnippet, insertHtmlSnippet, isEmptyHtml, richToolbar, setupRichTextEditor, toEditableHtml, videoSnippet } from '../../utils/richText'
+import { ensureRichTextFormats, fileSnippet, imageSnippet, insertLinkButton, insertUploadPlaceholder, isEmptyHtml, removeUploadPlaceholder, replaceUploadPlaceholder, richToolbar, setupRichTextEditor, toEditableHtml, videoSnippet } from '../../utils/richText'
 
 const ArticleTable = defineComponent({
   props: { rows: { type: Array, default: () => [] }, statusText: Function, statusType: Function },
@@ -166,7 +176,11 @@ const editingId = ref(null)
 const editorRef = ref(null)
 const lastSelection = ref(null)
 const articleBaseline = ref('')
-const articleUploading = ref(false)
+const pendingUploads = ref(0)
+const articleSaving = ref(false)
+const linkButtonVisible = ref(false)
+const linkButtonRange = ref(null)
+const linkButtonForm = reactive({ text: '', href: '', style: 'primary', newWindow: true })
 const writerImageInput = ref(null)
 const writerVideoInput = ref(null)
 const writerFileInput = ref(null)
@@ -189,6 +203,8 @@ const articleSignature = () => JSON.stringify({ ...articleForm, tagIds: [...arti
 const hasUnsavedArticle = computed(() => activeSection.value === 'write' && articleSignature() !== articleBaseline.value && Boolean(articleForm.title.trim() || articleForm.summary.trim() || articleForm.coverUrl || !isEmptyHtml(articleForm.content)))
 const markArticleSaved = () => { articleBaseline.value = articleSignature() }
 const confirmDiscardArticle = async () => {
+  if (articleSaving.value) { ElMessage.warning('文章正在保存，请稍后再离开写作页'); return false }
+  if (pendingUploads.value > 0) { ElMessage.warning('请等待文件上传完成后再离开写作页'); return false }
   if (!hasUnsavedArticle.value) return true
   try {
     await ElMessageBox.confirm('当前文章还有未保存的修改，确定离开吗？', '未保存的文章', { type: 'warning', confirmButtonText: '放弃修改', cancelButtonText: '继续编辑' })
@@ -205,9 +221,12 @@ const saveProfile = async () => { try { const res = await userApi.updateProfile(
 const changePassword = async () => { if (!password.oldPassword || !password.newPassword) return ElMessage.warning('请填写原密码和新密码'); try { await userApi.changePassword({ ...password }); auth.clearPasswordRequired(); password.oldPassword = ''; password.newPassword = ''; ElMessage.success('密码已修改') } catch (error) { console.error(error) } }
 
 const saveArticle = async (status) => {
+  if (articleSaving.value) return
+  if (pendingUploads.value > 0) return ElMessage.warning('请等待文件上传完成后再保存')
   if (!articleForm.title.trim()) return ElMessage.warning('请填写文章标题')
   if (status !== 'DRAFT' && isEmptyHtml(articleForm.content)) return ElMessage.warning('发布前请先写正文')
   const payload = { ...articleForm, contentType: 'HTML', status }
+  articleSaving.value = true
   try {
     const res = editingId.value ? await articleApi.update(editingId.value, payload) : await articleApi.save(payload)
     const savedArticle = res?.data || {}
@@ -215,18 +234,19 @@ const saveArticle = async (status) => {
     else if (savedArticle.status === 'PUBLISHED') ElMessage.success('文章已发布')
     else ElMessage.warning(savedArticle.reviewReason ? `内容含违禁词，已转入审核：${savedArticle.reviewReason}` : '内容已转入审核')
     resetArticleForm(); await loadMine(1); activeSection.value = 'articles'
-  } catch (error) { console.error(error) }
+  } catch (error) { console.error(error) } finally { articleSaving.value = false }
 }
 const resetArticleForm = () => { editingId.value = null; editorRef.value = null; lastSelection.value = null; Object.assign(articleForm, { title: '', summary: '', coverUrl: '', content: '', contentType: 'HTML', categoryId: null, tagIds: [] }); markArticleSaved() }
 const editArticle = async (row) => { if (!(await confirmDiscardArticle())) return; await ensureRichTextFormats(); editingId.value = row.id; Object.assign(articleForm, { title: row.title || '', summary: row.summary || '', coverUrl: row.coverUrl || '', content: toEditableHtml(row.content, row.contentType), contentType: 'HTML', categoryId: row.categoryId || null, tagIds: row.tags?.map((tag) => tag.id) || [] }); markArticleSaved(); activeSection.value = 'write' }
-const onEditorReady = (quill) => { editorRef.value = quill; lastSelection.value = null; setupRichTextEditor(quill, { onImageFile: (file) => uploadArticleFile({ file }, 'image') }) }
+const onEditorReady = (quill) => { editorRef.value = quill; lastSelection.value = null; setupRichTextEditor(quill, { onImageFile: (file, range) => uploadArticleFile({ file }, 'image', range), onLinkButton: openLinkButton, getLastSelection: () => lastSelection.value }) }
 const onSelectionChange = ({ range }) => { if (range) lastSelection.value = range }
 const removeArticle = async (row) => { await ElMessageBox.confirm(`确认删除《${row.title}》吗？`, '删除文章', { type: 'warning' }); await articleApi.removeMine(row.id); if (editingId.value === row.id) resetArticleForm(); ElMessage.success('文章已删除'); loadMine(Math.min(articlePage.current, pageCount(articlePage.total - 1, articlePage.size))) }
 const uploadProfileFile = async (options, field) => { try { const res = await uploadApi.file(options.file); profile[field] = res.data.url; options.onSuccess?.(res); ElMessage.success('上传成功') } catch (error) { console.error(error); options.onError?.(error) } }
-const uploadArticleFile = async (options, type) => { const currentRange = editorRef.value?.getSelection?.(); const insertIndex = type === 'cover' ? null : getSafeInsertIndex(editorRef.value, currentRange || lastSelection.value); articleUploading.value = true; try { const res = await uploadApi.file(options.file); const { url, name } = res.data; if (type === 'cover') articleForm.coverUrl = url; else if (type === 'image') insertSnippet(imageSnippet(url, name), insertIndex); else if (type === 'video') insertSnippet(videoSnippet(url, name), insertIndex); else insertSnippet(fileSnippet(url, name), insertIndex); options.onSuccess?.(res); ElMessage.success('上传成功') } catch (error) { console.error(error); options.onError?.(error) } finally { articleUploading.value = false } }
-const openWriterUpload = (type) => { if (articleUploading.value) return; const quill = editorRef.value; const currentRange = quill?.getSelection?.(); if (currentRange) lastSelection.value = currentRange; const input = writerUploadInputs[type]?.value; if (!input) return; input.value = ''; input.click() }
+const uploadArticleFile = async (options, type, requestedRange = null) => { if (articleSaving.value) return ElMessage.warning('文章正在保存，请稍后再上传文件'); const quill = editorRef.value; const range = requestedRange || quill?.getSelection?.() || lastSelection.value; const placeholderId = type === 'cover' ? null : insertUploadPlaceholder(quill, type, range); if (type !== 'cover' && !placeholderId) return ElMessage.warning('编辑器还没有准备好，请稍后再试'); pendingUploads.value += 1; try { const res = await uploadApi.file(options.file); const { url, name } = res.data; if (type === 'cover') articleForm.coverUrl = url; else { const snippet = type === 'image' ? imageSnippet(url, name) : type === 'video' ? videoSnippet(url, name) : fileSnippet(url, name); const nextIndex = replaceUploadPlaceholder(quill, placeholderId, snippet); lastSelection.value = { index: nextIndex, length: 0 } } options.onSuccess?.(res); ElMessage.success('上传成功') } catch (error) { console.error(error); if (placeholderId) removeUploadPlaceholder(quill, placeholderId); if (error?.code === 'EDITOR_INSERT_FAILED') ElMessage.error(error.message); options.onError?.(error) } finally { pendingUploads.value = Math.max(0, pendingUploads.value - 1) } }
+const openWriterUpload = (type) => { if (articleSaving.value) return; const quill = editorRef.value; const currentRange = quill?.getSelection?.(); if (currentRange) lastSelection.value = currentRange; const input = writerUploadInputs[type]?.value; if (!input) return; input.value = ''; input.click() }
 const handleWriterUpload = async (event, type) => { const file = event?.target?.files?.[0]; if (event?.target) event.target.value = ''; if (!file) return; await uploadArticleFile({ file }, type) }
-const insertSnippet = (text, insertIndex) => { const quill = editorRef.value; const nextIndex = quill ? insertHtmlSnippet(quill, insertIndex, text) : null; if (nextIndex !== null) { lastSelection.value = { index: nextIndex, length: 0 }; return } articleForm.content = `${articleForm.content || ''}${text}` }
+const openLinkButton = () => { const quill = editorRef.value; linkButtonRange.value = quill?.getSelection?.() || lastSelection.value; Object.assign(linkButtonForm, { text: '', href: '', style: 'primary', newWindow: true }); linkButtonVisible.value = true }
+const confirmLinkButton = () => { try { const nextIndex = insertLinkButton(editorRef.value, linkButtonRange.value, linkButtonForm); if (nextIndex !== null) lastSelection.value = { index: nextIndex, length: 0 }; linkButtonVisible.value = false } catch (error) { ElMessage.warning(error.message || '链接按钮填写有误') } }
 const loadMine = async (page = articlePage.current) => { articlePage.current = page; try { const res = await articleApi.mine({ current: articlePage.current, size: articlePage.size, keyword: articleQuery.keyword?.trim() || undefined, status: articleQuery.status || undefined }); mineRows.value = res.data.records || []; articlePage.total = res.data.total || 0 } catch (error) { console.error(error) } }
 const loadFavorites = async (page = favoritePage.current) => { favoritePage.current = page; try { const res = await userApi.favorites({ current: favoritePage.current, size: favoritePage.size }); favoriteRows.value = res.data.records || []; favoritePage.total = res.data.total || 0 } catch (error) { console.error(error) } }
 const loadComments = async (page = commentPage.current) => { commentPage.current = page; try { const res = await userApi.comments({ current: commentPage.current, size: commentPage.size }); commentRows.value = res.data.records || []; commentPage.total = res.data.total || 0 } catch (error) { console.error(error) } }
@@ -239,7 +259,7 @@ const statusText = (status) => ({ DRAFT: '草稿', PENDING: '待审核', PUBLISH
 const statusType = (status) => ({ PUBLISHED: 'success', PENDING: 'warning', REJECTED: 'danger', OFFLINE: 'info', DELETED: 'danger', DRAFT: 'info' }[status] || 'info')
 const commentStatusText = (status) => ({ PENDING: '待审核', APPROVED: '已通过', REJECTED: '已驳回' }[status] || status || '-')
 const commentStatusType = (status) => ({ APPROVED: 'success', PENDING: 'warning', REJECTED: 'danger' }[status] || 'info')
-const handleBeforeUnload = (event) => { if (!hasUnsavedArticle.value) return; event.preventDefault(); event.returnValue = '' }
+const handleBeforeUnload = (event) => { if (!hasUnsavedArticle.value && pendingUploads.value === 0 && !articleSaving.value) return; event.preventDefault(); event.returnValue = '' }
 onBeforeRouteLeave(async () => await confirmDiscardArticle())
 onMounted(() => { markArticleSaved(); window.addEventListener('beforeunload', handleBeforeUnload); loadProfile(); loadMeta(); loadMine() })
 onBeforeUnmount(() => window.removeEventListener('beforeunload', handleBeforeUnload))

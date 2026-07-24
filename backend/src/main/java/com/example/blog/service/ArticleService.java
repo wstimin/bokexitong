@@ -47,11 +47,13 @@ public class ArticleService {
     private final TagMapper tagMapper;
     private final BlogUserMapper blogUserMapper;
     private final SiteSettingService siteSettingService;
+    private final RichTextMediaMigrationService richTextMediaMigrationService;
 
     public ArticleService(ArticleMapper articleMapper, ArticleTagMapper articleTagMapper, CommentMapper commentMapper,
                           LikeRecordMapper likeRecordMapper, FavoriteMapper favoriteMapper,
                           CategoryMapper categoryMapper, TagMapper tagMapper, BlogUserMapper blogUserMapper,
-                          SiteSettingService siteSettingService) {
+                          SiteSettingService siteSettingService,
+                          RichTextMediaMigrationService richTextMediaMigrationService) {
         this.articleMapper = articleMapper;
         this.articleTagMapper = articleTagMapper;
         this.commentMapper = commentMapper;
@@ -61,6 +63,7 @@ public class ArticleService {
         this.tagMapper = tagMapper;
         this.blogUserMapper = blogUserMapper;
         this.siteSettingService = siteSettingService;
+        this.richTextMediaMigrationService = richTextMediaMigrationService;
     }
 
     public Page<Article> page(long current, long size, String keyword, String status, Long categoryId, Long tagId) {
@@ -155,7 +158,7 @@ public class ArticleService {
         article.setSummary(request.getSummary());
         article.setCoverUrl(request.getCoverUrl());
         String contentType = request.getContentType() == null ? "MARKDOWN" : request.getContentType();
-        article.setContent(RichTextSanitizer.sanitize(request.getContent(), contentType));
+        article.setContent(prepareContentForSave(request.getContent(), contentType));
         article.setContentType(contentType);
         article.setStatus("DRAFT".equals(requestedStatus) ? "DRAFT" : "PENDING");
         article.setRecommended(0);
@@ -221,7 +224,7 @@ public class ArticleService {
         article.setSummary(request.getSummary());
         article.setCoverUrl(request.getCoverUrl());
         String contentType = request.getContentType() == null ? "MARKDOWN" : request.getContentType();
-        article.setContent(RichTextSanitizer.sanitize(request.getContent(), contentType));
+        article.setContent(prepareContentForSave(request.getContent(), contentType));
         article.setContentType(contentType);
         article.setStatus(nextStatus);
         if (id == null || request.getRecommended() != null) {
@@ -322,6 +325,11 @@ public class ArticleService {
             relation.setTagId(tagId);
             articleTagMapper.insert(relation);
         }
+    }
+
+    private String prepareContentForSave(String content, String contentType) {
+        String migrated = richTextMediaMigrationService.migrateEmbeddedImages(content, contentType);
+        return RichTextSanitizer.sanitize(migrated, contentType);
     }
 
     private String normalizeUserStatus(String status) {

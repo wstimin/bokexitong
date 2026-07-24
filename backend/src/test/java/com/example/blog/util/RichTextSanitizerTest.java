@@ -50,6 +50,18 @@ class RichTextSanitizerTest {
     }
 
     @Test
+    void sanitize_shouldKeepArticleLinkButtonAttributes() {
+        String html = "<a class=\"article-link-button article-link-button--download\" href=\"/api/uploads/file.zip\" "
+                + "target=\"_blank\" rel=\"noopener noreferrer\" download>下载附件</a>";
+
+        String sanitized = RichTextSanitizer.sanitize(html, "HTML");
+
+        assertTrue(sanitized.contains("article-link-button--download"));
+        assertTrue(sanitized.contains("href=\"/api/uploads/file.zip\""));
+        assertTrue(sanitized.contains("download"));
+    }
+
+    @Test
     void sanitize_shouldLeaveMarkdownSourceUntouched() {
         String markdown = "[链接](https://example.com) <script>legacy</script>";
         assertTrue(RichTextSanitizer.sanitize(markdown, "MARKDOWN").equals(markdown));
