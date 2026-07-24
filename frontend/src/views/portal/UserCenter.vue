@@ -90,7 +90,7 @@
           <div class="hero-actions writer-actions">
             <button class="btn-primary" type="button" @click="saveArticle('PUBLISHED')">发布文章</button>
             <button class="btn-ghost" type="button" @click="saveArticle('DRAFT')">保存草稿</button>
-            <button v-if="editingId" class="btn-ghost" type="button" @click="resetArticleForm">取消编辑</button>
+            <button v-if="editingId" class="btn-ghost" type="button" @click="cancelArticleEdit">取消编辑</button>
           </div>
         </section>
 
@@ -119,8 +119,8 @@
 </template>
 
 <script setup>
-import { computed, defineComponent, h, onMounted, reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, defineComponent, h, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
+import { onBeforeRouteLeave, useRouter } from 'vue-router'
 import { ElButton, ElMessage, ElMessageBox, ElTable, ElTableColumn, ElTag } from 'element-plus'
 import { QuillEditor } from '@vueup/vue-quill'
 import FileUploadButton from '../../components/FileUploadButton.vue'
@@ -129,7 +129,7 @@ import PortalFooter from '../../components/PortalFooter.vue'
 import { articleApi, portalApi, uploadApi, userApi } from '../../api/blog'
 import { useAuthStore } from '../../stores/auth'
 import { normalizeAssetUrl } from '../../utils/assets'
-import { ensureRichTextFormats, fileSnippet, imageSnippet, insertHtmlSnippet, isEmptyHtml, localizeRichTextToolbar, richToolbar, toEditableHtml, videoSnippet } from '../../utils/richText'
+import { ensureRichTextFormats, fileSnippet, getSafeInsertIndex, imageSnippet, insertHtmlSnippet, isEmptyHtml, richToolbar, setupRichTextEditor, toEditableHtml, videoSnippet } from '../../utils/richText'
 
 const ArticleTable = defineComponent({
   props: { rows: { type: Array, default: () => [] }, statusText: Function, statusType: Function },
@@ -165,6 +165,7 @@ const tags = ref([])
 const editingId = ref(null)
 const editorRef = ref(null)
 const lastSelection = ref(null)
+const articleBaseline = ref('')
 const articleUploading = ref(false)
 const writerImageInput = ref(null)
 const writerVideoInput = ref(null)
@@ -184,6 +185,19 @@ const actionCards = computed(() => [
   { key: 'profile', title: '个人资料', desc: '修改昵称、头像和邮箱。', action: () => setSection('profile') },
   { key: 'password', title: '修改密码', desc: '定期更新登录密码。', action: () => setSection('password') }
 ])
+const articleSignature = () => JSON.stringify({ ...articleForm, tagIds: [...articleForm.tagIds] })
+const hasUnsavedArticle = computed(() => activeSection.value === 'write' && articleSignature() !== articleBaseline.value && Boolean(articleForm.title.trim() || articleForm.summary.trim() || articleForm.coverUrl || !isEmptyHtml(articleForm.content)))
+const markArticleSaved = () => { articleBaseline.value = articleSignature() }
+const confirmDiscardArticle = async () => {
+  if (!hasUnsavedArticle.value) return true
+  try {
+    await ElMessageBox.confirm('当前文章还有未保存的修改，确定离开吗？', '未保存的文章', { type: 'warning', confirmButtonText: '放弃修改', cancelButtonText: '继续编辑' })
+    return true
+  } catch {
+    return false
+  }
+}
+const cancelArticleEdit = async () => { if (await confirmDiscardArticle()) resetArticleForm() }
 
 const loadProfile = async () => { try { const res = await userApi.me(); Object.assign(profile, { nickname: res.data.nickname || '', avatar: res.data.avatar || '', email: res.data.email || '' }); auth.setUser(res.data) } catch (error) { console.error(error) } }
 const loadMeta = async () => { try { const res = await portalApi.home(); categories.value = res.data.categories || []; tags.value = res.data.tags || [] } catch (error) { console.error(error) } }
@@ -203,22 +217,21 @@ const saveArticle = async (status) => {
     resetArticleForm(); await loadMine(1); activeSection.value = 'articles'
   } catch (error) { console.error(error) }
 }
-const resetArticleForm = () => { editingId.value = null; Object.assign(articleForm, { title: '', summary: '', coverUrl: '', content: '', contentType: 'HTML', categoryId: null, tagIds: [] }) }
-const editArticle = async (row) => { await ensureRichTextFormats(); editingId.value = row.id; Object.assign(articleForm, { title: row.title || '', summary: row.summary || '', coverUrl: row.coverUrl || '', content: toEditableHtml(row.content, row.contentType), contentType: 'HTML', categoryId: row.categoryId || null, tagIds: row.tags?.map((tag) => tag.id) || [] }); activeSection.value = 'write' }
-const onEditorReady = (quill) => { editorRef.value = quill; lastSelection.value = null; localizeRichTextToolbar(quill) }
+const resetArticleForm = () => { editingId.value = null; editorRef.value = null; lastSelection.value = null; Object.assign(articleForm, { title: '', summary: '', coverUrl: '', content: '', contentType: 'HTML', categoryId: null, tagIds: [] }); markArticleSaved() }
+const editArticle = async (row) => { if (!(await confirmDiscardArticle())) return; await ensureRichTextFormats(); editingId.value = row.id; Object.assign(articleForm, { title: row.title || '', summary: row.summary || '', coverUrl: row.coverUrl || '', content: toEditableHtml(row.content, row.contentType), contentType: 'HTML', categoryId: row.categoryId || null, tagIds: row.tags?.map((tag) => tag.id) || [] }); markArticleSaved(); activeSection.value = 'write' }
+const onEditorReady = (quill) => { editorRef.value = quill; lastSelection.value = null; setupRichTextEditor(quill, { onImageFile: (file) => uploadArticleFile({ file }, 'image') }) }
 const onSelectionChange = ({ range }) => { if (range) lastSelection.value = range }
-const getInsertIndex = () => { const quill = editorRef.value; return quill ? Math.max(quill.getLength() - 1, 0) : 0 }
 const removeArticle = async (row) => { await ElMessageBox.confirm(`确认删除《${row.title}》吗？`, '删除文章', { type: 'warning' }); await articleApi.removeMine(row.id); if (editingId.value === row.id) resetArticleForm(); ElMessage.success('文章已删除'); loadMine(Math.min(articlePage.current, pageCount(articlePage.total - 1, articlePage.size))) }
 const uploadProfileFile = async (options, field) => { try { const res = await uploadApi.file(options.file); profile[field] = res.data.url; options.onSuccess?.(res); ElMessage.success('上传成功') } catch (error) { console.error(error); options.onError?.(error) } }
-const uploadArticleFile = async (options, type) => { articleUploading.value = true; try { const res = await uploadApi.file(options.file); const { url, name } = res.data; if (type === 'cover') articleForm.coverUrl = url; else if (type === 'image') insertSnippet(imageSnippet(url, name)); else if (type === 'video') insertSnippet(videoSnippet(url, name)); else insertSnippet(fileSnippet(url, name)); options.onSuccess?.(res); ElMessage.success('上传成功') } catch (error) { console.error(error); options.onError?.(error) } finally { articleUploading.value = false } }
-const openWriterUpload = (type) => { if (articleUploading.value) return; const input = writerUploadInputs[type]?.value; if (!input) return; input.value = ''; input.click() }
+const uploadArticleFile = async (options, type) => { const currentRange = editorRef.value?.getSelection?.(); const insertIndex = type === 'cover' ? null : getSafeInsertIndex(editorRef.value, currentRange || lastSelection.value); articleUploading.value = true; try { const res = await uploadApi.file(options.file); const { url, name } = res.data; if (type === 'cover') articleForm.coverUrl = url; else if (type === 'image') insertSnippet(imageSnippet(url, name), insertIndex); else if (type === 'video') insertSnippet(videoSnippet(url, name), insertIndex); else insertSnippet(fileSnippet(url, name), insertIndex); options.onSuccess?.(res); ElMessage.success('上传成功') } catch (error) { console.error(error); options.onError?.(error) } finally { articleUploading.value = false } }
+const openWriterUpload = (type) => { if (articleUploading.value) return; const quill = editorRef.value; const currentRange = quill?.getSelection?.(); if (currentRange) lastSelection.value = currentRange; const input = writerUploadInputs[type]?.value; if (!input) return; input.value = ''; input.click() }
 const handleWriterUpload = async (event, type) => { const file = event?.target?.files?.[0]; if (event?.target) event.target.value = ''; if (!file) return; await uploadArticleFile({ file }, type) }
-const insertSnippet = (text) => { const quill = editorRef.value; if (quill && insertHtmlSnippet(quill, getInsertIndex(), text)) return; articleForm.content = `${articleForm.content || ''}${text}` }
+const insertSnippet = (text, insertIndex) => { const quill = editorRef.value; const nextIndex = quill ? insertHtmlSnippet(quill, insertIndex, text) : null; if (nextIndex !== null) { lastSelection.value = { index: nextIndex, length: 0 }; return } articleForm.content = `${articleForm.content || ''}${text}` }
 const loadMine = async (page = articlePage.current) => { articlePage.current = page; try { const res = await articleApi.mine({ current: articlePage.current, size: articlePage.size, keyword: articleQuery.keyword?.trim() || undefined, status: articleQuery.status || undefined }); mineRows.value = res.data.records || []; articlePage.total = res.data.total || 0 } catch (error) { console.error(error) } }
 const loadFavorites = async (page = favoritePage.current) => { favoritePage.current = page; try { const res = await userApi.favorites({ current: favoritePage.current, size: favoritePage.size }); favoriteRows.value = res.data.records || []; favoritePage.total = res.data.total || 0 } catch (error) { console.error(error) } }
 const loadComments = async (page = commentPage.current) => { commentPage.current = page; try { const res = await userApi.comments({ current: commentPage.current, size: commentPage.size }); commentRows.value = res.data.records || []; commentPage.total = res.data.total || 0 } catch (error) { console.error(error) } }
-async function focusWriter() { await ensureRichTextFormats(); resetArticleForm(); activeSection.value = 'write' }
-const setSection = async (section) => { if (section === 'write') await ensureRichTextFormats(); activeSection.value = section; if (section === 'articles') loadMine(articlePage.current); if (section === 'favorites') loadFavorites(favoritePage.current); if (section === 'comments') loadComments(commentPage.current) }
+async function focusWriter() { if (!(await confirmDiscardArticle())) return; await ensureRichTextFormats(); resetArticleForm(); activeSection.value = 'write' }
+const setSection = async (section) => { if (section !== 'write' && !(await confirmDiscardArticle())) return; if (activeSection.value === 'write' && section !== 'write') resetArticleForm(); if (section === 'write') await ensureRichTextFormats(); activeSection.value = section; if (section === 'articles') loadMine(articlePage.current); if (section === 'favorites') loadFavorites(favoritePage.current); if (section === 'comments') loadComments(commentPage.current) }
 const pageCount = (total, size) => Math.max(1, Math.ceil(Math.max(total, 0) / size))
 const openArticle = (id) => { if (id) router.push(`/article/${id}`) }
 const formatDate = (date) => String(date || '').slice(0, 16) || '-'
@@ -226,5 +239,8 @@ const statusText = (status) => ({ DRAFT: '草稿', PENDING: '待审核', PUBLISH
 const statusType = (status) => ({ PUBLISHED: 'success', PENDING: 'warning', REJECTED: 'danger', OFFLINE: 'info', DELETED: 'danger', DRAFT: 'info' }[status] || 'info')
 const commentStatusText = (status) => ({ PENDING: '待审核', APPROVED: '已通过', REJECTED: '已驳回' }[status] || status || '-')
 const commentStatusType = (status) => ({ APPROVED: 'success', PENDING: 'warning', REJECTED: 'danger' }[status] || 'info')
-onMounted(() => { loadProfile(); loadMeta(); loadMine() })
+const handleBeforeUnload = (event) => { if (!hasUnsavedArticle.value) return; event.preventDefault(); event.returnValue = '' }
+onBeforeRouteLeave(async () => await confirmDiscardArticle())
+onMounted(() => { markArticleSaved(); window.addEventListener('beforeunload', handleBeforeUnload); loadProfile(); loadMeta(); loadMine() })
+onBeforeUnmount(() => window.removeEventListener('beforeunload', handleBeforeUnload))
 </script>

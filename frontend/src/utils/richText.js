@@ -1,4 +1,5 @@
 import { loadQuill } from '@vueup/vue-quill'
+import DOMPurify from 'dompurify'
 import { marked } from 'marked'
 import { normalizeAssetUrl } from './assets'
 
@@ -7,6 +8,18 @@ const sizeWhitelist = ['12px', '14px', '16px', '18px', '20px', '24px', '28px', '
 
 let richTextRegistered = false
 let toolbarLocalizationTimer = null
+const autoLinkTimers = new WeakMap()
+
+const urlPattern = /(?:https?:\/\/|www\.)[^\s<>"']+/gi
+const trailingPunctuation = /[),.;!?，。；！？）】》]+$/
+const skippedAutoLinkTags = new Set(['A', 'CODE', 'PRE', 'SCRIPT', 'STYLE', 'TEXTAREA'])
+
+const normalizeLinkUrl = (value) => value.toLowerCase().startsWith('www.') ? `https://${value}` : value
+
+const trimUrlPunctuation = (value) => {
+  const trailing = value.match(trailingPunctuation)?.[0] || ''
+  return { url: trailing ? value.slice(0, -trailing.length) : value, trailing }
+}
 
 export const ensureRichTextFormats = async () => {
   if (richTextRegistered) return
@@ -21,6 +34,26 @@ export const ensureRichTextFormats = async () => {
   Size.whitelist = sizeWhitelist
   Quill.register(Size, true)
 
+  const BlockEmbed = Quill.import('blots/block/embed')
+  class UploadedVideoBlot extends BlockEmbed {
+    static blotName = 'uploadedVideo'
+    static tagName = 'video'
+
+    static create(value) {
+      const node = super.create()
+      node.setAttribute('src', String(value || ''))
+      node.setAttribute('controls', 'controls')
+      node.setAttribute('preload', 'metadata')
+      node.setAttribute('class', 'article-inline-video')
+      return node
+    }
+
+    static value(node) {
+      return node.getAttribute('src') || ''
+    }
+  }
+  Quill.register(UploadedVideoBlot, true)
+
   richTextRegistered = true
 }
 
@@ -32,7 +65,8 @@ export const richToolbar = [
   [{ header: [1, 2, 3, 4, false] }],
   [{ list: 'ordered' }, { list: 'bullet' }],
   ['blockquote', 'code-block'],
-  ['link', 'image'],
+  ['link'],
+  ['undo', 'redo'],
   ['clean']
 ]
 
@@ -51,7 +85,8 @@ export const richToolbarLabels = {
   blockquote: '引用',
   'code-block': '代码块',
   link: '链接',
-  image: '图片',
+  undo: '撤销',
+  redo: '重做',
   clean: '清除格式'
 }
 
@@ -254,6 +289,58 @@ export const localizeRichTextToolbar = (editorRoot) => {
   }, 0)
 }
 
+const autoLinkEditor = (quill) => {
+  if (!quill?.getText || !quill?.formatText) return
+  const text = quill.getText(0, Math.max(quill.getLength?.() || 0, 0))
+  for (const match of text.matchAll(urlPattern)) {
+    const { url } = trimUrlPunctuation(match[0])
+    if (!url) continue
+    const index = match.index || 0
+    const formats = quill.getFormat?.(index, url.length) || {}
+    if (formats.link || formats['code-block'] || formats.code) continue
+    quill.formatText(index, url.length, 'link', normalizeLinkUrl(url), 'api')
+  }
+}
+
+export const setupRichTextEditor = (quill, options = {}) => {
+  if (!quill) return
+  quill.__blogEditorOptions = options
+  localizeRichTextToolbar(quill)
+  const toolbar = quill.getModule?.('toolbar')
+  toolbar?.addHandler?.('undo', () => quill.history?.undo?.())
+  toolbar?.addHandler?.('redo', () => quill.history?.redo?.())
+
+  if (quill.__blogAutoLinkReady) return
+  quill.__blogAutoLinkReady = true
+  quill.on?.('text-change', (_delta, _oldDelta, source) => {
+    if (source !== 'user') return
+    const previous = autoLinkTimers.get(quill)
+    if (previous) window.clearTimeout(previous)
+    const timer = window.setTimeout(() => {
+      autoLinkTimers.delete(quill)
+      autoLinkEditor(quill)
+    }, 80)
+    autoLinkTimers.set(quill, timer)
+  })
+
+  const uploadClipboardImage = (event) => {
+    const files = Array.from(event.clipboardData?.files || event.dataTransfer?.files || [])
+    const image = files.find((file) => file.type?.startsWith('image/'))
+    if (!image) return
+    event.preventDefault()
+    quill.__blogEditorOptions?.onImageFile?.(image)
+  }
+  quill.root?.addEventListener('paste', uploadClipboardImage, true)
+  quill.root?.addEventListener('drop', uploadClipboardImage, true)
+}
+
+export const getSafeInsertIndex = (quill, range) => {
+  if (!quill) return 0
+  const end = Math.max((quill.getLength?.() || 1) - 1, 0)
+  const requested = Number(range?.index)
+  return Number.isFinite(requested) ? Math.min(Math.max(requested, 0), end) : end
+}
+
 export const isRichTextContentType = (contentType) => {
   const normalized = String(contentType || '').toUpperCase()
   return normalized === 'HTML' || normalized === 'RICH_TEXT'
@@ -261,13 +348,65 @@ export const isRichTextContentType = (contentType) => {
 
 export const toEditableHtml = (content, contentType) => {
   const raw = String(content || '')
-  return isRichTextContentType(contentType) ? raw : marked(raw)
+  return sanitizeRichTextHtml(isRichTextContentType(contentType) ? raw : marked(raw))
 }
 
 export const toDisplayHtml = (content, contentType) => {
   const raw = String(content || '')
   const html = isRichTextContentType(contentType) ? raw : marked(raw)
-  return normalizeHtmlAssets(html)
+  return autoLinkHtml(normalizeHtmlAssets(sanitizeRichTextHtml(html)))
+}
+
+export const sanitizeRichTextHtml = (html) => DOMPurify.sanitize(String(html || ''), {
+  ADD_TAGS: ['video', 'source'],
+  ADD_ATTR: ['controls', 'preload', 'data-list', 'target'],
+  ALLOW_DATA_ATTR: true,
+  FORBID_TAGS: ['form', 'input', 'button', 'iframe', 'object', 'embed', 'svg', 'math'],
+  FORBID_ATTR: ['srcdoc']
+})
+
+const autoLinkHtml = (html) => {
+  if (typeof document === 'undefined') return html
+  const container = document.createElement('div')
+  container.innerHTML = html
+  const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT)
+  const textNodes = []
+  while (walker.nextNode()) textNodes.push(walker.currentNode)
+
+  textNodes.forEach((node) => {
+    if (!node.parentElement || skippedAutoLinkTags.has(node.parentElement.tagName)) return
+    const text = node.nodeValue || ''
+    urlPattern.lastIndex = 0
+    if (!urlPattern.test(text)) return
+    urlPattern.lastIndex = 0
+    const fragment = document.createDocumentFragment()
+    let cursor = 0
+    for (const match of text.matchAll(urlPattern)) {
+      const index = match.index || 0
+      const { url, trailing } = trimUrlPunctuation(match[0])
+      fragment.append(document.createTextNode(text.slice(cursor, index)))
+      if (url) {
+        const anchor = document.createElement('a')
+        anchor.href = normalizeLinkUrl(url)
+        anchor.target = '_blank'
+        anchor.rel = 'noopener noreferrer'
+        anchor.textContent = url
+        fragment.append(anchor)
+      }
+      if (trailing) fragment.append(document.createTextNode(trailing))
+      cursor = index + match[0].length
+    }
+    fragment.append(document.createTextNode(text.slice(cursor)))
+    node.replaceWith(fragment)
+  })
+  container.querySelectorAll('a[href]').forEach((anchor) => {
+    const href = anchor.getAttribute('href') || ''
+    if (/^https?:\/\//i.test(href)) {
+      anchor.target = '_blank'
+      anchor.rel = 'noopener noreferrer'
+    }
+  })
+  return container.innerHTML
 }
 
 export const isEmptyHtml = (value) => {
@@ -298,6 +437,14 @@ const parseInsertSnippet = (snippet) => {
     }
   }
 
+  const video = doc.querySelector('video')
+  if (video) {
+    return {
+      type: 'video',
+      src: video.getAttribute('src') || video.querySelector('source')?.getAttribute('src') || ''
+    }
+  }
+
   const link = doc.querySelector('a')
   if (link) {
     const text = (link.textContent || '').trim()
@@ -312,32 +459,47 @@ const parseInsertSnippet = (snippet) => {
 }
 
 export const insertHtmlSnippet = (quill, index, snippet) => {
-  if (!quill || typeof index !== 'number' || Number.isNaN(index)) return false
+  if (!quill || typeof index !== 'number' || Number.isNaN(index)) return null
   const parsed = parseInsertSnippet(snippet)
   try {
-    quill.focus?.()
+    const safeIndex = Math.min(Math.max(index, 0), Math.max((quill.getLength?.() || 1) - 1, 0))
 
     if (parsed?.type === 'image' && parsed.src && typeof quill.insertEmbed === 'function') {
-      quill.insertEmbed(index, 'image', parsed.src, 'user')
-      quill.insertText(index + 1, '\n', 'user')
-      return true
+      quill.insertEmbed(safeIndex, 'image', parsed.src, 'user')
+      quill.insertText(safeIndex + 1, '\n', 'user')
+      quill.setSelection?.(safeIndex + 2, 0, 'silent')
+      quill.focus?.()
+      return safeIndex + 2
+    }
+
+    if (parsed?.type === 'video' && parsed.src && typeof quill.insertEmbed === 'function') {
+      quill.insertEmbed(safeIndex, 'uploadedVideo', parsed.src, 'user')
+      quill.insertText(safeIndex + 1, '\n', 'user')
+      quill.setSelection?.(safeIndex + 2, 0, 'silent')
+      quill.focus?.()
+      return safeIndex + 2
     }
 
     if (parsed?.type === 'link' && parsed.href && typeof quill.insertText === 'function') {
-      quill.insertText(index, parsed.text, 'link', parsed.href, 'user')
-      quill.insertText(index + parsed.text.length, '\n', 'user')
-      return true
+      quill.insertText(safeIndex, parsed.text, 'link', parsed.href, 'user')
+      quill.insertText(safeIndex + parsed.text.length, '\n', 'user')
+      const nextIndex = safeIndex + parsed.text.length + 1
+      quill.setSelection?.(nextIndex, 0, 'silent')
+      quill.focus?.()
+      return nextIndex
     }
 
     if (snippet && quill.clipboard?.dangerouslyPasteHTML) {
-      quill.clipboard.dangerouslyPasteHTML(index, snippet, 'user')
-      return true
+      quill.clipboard.dangerouslyPasteHTML(safeIndex, sanitizeRichTextHtml(snippet), 'user')
+      quill.setSelection?.(safeIndex + 1, 0, 'silent')
+      quill.focus?.()
+      return safeIndex + 1
     }
   } catch (error) {
     console.error(error)
   }
 
-  return false
+  return null
 }
 
 export const imageSnippet = (url, name) => {
@@ -346,8 +508,8 @@ export const imageSnippet = (url, name) => {
 }
 
 export const videoSnippet = (url, name) => {
-  const href = normalizeAssetUrl(url)
-  return `<p><a class="article-inline-file" href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">${escapeHtml(name || '视频文件')}</a></p>`
+  const src = normalizeAssetUrl(url)
+  return `<video class="article-inline-video" src="${escapeHtml(src)}" controls preload="metadata" title="${escapeHtml(name || '视频')}"></video><p><br></p>`
 }
 
 export const fileSnippet = (url, name) => {

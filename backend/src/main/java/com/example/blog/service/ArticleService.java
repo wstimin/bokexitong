@@ -21,6 +21,7 @@ import com.example.blog.mapper.CommentMapper;
 import com.example.blog.mapper.FavoriteMapper;
 import com.example.blog.mapper.LikeRecordMapper;
 import com.example.blog.mapper.TagMapper;
+import com.example.blog.util.RichTextSanitizer;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -153,8 +154,9 @@ public class ArticleService {
         article.setTitle(request.getTitle());
         article.setSummary(request.getSummary());
         article.setCoverUrl(request.getCoverUrl());
-        article.setContent(request.getContent());
-        article.setContentType(request.getContentType() == null ? "MARKDOWN" : request.getContentType());
+        String contentType = request.getContentType() == null ? "MARKDOWN" : request.getContentType();
+        article.setContent(RichTextSanitizer.sanitize(request.getContent(), contentType));
+        article.setContentType(contentType);
         article.setStatus("DRAFT".equals(requestedStatus) ? "DRAFT" : "PENDING");
         article.setRecommended(0);
         article.setRecommendSort(0);
@@ -218,8 +220,9 @@ public class ArticleService {
         article.setTitle(request.getTitle());
         article.setSummary(request.getSummary());
         article.setCoverUrl(request.getCoverUrl());
-        article.setContent(request.getContent());
-        article.setContentType(request.getContentType() == null ? "MARKDOWN" : request.getContentType());
+        String contentType = request.getContentType() == null ? "MARKDOWN" : request.getContentType();
+        article.setContent(RichTextSanitizer.sanitize(request.getContent(), contentType));
+        article.setContentType(contentType);
         article.setStatus(nextStatus);
         if (id == null || request.getRecommended() != null) {
             article.setRecommended(normalizeRecommendation(request.getRecommended()));

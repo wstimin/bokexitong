@@ -154,6 +154,24 @@ button, input, textarea, select { font: inherit; }
 .detail-meta, .detail-tags, .detail-actions { margin-bottom: 16px; }
 .detail-summary { margin: 0 0 18px; color: #5a5264; font-size: 17px; line-height: 1.8; }
 .article-body, .markdown { line-height: 1.9; color: #40374a; font-size: 17px; }
+.article-body a, .markdown a { color: #b51f6f; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; overflow-wrap: anywhere; }
+.article-body p, .markdown p { margin: 0 0 1em; }
+.article-body h1, .article-body h2, .article-body h3, .article-body h4, .markdown h1, .markdown h2, .markdown h3, .markdown h4 { margin: 1.35em 0 .65em; line-height: 1.35; }
+.article-body ol, .article-body ul, .markdown ol, .markdown ul { margin: .8em 0 1em; padding-left: 1.75em; }
+.article-body li, .markdown li { margin: .35em 0; }
+.article-body li[data-list="ordered"] { list-style-type: decimal; }
+.article-body li[data-list="bullet"] { list-style-type: disc; }
+.article-body .ql-align-center { text-align: center; }
+.article-body .ql-align-right { text-align: right; }
+.article-body .ql-align-justify { text-align: justify; }
+.article-body .ql-indent-1 { padding-left: 3em; }
+.article-body .ql-indent-2 { padding-left: 6em; }
+.article-body .ql-indent-3 { padding-left: 9em; }
+.article-body .ql-indent-4 { padding-left: 12em; }
+.article-body .ql-indent-5 { padding-left: 15em; }
+.article-body .ql-indent-6 { padding-left: 18em; }
+.article-body .ql-indent-7 { padding-left: 21em; }
+.article-body .ql-indent-8 { padding-left: 24em; }
 .article-body img, .markdown img { display: block; max-width: min(100%, 760px); height: auto; margin: 18px auto; border-radius: 8px; }
 .article-body video, .markdown video { display: block; width: 100%; max-width: 100%; margin: 16px 0; border-radius: 8px; }
 .article-body pre, .markdown pre { padding: 16px; border-radius: 8px; overflow: auto; background: #282c34; color: #f8f8f2; }
@@ -279,7 +297,15 @@ button, input, textarea, select { font: inherit; }
 .rich-editor.ql-container.ql-snow, .rich-editor .ql-container.ql-snow { border: 0; font-family: inherit; }
 .rich-editor .ql-editor { min-height: clamp(380px, 48vh, 560px); font-size: 17px; line-height: 1.9; color: var(--ink); word-break: break-word; }
 .rich-editor .ql-editor img { display: block; max-width: min(100%, 760px); height: auto; margin: 14px auto; border-radius: 8px; }
+.rich-editor .ql-editor video { display: block; width: 100%; max-width: 760px; margin: 14px auto; border-radius: 8px; background: #111; }
 .rich-editor .ql-editor a { color: var(--pink); text-decoration: underline; text-underline-offset: 3px; }
+.rich-editor .ql-toolbar .ql-undo::after, .rich-editor .ql-toolbar .ql-redo::after { display: block; color: #444; font-size: 18px; line-height: 18px; font-weight: 800; }
+.rich-editor .ql-toolbar .ql-undo::after { content: "↶"; }
+.rich-editor .ql-toolbar .ql-redo::after { content: "↷"; }
+.rich-editor .ql-tooltip[data-mode="link"]::before { content: "输入链接："; }
+.rich-editor .ql-tooltip.ql-editing a.ql-action::after { content: "保存"; }
+.rich-editor .ql-tooltip:not(.ql-editing) a.ql-action::after { content: "编辑"; }
+.rich-editor .ql-tooltip a.ql-remove::before { content: "移除"; }
 .upload-trigger {
   display: inline-flex;
   align-items: center;
@@ -388,4 +414,7 @@ button, input, textarea, select { font: inherit; }
   .admin-main { padding: 16px; }
   .hero h1 { font-size: 34px; }
   .recommend-card { grid-template-columns: 1fr; }
+  .rich-editor .ql-toolbar.ql-snow { display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 2px; padding-bottom: 10px; }
+  .rich-editor .ql-toolbar.ql-snow .ql-formats { display: inline-flex; flex: 0 0 auto; margin-right: 4px; }
+  .article-body .ql-indent-3, .article-body .ql-indent-4, .article-body .ql-indent-5, .article-body .ql-indent-6, .article-body .ql-indent-7, .article-body .ql-indent-8 { padding-left: 3em; }
 }

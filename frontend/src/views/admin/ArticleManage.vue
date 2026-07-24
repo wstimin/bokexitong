@@ -58,7 +58,7 @@
       <el-pagination background layout="total, prev, pager, next" :total="total" :page-size="query.size" v-model:current-page="query.current" @current-change="load" />
     </div>
 
-    <el-dialog v-model="editorVisible" :title="editingId ? '编辑文章' : '新增文章'" width="1020px" class="article-editor-dialog" destroy-on-close append-to-body>
+    <el-dialog v-model="editorVisible" :title="editingId ? '编辑文章' : '新增文章'" width="1020px" class="article-editor-dialog" destroy-on-close append-to-body :before-close="requestEditorClose">
       <el-form label-position="top">
         <el-form-item label="标题">
           <el-input v-model="form.title" maxlength="180" show-word-limit placeholder="请输入文章标题" />
@@ -111,7 +111,7 @@
       </div>
 
       <template #footer>
-        <button class="btn-ghost" type="button" @click="editorVisible = false">取消</button>
+        <button class="btn-ghost" type="button" @click="requestEditorClose()">取消</button>
         <button class="btn-ghost" type="button" :disabled="saving" @click="saveArticle('DRAFT')">保存草稿</button>
         <button class="btn-ghost" type="button" :disabled="saving" @click="saveArticle('PENDING')">提交审核</button>
         <button class="btn-primary" type="button" :disabled="saving" @click="saveArticle('PUBLISHED')">发布文章</button>
@@ -144,13 +144,13 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { QuillEditor } from '@vueup/vue-quill'
 import FileUploadButton from '../../components/FileUploadButton.vue'
 import { adminApi, articleApi, uploadApi } from '../../api/blog'
 import { normalizeAssetUrl } from '../../utils/assets'
-import { ensureRichTextFormats, fileSnippet, imageSnippet, insertHtmlSnippet, isEmptyHtml, localizeRichTextToolbar, richToolbar, toDisplayHtml, toEditableHtml, videoSnippet } from '../../utils/richText'
+import { ensureRichTextFormats, fileSnippet, getSafeInsertIndex, imageSnippet, insertHtmlSnippet, isEmptyHtml, richToolbar, setupRichTextEditor, toDisplayHtml, toEditableHtml, videoSnippet } from '../../utils/richText'
 
 const statusOptions = [
   { label: '草稿', value: 'DRAFT' },
@@ -180,6 +180,10 @@ const query = reactive({ current: 1, size: 10, keyword: '', status: '' })
 const previewHtml = computed(() => toDisplayHtml(previewArticle.value.content, previewArticle.value.contentType))
 const previewCoverSrc = computed(() => normalizeAssetUrl(previewArticle.value.coverUrl))
 const coverPreviewSrc = computed(() => normalizeAssetUrl(form.coverUrl))
+const formBaseline = ref('')
+const formSignature = () => JSON.stringify({ ...form, tagIds: [...form.tagIds] })
+const hasUnsavedChanges = computed(() => editorVisible.value && formSignature() !== formBaseline.value && Boolean(form.title.trim() || form.summary.trim() || form.coverUrl || !isEmptyHtml(form.content)))
+const markFormSaved = () => { formBaseline.value = formSignature() }
 
 const load = async () => {
   loading.value = true
@@ -232,6 +236,7 @@ const openEditor = async (row) => {
     const detail = res.data || row
     editingId.value = detail.id
     Object.assign(form, { title: detail.title || '', summary: detail.summary || '', coverUrl: detail.coverUrl || '', content: toEditableHtml(detail.content, detail.contentType), contentType: 'HTML', categoryId: detail.categoryId || null, tagIds: detail.tags?.map((tag) => tag.id) || [], recommended: detail.recommended || 0, recommendSort: detail.recommendSort || 0 })
+    markFormSaved()
   } catch (error) {
     console.error(error)
   }
@@ -239,18 +244,29 @@ const openEditor = async (row) => {
 
 const resetForm = () => {
   editingId.value = null
+  editorRef.value = null
   lastSelection.value = null
   Object.assign(form, emptyForm())
+  markFormSaved()
 }
 const onEditorReady = (quill) => {
   editorRef.value = quill
   lastSelection.value = null
-  localizeRichTextToolbar(quill)
+  setupRichTextEditor(quill, { onImageFile: (file) => uploadFile({ file }, 'image') })
 }
 const onSelectionChange = ({ range }) => { if (range) lastSelection.value = range }
-const getInsertIndex = () => {
-  const quill = editorRef.value
-  return quill ? Math.max(quill.getLength() - 1, 0) : 0
+
+const requestEditorClose = async (done) => {
+  if (hasUnsavedChanges.value) {
+    try {
+      await ElMessageBox.confirm('当前文章还有未保存的修改，确定关闭吗？', '未保存的文章', { type: 'warning', confirmButtonText: '放弃修改', cancelButtonText: '继续编辑' })
+    } catch {
+      return
+    }
+  }
+  if (typeof done === 'function') done()
+  else editorVisible.value = false
+  resetForm()
 }
 
 const saveArticle = async (status) => {
@@ -273,14 +289,16 @@ const saveArticle = async (status) => {
 }
 
 const uploadFile = async (options, type) => {
+  const currentRange = editorRef.value?.getSelection?.()
+  const insertIndex = type === 'cover' ? null : getSafeInsertIndex(editorRef.value, currentRange || lastSelection.value)
   uploading.value = true
   try {
     const res = await uploadApi.file(options.file)
     const { url, name } = res.data
     if (type === 'cover') form.coverUrl = url
-    else if (type === 'image') insertSnippet(imageSnippet(url, name))
-    else if (type === 'video') insertSnippet(videoSnippet(url, name))
-    else insertSnippet(fileSnippet(url, name))
+    else if (type === 'image') insertSnippet(imageSnippet(url, name), insertIndex)
+    else if (type === 'video') insertSnippet(videoSnippet(url, name), insertIndex)
+    else insertSnippet(fileSnippet(url, name), insertIndex)
     options.onSuccess?.(res)
     ElMessage.success('上传成功')
   } catch (error) {
@@ -291,9 +309,13 @@ const uploadFile = async (options, type) => {
   }
 }
 
-const insertSnippet = (text) => {
+const insertSnippet = (text, insertIndex) => {
   const quill = editorRef.value
-  if (quill && insertHtmlSnippet(quill, getInsertIndex(), text)) return
+  const nextIndex = quill ? insertHtmlSnippet(quill, insertIndex, text) : null
+  if (nextIndex !== null) {
+    lastSelection.value = { index: nextIndex, length: 0 }
+    return
+  }
   form.content = `${form.content || ''}${text}`
 }
 const canPublish = (status) => ['PENDING', 'REJECTED', 'OFFLINE', 'DRAFT'].includes(status)
@@ -348,5 +370,7 @@ const removeIds = async (ids, message) => {
 const statusText = (status) => ({ DRAFT: '草稿', PENDING: '待审核', PUBLISHED: '已发布', REJECTED: '已驳回', OFFLINE: '已下架' }[status] || status || '-')
 const statusType = (status) => ({ PUBLISHED: 'success', PENDING: 'warning', REJECTED: 'danger', OFFLINE: 'info', DRAFT: 'info' }[status] || 'info')
 
-onMounted(() => { loadMeta(); load() })
+const handleBeforeUnload = (event) => { if (!hasUnsavedChanges.value) return; event.preventDefault(); event.returnValue = '' }
+onMounted(() => { markFormSaved(); window.addEventListener('beforeunload', handleBeforeUnload); loadMeta(); load() })
+onBeforeUnmount(() => window.removeEventListener('beforeunload', handleBeforeUnload))
 </script>
