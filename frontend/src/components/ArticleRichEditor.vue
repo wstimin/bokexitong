@@ -81,7 +81,6 @@
             </button>
             <button type="button" class="article-editor-tool article-editor-tool--link" title="插入独立链接按钮" aria-label="插入独立链接按钮" :disabled="disabled" @mousedown="rememberLinkButtonPosition" @click.stop="openLinkButton">
               <SquareArrowOutUpRight :size="17" aria-hidden="true" />
-              <span>链接按钮</span>
             </button>
             <span v-if="pendingUploads" class="article-rich-editor__upload-status" role="status">
               <LoaderCircle :size="16" class="is-spinning" aria-hidden="true" />

@@ -19,7 +19,8 @@ test('link button keeps its dialog, style choices, and insertion command', async
   const source = await readSource('../src/components/ArticleRichEditor.vue')
   assert.match(source, /class="ql-link" title="文本链接（请先选中文字）" aria-label="文本链接"/)
   assert.match(source, /@mousedown="rememberLinkButtonPosition" @click\.stop="openLinkButton"/)
-  assert.match(source, /<span>链接按钮<\/span>/)
+  assert.doesNotMatch(source, /<span>链接按钮<\/span>/)
+  assert.match(source, /title="插入独立链接按钮" aria-label="插入独立链接按钮"/)
   assert.match(source, /getSafeInsertIndex,/)
   assert.match(source, /value="primary"/)
   assert.match(source, /value="secondary"/)
@@ -46,6 +47,15 @@ test('toolbar pickers are not clipped by the formatting row', async () => {
   assert.doesNotMatch(formatsRule, /overflow-y: hidden/)
   assert.match(immersiveFormatsRule, /overflow: visible/)
   assert.match(source, /\.ql-picker-options \{[^}]*z-index: 20;/)
+})
+
+test('immersive desktop toolbar stays on one compact row', async () => {
+  const source = await readSource('../src/assets/styles.css')
+  const immersiveFormatsRule = source.match(/\.article-composer__document \.article-rich-editor__formats \{([^}]*)\}/)?.[1] || ''
+  const mobileRule = source.match(/@media \(max-width: 720px\) \{([\s\S]*)\}\s*$/)?.[1] || ''
+
+  assert.match(immersiveFormatsRule, /flex-wrap: nowrap/)
+  assert.match(mobileRule, /\.article-composer__document \.article-rich-editor__formats \{[^}]*flex-wrap: wrap;/)
 })
 
 test('toolbar exposes every registered font and size option', async () => {
