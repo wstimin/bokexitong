@@ -39,7 +39,9 @@ class RichTextSanitizerTest {
     void sanitize_shouldKeepSafeLinksAndRemoveUnsafeMediaUrls() {
         String html = "<a href=\"https://example.com\" target=\"_blank\">外部</a>"
                 + "<a href=\"/article/1\">站内</a>"
-                + "<img src=\"data:image/svg+xml,unsafe\">";
+                + "<a href=\"//evil.example/path\">协议相对地址</a>"
+                + "<img src=\"data:image/svg+xml,unsafe\">"
+                + "<video src=\"blob:https://example.com/video\"></video>";
 
         String sanitized = RichTextSanitizer.sanitize(html, "HTML");
 
@@ -47,6 +49,8 @@ class RichTextSanitizerTest {
         assertTrue(sanitized.contains("rel=\"noopener noreferrer\""));
         assertTrue(sanitized.contains("/article/1"));
         assertFalse(sanitized.contains("data:image"));
+        assertFalse(sanitized.contains("//evil.example"));
+        assertFalse(sanitized.contains("blob:"));
     }
 
     @Test

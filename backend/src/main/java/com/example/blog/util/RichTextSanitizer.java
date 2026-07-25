@@ -67,13 +67,13 @@ public final class RichTextSanitizer {
     private static void sanitizeUrl(Element element, String attribute, boolean allowMailto) {
         String value = element.attr(attribute).trim();
         String normalized = value.toLowerCase(Locale.ROOT);
-        boolean safe = normalized.startsWith("https://")
-                || normalized.startsWith("http://")
-                || normalized.startsWith("/")
+        boolean hasWhitespace = normalized.chars().anyMatch(Character::isWhitespace);
+        boolean safe = !hasWhitespace && (normalized.matches("https?://.+")
+                || (normalized.startsWith("/") && !normalized.startsWith("//"))
                 || normalized.startsWith("./")
                 || normalized.startsWith("../")
-                || (allowMailto && normalized.startsWith("mailto:"))
-                || (allowMailto && normalized.startsWith("#"));
+                || (allowMailto && normalized.matches("mailto:.+"))
+                || (allowMailto && normalized.startsWith("#")));
         if (!safe) element.removeAttr(attribute);
     }
 }

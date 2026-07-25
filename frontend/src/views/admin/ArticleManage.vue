@@ -59,7 +59,7 @@
     </div>
 
     <el-dialog v-model="editorVisible" :title="editingId ? '编辑文章' : '新增文章'" width="1020px" class="article-editor-dialog" destroy-on-close append-to-body :before-close="requestEditorClose">
-      <el-form label-position="top" :disabled="saving">
+      <el-form v-loading="detailLoading" label-position="top" :disabled="saving || detailLoading">
         <el-form-item label="标题">
           <el-input v-model="form.title" maxlength="180" show-word-limit placeholder="请输入文章标题" />
         </el-form-item>
@@ -92,47 +92,22 @@
             <div v-else class="cover-empty">封面预览</div>
             <div class="cover-fields">
               <el-input v-model="form.coverUrl" placeholder="上传封面或粘贴图片地址" />
-              <FileUploadButton accept="image/*" :disabled="saving" @select="(file) => uploadFile({ file }, 'cover')">上传封面</FileUploadButton>
+              <FileUploadButton accept="image/*" :disabled="saving || detailLoading" @select="uploadCover">上传封面</FileUploadButton>
             </div>
           </div>
         </el-form-item>
 
         <el-form-item label="正文">
-          <div class="rich-editor-shell">
-            <QuillEditor v-model:content="form.content" theme="snow" content-type="html" class="rich-editor" :toolbar="richToolbar" :enable="!saving" @ready="onEditorReady" @selectionChange="onSelectionChange" placeholder="开始写正文，支持字体、字号、颜色、对齐、图片、视频和链接。" />
-          </div>
+          <ArticleRichEditor v-model="form.content" :disabled="saving || detailLoading" @pending-change="editorPendingUploads = $event" />
         </el-form-item>
       </el-form>
-
-      <div class="upload-row writer-tools">
-        <FileUploadButton accept="image/*" :disabled="saving" @select="(file) => uploadFile({ file }, 'image')">插入图片</FileUploadButton>
-        <FileUploadButton accept="video/*" :disabled="saving" @select="(file) => uploadFile({ file }, 'video')">插入视频</FileUploadButton>
-        <FileUploadButton :disabled="saving" @select="(file) => uploadFile({ file }, 'file')">插入附件</FileUploadButton>
-        <span v-if="pendingUploads" class="upload-status">{{ pendingUploads }} 个文件上传中</span>
-      </div>
 
       <template #footer>
         <button class="btn-ghost" type="button" :disabled="saving || pendingUploads > 0" @click="requestEditorClose()">取消</button>
-        <button class="btn-ghost" type="button" :disabled="saving || pendingUploads > 0" @click="saveArticle('DRAFT')">保存草稿</button>
-        <button class="btn-ghost" type="button" :disabled="saving || pendingUploads > 0" @click="saveArticle('PENDING')">提交审核</button>
-        <button class="btn-primary" type="button" :disabled="saving || pendingUploads > 0" @click="saveArticle('PUBLISHED')">发布文章</button>
+        <button class="btn-ghost" type="button" :disabled="saving || detailLoading || pendingUploads > 0" @click="saveArticle('DRAFT')">保存草稿</button>
+        <button class="btn-ghost" type="button" :disabled="saving || detailLoading || pendingUploads > 0" @click="saveArticle('PENDING')">提交审核</button>
+        <button class="btn-primary" type="button" :disabled="saving || detailLoading || pendingUploads > 0" @click="saveArticle('PUBLISHED')">发布文章</button>
       </template>
-    </el-dialog>
-
-    <el-dialog v-model="linkButtonVisible" title="插入链接按钮" width="460px" append-to-body>
-      <el-form label-position="top">
-        <el-form-item label="按钮文字"><el-input v-model="linkButtonForm.text" maxlength="60" placeholder="例如：查看文档" /></el-form-item>
-        <el-form-item label="链接地址"><el-input v-model="linkButtonForm.href" placeholder="https://example.com 或 /article/1" /></el-form-item>
-        <el-form-item label="按钮样式">
-          <el-radio-group v-model="linkButtonForm.style">
-            <el-radio-button value="primary">主要</el-radio-button>
-            <el-radio-button value="secondary">次要</el-radio-button>
-            <el-radio-button value="download">下载</el-radio-button>
-          </el-radio-group>
-        </el-form-item>
-        <el-form-item><el-checkbox v-model="linkButtonForm.newWindow">在新窗口打开</el-checkbox></el-form-item>
-      </el-form>
-      <template #footer><button class="btn-ghost" type="button" @click="linkButtonVisible = false">取消</button><button class="btn-primary" type="button" @click="confirmLinkButton">插入</button></template>
     </el-dialog>
 
     <el-dialog v-model="previewVisible" title="文章预览" width="900px" class="article-preview-dialog" append-to-body>
@@ -163,11 +138,11 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { QuillEditor } from '@vueup/vue-quill'
+import ArticleRichEditor from '../../components/ArticleRichEditor.vue'
 import FileUploadButton from '../../components/FileUploadButton.vue'
 import { adminApi, articleApi, uploadApi } from '../../api/blog'
 import { normalizeAssetUrl } from '../../utils/assets'
-import { ensureRichTextFormats, fileSnippet, imageSnippet, insertLinkButton, insertUploadPlaceholder, isEmptyHtml, removeUploadPlaceholder, replaceUploadPlaceholder, richToolbar, setupRichTextEditor, toDisplayHtml, toEditableHtml, videoSnippet } from '../../utils/richText'
+import { ensureRichTextFormats, isEmptyHtml, toDisplayHtml, toEditableHtml } from '../../utils/richText'
 
 const statusOptions = [
   { label: '草稿', value: 'DRAFT' },
@@ -183,18 +158,16 @@ const selected = ref([])
 const total = ref(0)
 const loading = ref(false)
 const saving = ref(false)
+const detailLoading = ref(false)
 const previewVisible = ref(false)
 const editorVisible = ref(false)
 const previewArticle = ref({})
 const categories = ref([])
 const tags = ref([])
 const editingId = ref(null)
-const editorRef = ref(null)
-const lastSelection = ref(null)
-const pendingUploads = ref(0)
-const linkButtonVisible = ref(false)
-const linkButtonRange = ref(null)
-const linkButtonForm = reactive({ text: '', href: '', style: 'primary', newWindow: true })
+const editorPendingUploads = ref(0)
+const coverPendingUploads = ref(0)
+const pendingUploads = computed(() => editorPendingUploads.value + coverPendingUploads.value)
 const form = reactive(emptyForm())
 const query = reactive({ current: 1, size: 10, keyword: '', status: '' })
 const previewHtml = computed(() => toDisplayHtml(previewArticle.value.content, previewArticle.value.contentType))
@@ -204,6 +177,12 @@ const formBaseline = ref('')
 const formSignature = () => JSON.stringify({ ...form, tagIds: [...form.tagIds] })
 const hasUnsavedChanges = computed(() => editorVisible.value && formSignature() !== formBaseline.value && Boolean(form.title.trim() || form.summary.trim() || form.coverUrl || !isEmptyHtml(form.content)))
 const markFormSaved = () => { formBaseline.value = formSignature() }
+let editorRequestVersion = 0
+
+const invalidateEditorRequest = () => {
+  editorRequestVersion += 1
+  detailLoading.value = false
+}
 
 const load = async () => {
   loading.value = true
@@ -246,39 +225,41 @@ const openPreview = async (row) => {
 }
 
 const openEditor = async (row) => {
-  resetForm()
+  invalidateEditorRequest()
+  const requestVersion = editorRequestVersion
+  resetForm(false)
   previewVisible.value = false
-  await ensureRichTextFormats()
-  editorVisible.value = true
-  if (!row?.id) return
   try {
-    const res = await articleApi.adminDetail(row.id)
+    await ensureRichTextFormats()
+    if (requestVersion !== editorRequestVersion) return
+    editorVisible.value = true
+    if (!row?.id) return
+    detailLoading.value = true
+    const res = await articleApi.adminDetail(row.id, { silentError: true })
+    if (requestVersion !== editorRequestVersion || !editorVisible.value) return
     const detail = res.data || row
     editingId.value = detail.id
     Object.assign(form, { title: detail.title || '', summary: detail.summary || '', coverUrl: detail.coverUrl || '', content: toEditableHtml(detail.content, detail.contentType), contentType: 'HTML', categoryId: detail.categoryId || null, tagIds: detail.tags?.map((tag) => tag.id) || [], recommended: detail.recommended || 0, recommendSort: detail.recommendSort || 0 })
     markFormSaved()
   } catch (error) {
     console.error(error)
+    if (requestVersion !== editorRequestVersion) return
+    editorVisible.value = false
+    resetForm()
+    ElMessage.error('文章详情加载失败，请稍后重试')
+  } finally {
+    if (requestVersion === editorRequestVersion) detailLoading.value = false
   }
 }
 
-const resetForm = () => {
+const resetForm = (invalidateRequest = true) => {
+  if (invalidateRequest) invalidateEditorRequest()
   editingId.value = null
-  editorRef.value = null
-  lastSelection.value = null
+  editorPendingUploads.value = 0
+  coverPendingUploads.value = 0
   Object.assign(form, emptyForm())
   markFormSaved()
 }
-const onEditorReady = (quill) => {
-  editorRef.value = quill
-  lastSelection.value = null
-  setupRichTextEditor(quill, {
-    onImageFile: (file, range) => uploadFile({ file }, 'image', range),
-    onLinkButton: openLinkButton,
-    getLastSelection: () => lastSelection.value
-  })
-}
-const onSelectionChange = ({ range }) => { if (range) lastSelection.value = range }
 
 const requestEditorClose = async (done) => {
   if (saving.value) {
@@ -303,6 +284,7 @@ const requestEditorClose = async (done) => {
 
 const saveArticle = async (status) => {
   if (saving.value) return
+  if (detailLoading.value) return ElMessage.warning('文章正在加载，请稍后再保存')
   if (pendingUploads.value > 0) return ElMessage.warning('请等待文件上传完成后再保存')
   if (!form.title.trim()) return ElMessage.warning('请填写文章标题')
   if (['PENDING', 'PUBLISHED'].includes(status) && isEmptyHtml(form.content)) return ElMessage.warning('发布或提交前请先写正文')
@@ -322,50 +304,17 @@ const saveArticle = async (status) => {
   }
 }
 
-const uploadFile = async (options, type, requestedRange = null) => {
-  if (saving.value) return ElMessage.warning('文章正在保存，请稍后再上传文件')
-  const quill = editorRef.value
-  const range = requestedRange || quill?.getSelection?.() || lastSelection.value
-  const placeholderId = type === 'cover' ? null : insertUploadPlaceholder(quill, type, range)
-  if (type !== 'cover' && !placeholderId) {
-    ElMessage.warning('编辑器还没有准备好，请稍后再试')
-    return
-  }
-  pendingUploads.value += 1
+const uploadCover = async (file) => {
+  if (saving.value || detailLoading.value) return ElMessage.warning('文章正在加载或保存，请稍后再上传文件')
+  coverPendingUploads.value += 1
   try {
-    const res = await uploadApi.file(options.file)
-    const { url, name } = res.data
-    if (type === 'cover') form.coverUrl = url
-    else {
-      const snippet = type === 'image' ? imageSnippet(url, name) : type === 'video' ? videoSnippet(url, name) : fileSnippet(url, name)
-      const nextIndex = replaceUploadPlaceholder(quill, placeholderId, snippet)
-      lastSelection.value = { index: nextIndex, length: 0 }
-    }
-    options.onSuccess?.(res)
+    const res = await uploadApi.file(file)
+    form.coverUrl = res.data.url
     ElMessage.success('上传成功')
   } catch (error) {
     console.error(error)
-    if (placeholderId) removeUploadPlaceholder(quill, placeholderId)
-    if (error?.code === 'EDITOR_INSERT_FAILED') ElMessage.error(error.message)
-    options.onError?.(error)
   } finally {
-    pendingUploads.value = Math.max(0, pendingUploads.value - 1)
-  }
-}
-
-const openLinkButton = () => {
-  const quill = editorRef.value
-  linkButtonRange.value = quill?.getSelection?.() || lastSelection.value
-  Object.assign(linkButtonForm, { text: '', href: '', style: 'primary', newWindow: true })
-  linkButtonVisible.value = true
-}
-const confirmLinkButton = () => {
-  try {
-    const nextIndex = insertLinkButton(editorRef.value, linkButtonRange.value, linkButtonForm)
-    if (nextIndex !== null) lastSelection.value = { index: nextIndex, length: 0 }
-    linkButtonVisible.value = false
-  } catch (error) {
-    ElMessage.warning(error.message || '链接按钮填写有误')
+    coverPendingUploads.value = Math.max(0, coverPendingUploads.value - 1)
   }
 }
 const canPublish = (status) => ['PENDING', 'REJECTED', 'OFFLINE', 'DRAFT'].includes(status)
@@ -422,5 +371,8 @@ const statusType = (status) => ({ PUBLISHED: 'success', PENDING: 'warning', REJE
 
 const handleBeforeUnload = (event) => { if (!hasUnsavedChanges.value && pendingUploads.value === 0 && !saving.value) return; event.preventDefault(); event.returnValue = '' }
 onMounted(() => { markFormSaved(); window.addEventListener('beforeunload', handleBeforeUnload); loadMeta(); load() })
-onBeforeUnmount(() => window.removeEventListener('beforeunload', handleBeforeUnload))
+onBeforeUnmount(() => {
+  invalidateEditorRequest()
+  window.removeEventListener('beforeunload', handleBeforeUnload)
+})
 </script>

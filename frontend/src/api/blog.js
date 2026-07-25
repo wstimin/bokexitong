@@ -30,7 +30,7 @@ const articleSaveConfig = { timeout: 120000 }
 
 export const articleApi = {
   page: (params) => http.get('/articles', { params }),
-  adminDetail: (id) => http.get(`/articles/${id}`),
+  adminDetail: (id, config = {}) => http.get(`/articles/${id}`, config),
   adminSave: (data) => http.post('/articles/admin', data, articleSaveConfig),
   adminUpdate: (id, data) => http.put(`/articles/admin/${id}`, data, articleSaveConfig),
   updateRecommendation: (id, recommended, recommendSort) => http.put(`/articles/${id}/recommendation`, null, { params: { recommended, recommendSort } }),
