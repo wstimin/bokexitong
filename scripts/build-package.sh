@@ -41,6 +41,16 @@ main() {
   info "Building frontend..."
   (cd frontend && npm ci && npm run build)
 
+  built_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  frontend_entry="$(grep -oE 'src="/assets/[^"]+\.js"' frontend/dist/index.html | head -n 1 | cut -d'"' -f2)"
+  article_composer="$(find frontend/dist/assets -maxdepth 1 -type f -name 'ArticleComposer-*.js' -printf '%f\n' | head -n 1)"
+  [ -n "$frontend_entry" ] || fail "Frontend entry was not found in frontend/dist/index.html."
+  [ -n "$article_composer" ] || fail "ArticleComposer bundle was not found in frontend/dist/assets."
+  article_composer_sha256="$(sha256sum "frontend/dist/assets/$article_composer" | awk '{print $1}')"
+  cat > frontend/dist/build-info.json <<EOF
+{"builtAt":"$built_at","frontendEntry":"$frontend_entry","articleComposer":"$article_composer","articleComposerSha256":"$article_composer_sha256"}
+EOF
+
   info "Building backend..."
   (cd backend && mvn -q -DskipTests package)
 
@@ -59,6 +69,12 @@ main() {
   cp frontend/Dockerfile.runtime "$BUILD_DIR/frontend/Dockerfile.runtime"
   cp -R sql/. "$BUILD_DIR/sql/"
   cp -R scripts/. "$BUILD_DIR/scripts/"
+  cat > "$BUILD_DIR/build-info.txt" <<EOF
+built_at=$built_at
+frontend_entry=$frontend_entry
+article_composer=$article_composer
+article_composer_sha256=$article_composer_sha256
+EOF
   copy_path docker-compose.runtime.yml "$BUILD_DIR/docker-compose.yml"
   copy_path docker-compose.yml "$BUILD_DIR/docker-compose.source.yml"
   copy_path .env.example "$BUILD_DIR/.env.example"
@@ -71,6 +87,7 @@ main() {
 
   cp "$BUILD_DIR/backend/app.jar" "$WEB_BUILD_DIR/backend/app.jar"
   cp -R "$BUILD_DIR/frontend/dist" "$WEB_BUILD_DIR/frontend/dist"
+  cp "$BUILD_DIR/build-info.txt" "$WEB_BUILD_DIR/build-info.txt"
   cp "$PROJECT_DIR/scripts/web-start.sh" "$WEB_BUILD_DIR/web-start.sh"
   copy_path "$PROJECT_DIR/docs/web-package-readme.md" "$WEB_BUILD_DIR/README.md"
   : > "$WEB_BUILD_DIR/config/.gitkeep"

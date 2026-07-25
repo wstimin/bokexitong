@@ -208,7 +208,8 @@ clone_or_update_repo() {
 
 prepare_project_files() {
   if is_build_package; then
-    ok "Build package already exists: $INSTALL_DIR"
+    info "Existing build package detected. Downloading and replacing it with the latest package."
+    install_from_package
     return
   fi
   if install_from_package; then

@@ -421,7 +421,11 @@ deploy() {
   mark_installed_for_script_deploy
 
   info "Starting application services..."
-  compose_cmd up -d --build backend frontend
+  if is_build_package; then
+    info "Rebuilding the frontend image without Docker build cache..."
+    compose_cmd build --no-cache frontend
+  fi
+  compose_cmd up -d --build --force-recreate backend frontend
   ok "Services started."
 }
 
@@ -447,25 +451,46 @@ verify_frontend_build() {
   frontend_url="$1"
   expected_asset="$(expected_frontend_asset || true)"
   [ -n "$expected_asset" ] || fail "Cannot determine the frontend build asset from frontend/dist/index.html."
+  expected_build_info="$PROJECT_DIR/frontend/dist/build-info.json"
+  [ -f "$expected_build_info" ] || fail "Packaged frontend build information is missing."
 
   info "Verifying the running frontend build: $expected_asset"
   runtime_html="$(mktemp)"
+  runtime_build_info="$(mktemp)"
   cache_buster="$(date +%s)"
   if ! curl -fsS -H 'Cache-Control: no-cache' -H 'Pragma: no-cache' "${frontend_url}?build=${cache_buster}" -o "$runtime_html"; then
     rm -f "$runtime_html"
+    rm -f "$runtime_build_info"
     fail "Frontend responded earlier but its build entry could not be downloaded."
   fi
   if ! grep -Fq "$expected_asset" "$runtime_html"; then
     runtime_asset="$(grep -oE 'src="/assets/[^"]+\.js"' "$runtime_html" | head -n 1 | cut -d'"' -f2 || true)"
     rm -f "$runtime_html"
+    rm -f "$runtime_build_info"
     fail "Running frontend is stale. Expected $expected_asset but received ${runtime_asset:-an unknown build}. Check the active port, reverse proxy, and frontend container."
   fi
   rm -f "$runtime_html"
 
   if ! curl -fsS -H 'Cache-Control: no-cache' "${frontend_url%/}${expected_asset}" >/dev/null; then
+    rm -f "$runtime_build_info"
     fail "Running frontend references $expected_asset, but that asset is not available."
   fi
+  if ! curl -fsS -H 'Cache-Control: no-cache' -H 'Pragma: no-cache' "${frontend_url%/}/build-info.json?build=${cache_buster}" -o "$runtime_build_info"; then
+    rm -f "$runtime_build_info"
+    fail "Running frontend does not expose build-info.json and is not the packaged build."
+  fi
+  if ! cmp -s "$expected_build_info" "$runtime_build_info"; then
+    expected_info="$(cat "$expected_build_info")"
+    runtime_info="$(cat "$runtime_build_info")"
+    rm -f "$runtime_build_info"
+    fail "Running frontend build identity is stale. Expected $expected_info but received $runtime_info."
+  fi
+  rm -f "$runtime_build_info"
   ok "Running frontend matches the packaged build: $expected_asset"
+  if [ -f "$PROJECT_DIR/build-info.txt" ]; then
+    info "Packaged build information:"
+    sed 's/^/  /' "$PROJECT_DIR/build-info.txt"
+  fi
 }
 
 sync_domain_runtime() {

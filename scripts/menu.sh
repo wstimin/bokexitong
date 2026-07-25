@@ -135,16 +135,47 @@ resolve_package_url() {
     return
   fi
 
-  ref_api="https://api.github.com/repos/wstimin/bokexitong/git/ref/heads/${BRANCH}"
-  commit_sha="$(curl -fsSL -H 'Cache-Control: no-cache' -H 'Pragma: no-cache' "${ref_api}?cache_bust=$(date +%s)" 2>/dev/null \
-    | sed -n 's/^[[:space:]]*"sha":[[:space:]]*"\([0-9a-f]\{40\}\)".*/\1/p' \
-    | head -n 1 || true)"
+  commit_sha="$(resolve_latest_commit_sha)"
   if [ -n "$commit_sha" ]; then
     printf 'https://raw.githubusercontent.com/wstimin/bokexitong/%s/package/bokexitong-linux.tar.gz' "$commit_sha"
     return
   fi
 
   printf '%s' "$DEFAULT_PACKAGE_URL"
+}
+
+resolve_latest_commit_sha() {
+  ref_api="https://api.github.com/repos/wstimin/bokexitong/git/ref/heads/${BRANCH}"
+  curl -fsSL -H 'Cache-Control: no-cache' -H 'Pragma: no-cache' "${ref_api}?cache_bust=$(date +%s)" 2>/dev/null \
+    | sed -n 's/^[[:space:]]*"sha":[[:space:]]*"\([0-9a-f]\{40\}\)".*/\1/p' \
+    | head -n 1 || true
+}
+
+run_latest_update_script() {
+  [ "${BOKEXITONG_UPDATE_BOOTSTRAPPED:-0}" != "1" ] || return 1
+  commit_sha="$(resolve_latest_commit_sha)"
+  [ -n "$commit_sha" ] || return 1
+
+  latest_script_url="https://raw.githubusercontent.com/wstimin/bokexitong/${commit_sha}/scripts/menu.sh"
+  latest_package_url="https://raw.githubusercontent.com/wstimin/bokexitong/${commit_sha}/package/bokexitong-linux.tar.gz"
+  latest_script="$(mktemp)"
+  if ! curl -fsSL -H 'Cache-Control: no-cache' -H 'Pragma: no-cache' "$latest_script_url" -o "$latest_script"; then
+    rm -f "$latest_script"
+    return 1
+  fi
+  if cmp -s "$latest_script" "$SCRIPT_DIR/menu.sh"; then
+    rm -f "$latest_script"
+    return 1
+  fi
+
+  info "检测到新版更新程序，先切换到提交：$commit_sha"
+  chmod +x "$latest_script"
+  set +e
+  BOKEXITONG_UPDATE_BOOTSTRAPPED=1 INSTALL_DIR="$PROJECT_DIR" PACKAGE_URL="$latest_package_url" bash "$latest_script" update
+  status=$?
+  set -e
+  rm -f "$latest_script"
+  exit "$status"
 }
 
 download_build_package() {
@@ -193,6 +224,10 @@ update_from_build_package() {
   rm -f "$tmp_file"
   rm -rf "$tmp_dir"
   ok "构建包已更新到项目目录。"
+  if [ -f "$PROJECT_DIR/build-info.txt" ]; then
+    info "本次构建信息："
+    sed 's/^/  /' "$PROJECT_DIR/build-info.txt"
+  fi
 }
 
 refresh_frontend_service() {
@@ -249,6 +284,7 @@ install_project() {
 
 update_project() {
   ensure_project_dir
+  run_latest_update_script || true
   info "Updating from the repository build package."
   update_from_build_package
   cd "$PROJECT_DIR"
