@@ -13,7 +13,7 @@
 
 ## Linux 一键脚本
 
-Linux 一键脚本继续保留菜单交互和 Compose 部署。该版本包含包内 MySQL、SQL 初始化脚本和 `.env`，不使用 Web 包的网页安装向导。
+Linux 一键脚本继续保留菜单交互和 Compose 部署。该版本包含 MySQL Compose 服务、SQL 初始化脚本和 `.env.example`；首次部署时会在服务器生成 `.env`，不使用 Web 包的网页安装向导。
 
 安装：
 

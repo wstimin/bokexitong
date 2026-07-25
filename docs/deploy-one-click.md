@@ -8,7 +8,7 @@ shiye-bk
 
 后续安装、更新、卸载、查看当前配置、域名和证书都从这个菜单进入。
 
-一键脚本是一条独立部署路线，不需要你手动上传压缩包。首次安装时脚本会优先下载 GitHub Release 里的 `bokexitong-linux.tar.gz` 构建包，服务器只会用包里的 `app.jar` 和 `dist` 构建轻量 Docker 运行镜像，不会在服务器上执行 Maven 或 npm 构建。只有构建包下载不到时，首次安装才会回退到源码拉取和服务器本地构建；使用 `shiye-bk update` 更新时如果构建包下载失败会直接停止，不会用源码覆盖现有部署。
+一键脚本是一条独立部署路线，不需要你手动上传压缩包。首次安装时脚本会优先下载仓库 `main/package/bokexitong-linux.tar.gz` 构建包，服务器只会用包里的 `app.jar` 和 `dist` 构建轻量 Docker 运行镜像，不会在服务器上执行 Maven 或 npm 构建。只有构建包下载不到时，首次安装才会回退到源码拉取和服务器本地构建；使用 `shiye-bk update` 更新时如果构建包下载失败会直接停止，不会用源码覆盖现有部署。
 
 ## 服务器要求
 
@@ -121,7 +121,7 @@ shiye-bk status
 shiye-bk update
 ```
 
-更新会下载最新 `bokexitong-linux.tar.gz`，保留 `.env`、数据库卷和上传文件卷，然后重新启动服务并自动执行数据库升级脚本。老版本如果曾经是源码目录安装，执行 `shiye-bk update` 后也会切换到 Release 构建包更新路线。
+更新会下载仓库 `main` 分支中的最新 `bokexitong-linux.tar.gz`，保留 `.env`、数据库卷和上传文件卷，然后重新启动服务并自动执行数据库升级脚本。老版本如果曾经是源码目录安装，执行 `shiye-bk update` 后也会切换到构建包更新路线。
 
 配置域名或申请证书不需要重新安装。`shiye-bk domain example.com` 和 `shiye-bk ssl example.com` 只会热更新 `.env`、前端监听端口和 Nginx 反向代理。
 

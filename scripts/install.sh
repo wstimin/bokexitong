@@ -5,7 +5,7 @@ APP_NAME="bokexitong"
 REPO_URL="${REPO_URL:-https://github.com/wstimin/bokexitong.git}"
 BRANCH="${BRANCH:-main}"
 INSTALL_DIR="${INSTALL_DIR:-/opt/bokexitong}"
-PACKAGE_URL="${PACKAGE_URL:-https://github.com/wstimin/bokexitong/releases/latest/download/bokexitong-linux.tar.gz}"
+PACKAGE_URL="${PACKAGE_URL:-https://raw.githubusercontent.com/wstimin/bokexitong/main/package/bokexitong-linux.tar.gz}"
 
 info() { printf '\033[1;34m[INFO]\033[0m %s\n' "$*"; }
 ok() { printf '\033[1;32m[ OK ]\033[0m %s\n' "$*"; }

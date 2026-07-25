@@ -5,7 +5,7 @@ APP_NAME="bokexitong"
 REPO_URL="${REPO_URL:-https://github.com/wstimin/bokexitong.git}"
 BRANCH="${BRANCH:-main}"
 DEFAULT_INSTALL_DIR="/opt/bokexitong"
-PACKAGE_URL="${PACKAGE_URL:-https://github.com/wstimin/bokexitong/releases/latest/download/bokexitong-linux.tar.gz}"
+PACKAGE_URL="${PACKAGE_URL:-https://raw.githubusercontent.com/wstimin/bokexitong/main/package/bokexitong-linux.tar.gz}"
 
 SOURCE_PATH="${0:-}"
 if [ "${BASH_SOURCE+x}" = "x" ] && [ "${#BASH_SOURCE[@]}" -gt 0 ]; then
@@ -135,7 +135,7 @@ download_build_package() {
   if ! curl -fL --connect-timeout 10 --retry 2 "$PACKAGE_URL" -o "$tmp_file"; then
     rm -f "$tmp_file"
     rm -rf "$tmp_dir"
-    fail "构建包下载失败，请确认 GitHub Release 已上传 bokexitong-linux.tar.gz。"
+    fail "构建包下载失败，请确认仓库 main 分支已上传 package/bokexitong-linux.tar.gz。"
   fi
   tar -xzf "$tmp_file" -C "$tmp_dir"
   package_root="$tmp_dir/$APP_NAME"
@@ -213,7 +213,7 @@ install_project() {
   if is_build_package; then
     info "Build package detected. Deploying current package."
   else
-    info "Installing from GitHub Release build package."
+    info "Installing from the repository build package."
     install_or_update_from_build_package
   fi
 
@@ -224,7 +224,7 @@ install_project() {
 
 update_project() {
   ensure_project_dir
-  info "Updating from GitHub Release build package."
+  info "Updating from the repository build package."
   update_from_build_package
   cd "$PROJECT_DIR"
   DEPLOY_AUTO_YES=1 bash scripts/deploy.sh

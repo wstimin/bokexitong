@@ -35,9 +35,9 @@ shiye-bk
 - 首次执行安装脚本时自动下载 `bokexitong-linux.tar.gz` 构建包；构建包下载失败时回退到源码部署。
 - 使用菜单管理服务、域名和证书。
 - 保留 Compose 部署。
-- 使用包内 MySQL、SQL 初始化脚本和 `.env`。
+- 使用包内 MySQL Compose 服务、SQL 初始化脚本和 `.env.example`，首次部署时在服务器生成 `.env`。
 - 一键部署会自动标记为已安装，不进入网页安装向导。
-- 使用 `shiye-bk update` 更新时需要能够下载最新 Release 构建包；下载失败会停止更新，不会自动改用源码覆盖现有部署。
+- 使用 `shiye-bk update` 更新时需要能够下载仓库 `main/package/bokexitong-linux.tar.gz` 构建包；下载失败会停止更新，不会自动改用源码覆盖现有部署。
 
 ## 1Panel / 宝塔
 
