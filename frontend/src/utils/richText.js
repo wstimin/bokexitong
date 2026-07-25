@@ -409,9 +409,6 @@ export const setupRichTextEditor = (quill, options = {}) => {
   if (!quill) return () => {}
   quill.__blogEditorOptions = options
   localizeRichTextToolbar(quill)
-  const toolbar = quill.getModule?.('toolbar')
-  toolbar?.addHandler?.('undo', () => quill.history?.undo?.())
-  toolbar?.addHandler?.('redo', () => quill.history?.redo?.())
 
   if (quill.__blogAutoLinkReady) return quill.__blogEditorCleanup || (() => {})
   quill.__blogAutoLinkReady = true
@@ -487,9 +484,14 @@ const replaceSelectedContent = (quill, range) => {
 
 const setCursorAfterEmbed = (quill, index, focus = true) => {
   const nextIndex = Math.min(index + 1, Math.max((quill.getLength?.() || 1) - 1, 0))
-  quill.setSelection?.(nextIndex, 0, 'silent')
   if (focus) quill.focus?.()
+  quill.setSelection?.(nextIndex, 0, 'silent')
   return nextIndex
+}
+
+const restoreEditorSelection = (quill, index) => {
+  quill.focus?.({ preventScroll: true })
+  quill.setSelection?.(index, 0, 'silent')
 }
 
 export const insertUploadPlaceholder = (quill, type, range) => {
@@ -752,25 +754,26 @@ export const insertHtmlSnippet = (quill, index, snippet, options = {}) => {
   const moveCursor = options.moveCursor !== false
   try {
     const safeIndex = Math.min(Math.max(index, 0), Math.max((quill.getLength?.() || 1) - 1, 0))
+    restoreEditorSelection(quill, safeIndex)
 
     if (parsed?.type === 'image' && parsed.src && typeof quill.insertEmbed === 'function') {
-      quill.insertEmbed(safeIndex, 'uploadedImage', { src: parsed.src, alt: parsed.alt }, 'user')
+      quill.insertEmbed(safeIndex, 'uploadedImage', { src: parsed.src, alt: parsed.alt }, 'api')
       return moveCursor ? setCursorAfterEmbed(quill, safeIndex) : safeIndex + 1
     }
 
     if (parsed?.type === 'video' && parsed.src && typeof quill.insertEmbed === 'function') {
-      quill.insertEmbed(safeIndex, 'uploadedVideo', parsed.src, 'user')
+      quill.insertEmbed(safeIndex, 'uploadedVideo', parsed.src, 'api')
       return moveCursor ? setCursorAfterEmbed(quill, safeIndex) : safeIndex + 1
     }
 
     if (parsed?.type === 'file' && parsed.href && typeof quill.insertEmbed === 'function') {
-      quill.insertEmbed(safeIndex, 'uploadedFile', { href: parsed.href, text: parsed.text }, 'user')
+      quill.insertEmbed(safeIndex, 'uploadedFile', { href: parsed.href, text: parsed.text }, 'api')
       return moveCursor ? setCursorAfterEmbed(quill, safeIndex) : safeIndex + 1
     }
 
     if (snippet && quill.clipboard?.dangerouslyPasteHTML) {
       const beforeLength = quill.getLength?.() || 1
-      quill.clipboard.dangerouslyPasteHTML(safeIndex, sanitizeRichTextHtml(snippet), 'user')
+      quill.clipboard.dangerouslyPasteHTML(safeIndex, sanitizeRichTextHtml(snippet), 'api')
       const insertedLength = Math.max((quill.getLength?.() || beforeLength) - beforeLength, 1)
       const nextIndex = Math.min(safeIndex + insertedLength, Math.max((quill.getLength?.() || 1) - 1, 0))
       if (moveCursor) {
@@ -792,12 +795,13 @@ export const insertLinkButton = (quill, range, values) => {
   const text = String(values?.text || '').trim()
   if (!text) throw new Error('请填写按钮文字')
   const index = replaceSelectedContent(quill, range || quill.getSelection?.())
+  restoreEditorSelection(quill, index)
   quill.insertEmbed(index, 'articleLinkButton', {
     href,
     text,
     style: values?.style,
     newWindow: values?.newWindow
-  }, 'user')
+  }, 'api')
   return setCursorAfterEmbed(quill, index)
 }
 

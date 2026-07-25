@@ -4,23 +4,51 @@ import { readFile } from 'node:fs/promises'
 
 const readSource = (relativePath) => readFile(new URL(relativePath, import.meta.url), 'utf8')
 
-test('editor mounts Koenig and destroys the React root on unmount', async () => {
+test('editor exposes Quill and cleans up listeners on unmount', async () => {
   const source = await readSource('../src/components/ArticleRichEditor.vue')
-  assert.match(source, /mountKoenigEditor/)
-  assert.match(source, /defineExpose\(\s*\{[\s\S]*getEditor:/)
-  assert.match(source, /editorController\?\.destroy\(\)/)
+  assert.match(source, /editorRef = shallowRef\(null\)/)
+  assert.match(source, /@click="undoEditor"/)
+  assert.match(source, /@click="redoEditor"/)
+  assert.match(source, /defineExpose\(\s*\{[\s\S]*getQuill:/)
+  assert.match(source, /editorCleanup\?\.\(\)/)
+  assert.match(source, /off\?\.\('text-change', bookmarkChangeHandler\)/)
   assert.match(source, /emit\('pending-change', 0\)/)
 })
 
-test('Koenig bridge keeps HTML storage and the existing upload API', async () => {
-  const bridge = await readSource('../src/editor/koenigEditorBridge.jsx')
-  const uploader = await readSource('../src/editor/useKoenigUpload.js')
-  assert.match(bridge, /KoenigComposer/)
-  assert.match(bridge, /KoenigEditor/)
-  assert.match(bridge, /HtmlOutputPlugin/)
-  assert.match(bridge, /supportedCardTypes/)
-  assert.match(uploader, /uploadApi\.file\(file\)/)
-  assert.match(uploader, /normalizeAssetUrl/)
+test('link button keeps its dialog, style choices, and insertion command', async () => {
+  const source = await readSource('../src/components/ArticleRichEditor.vue')
+  assert.match(source, /@click="openLinkButton"/)
+  assert.match(source, /value="primary"/)
+  assert.match(source, /value="secondary"/)
+  assert.match(source, /value="download"/)
+  assert.match(source, /insertLinkButton\(editorRef\.value/)
+})
+
+test('media tools upload and insert image, video, and file content', async () => {
+  const source = await readSource('../src/components/ArticleRichEditor.vue')
+  assert.match(source, /@click="openPicker\('image'\)"/)
+  assert.match(source, /@click="openPicker\('video'\)"/)
+  assert.match(source, /@click="openPicker\('file'\)"/)
+  assert.match(source, /uploadApi\.file\(file\)/)
+  assert.match(source, /insertHtmlSnippet\(editorRef\.value/)
+})
+
+test('custom toolbar actions bookmark the last Quill selection before reading the native selection', async () => {
+  const source = await readSource('../src/components/ArticleRichEditor.vue')
+  assert.match(source, /let selection = range \|\| lastSelection\.value/)
+  assert.match(source, /try \{\s*selection = quill\.getSelection\?\.\(\) \|\| null/)
+  assert.match(source, /getSafeInsertIndex\(quill, selection\)/)
+})
+
+test('async media and dialog inserts do not depend on a focused native browser selection', async () => {
+  const source = await readSource('../src/utils/richText.js')
+  assert.match(source, /const restoreEditorSelection = \(quill, index\) => \{[\s\S]*?quill\.focus\?\.\(\{ preventScroll: true \}\)[\s\S]*?quill\.setSelection\?\.\(index, 0, 'silent'\)/)
+  assert.match(source, /restoreEditorSelection\(quill, safeIndex\)/)
+  assert.match(source, /restoreEditorSelection\(quill, index\)/)
+  assert.match(source, /insertEmbed\(safeIndex, 'uploadedImage',[\s\S]*?, 'api'\)/)
+  assert.match(source, /insertEmbed\(safeIndex, 'uploadedVideo', parsed\.src, 'api'\)/)
+  assert.match(source, /insertEmbed\(safeIndex, 'uploadedFile',[\s\S]*?, 'api'\)/)
+  assert.match(source, /insertEmbed\(index, 'articleLinkButton',[\s\S]*?\}, 'api'\)/)
 })
 
 test('article detail loading blocks editing and ignores stale requests', async () => {
