@@ -4,21 +4,23 @@ import { readFile } from 'node:fs/promises'
 
 const readSource = (relativePath) => readFile(new URL(relativePath, import.meta.url), 'utf8')
 
-test('editor exposes Quill and cleans up listeners on unmount', async () => {
+test('editor mounts Koenig and destroys the React root on unmount', async () => {
   const source = await readSource('../src/components/ArticleRichEditor.vue')
-  assert.match(source, /defineExpose\(\s*\{[\s\S]*getQuill:/)
-  assert.match(source, /editorCleanup\?\.\(\)/)
-  assert.match(source, /off\?\.\('text-change', bookmarkChangeHandler\)/)
+  assert.match(source, /mountKoenigEditor/)
+  assert.match(source, /defineExpose\(\s*\{[\s\S]*getEditor:/)
+  assert.match(source, /editorController\?\.destroy\(\)/)
   assert.match(source, /emit\('pending-change', 0\)/)
 })
 
-test('link button keeps its dialog, style choices, and insertion command', async () => {
-  const source = await readSource('../src/components/ArticleRichEditor.vue')
-  assert.match(source, /@click="openLinkButton"/)
-  assert.match(source, /value="primary"/)
-  assert.match(source, /value="secondary"/)
-  assert.match(source, /value="download"/)
-  assert.match(source, /insertLinkButton\(editorRef\.value/)
+test('Koenig bridge keeps HTML storage and the existing upload API', async () => {
+  const bridge = await readSource('../src/editor/koenigEditorBridge.jsx')
+  const uploader = await readSource('../src/editor/useKoenigUpload.js')
+  assert.match(bridge, /KoenigComposer/)
+  assert.match(bridge, /KoenigEditor/)
+  assert.match(bridge, /HtmlOutputPlugin/)
+  assert.match(bridge, /supportedCardTypes/)
+  assert.match(uploader, /uploadApi\.file\(file\)/)
+  assert.match(uploader, /normalizeAssetUrl/)
 })
 
 test('article detail loading blocks editing and ignores stale requests', async () => {

@@ -44,6 +44,27 @@ export const ensureRichTextFormats = async () => {
   Quill.register(Size, true)
 
   const BlockEmbed = Quill.import('blots/block/embed')
+  class UploadedImageBlot extends BlockEmbed {
+    static blotName = 'uploadedImage'
+    static tagName = 'img'
+    static className = 'article-inline-image'
+
+    static create(value) {
+      const node = super.create()
+      node.setAttribute('src', String(value?.src || ''))
+      node.setAttribute('alt', String(value?.alt || '图片'))
+      return node
+    }
+
+    static value(node) {
+      return {
+        src: node.getAttribute('src') || '',
+        alt: node.getAttribute('alt') || '图片'
+      }
+    }
+  }
+  Quill.register(UploadedImageBlot, true)
+
   class UploadedVideoBlot extends BlockEmbed {
     static blotName = 'uploadedVideo'
     static tagName = 'video'
@@ -62,6 +83,59 @@ export const ensureRichTextFormats = async () => {
     }
   }
   Quill.register(UploadedVideoBlot, true)
+
+  class UploadedFileBlot extends BlockEmbed {
+    static blotName = 'uploadedFile'
+    static tagName = 'div'
+    static className = 'article-inline-file-block'
+
+    static create(value) {
+      const node = super.create()
+      const link = document.createElement('a')
+      link.setAttribute('href', String(value?.href || ''))
+      link.setAttribute('class', 'article-inline-file')
+      link.setAttribute('target', '_blank')
+      link.setAttribute('rel', 'noopener noreferrer')
+      link.textContent = String(value?.text || '附件')
+      node.setAttribute('contenteditable', 'false')
+      node.appendChild(link)
+      return node
+    }
+
+    static value(node) {
+      const link = node.querySelector('a')
+      return {
+        href: link?.getAttribute('href') || '',
+        text: link?.textContent || '附件'
+      }
+    }
+  }
+  Quill.register(UploadedFileBlot, true)
+
+  class UploadPlaceholderBlot extends BlockEmbed {
+    static blotName = 'uploadPlaceholder'
+    static tagName = 'div'
+    static className = 'article-upload-placeholder'
+
+    static create(value) {
+      const node = super.create()
+      const type = String(value?.type || 'file')
+      node.setAttribute('data-upload-id', String(value?.id || ''))
+      node.setAttribute('data-upload-type', type)
+      node.setAttribute('contenteditable', 'false')
+      node.setAttribute('role', 'status')
+      node.textContent = `${mediaTypeLabel(type)}上传中...`
+      return node
+    }
+
+    static value(node) {
+      return {
+        id: node.getAttribute('data-upload-id') || '',
+        type: node.getAttribute('data-upload-type') || 'file'
+      }
+    }
+  }
+  Quill.register(UploadPlaceholderBlot, true)
 
   class ArticleLinkButtonBlot extends BlockEmbed {
     static blotName = 'articleLinkButton'
@@ -384,11 +458,89 @@ export const setupRichTextEditor = (quill, options = {}) => {
   return cleanup
 }
 
-export const getSafeInsertIndex = (quill, range) => {
-  if (!quill) return 0
-  const end = Math.max((quill.getLength?.() || 1) - 1, 0)
-  const requested = Number(range?.index)
-  return Number.isFinite(requested) ? Math.min(Math.max(requested, 0), end) : end
+export const normalizeEditorRange = (quill, range) => {
+  if (!quill) return { index: 0, length: 0 }
+  const contentEnd = Math.max((quill.getLength?.() || 1) - 1, 0)
+  const requestedIndex = Number(range?.index)
+  const index = Number.isFinite(requestedIndex)
+    ? Math.min(Math.max(requestedIndex, 0), contentEnd)
+    : contentEnd
+  const requestedLength = Number(range?.length)
+  const length = Number.isFinite(requestedLength)
+    ? Math.min(Math.max(requestedLength, 0), contentEnd - index)
+    : 0
+  return { index, length }
+}
+
+export const getSafeInsertIndex = (quill, range) => normalizeEditorRange(quill, range).index
+
+const mediaTypeLabel = (type) => ({ image: '图片', video: '视频', file: '附件' }[type] || '文件')
+
+const createUploadId = () => globalThis.crypto?.randomUUID?.()
+  || `upload-${Date.now()}-${Math.random().toString(16).slice(2)}`
+
+const replaceSelectedContent = (quill, range) => {
+  const normalized = normalizeEditorRange(quill, range)
+  if (normalized.length) quill.deleteText?.(normalized.index, normalized.length, 'user')
+  return normalized.index
+}
+
+const setCursorAfterEmbed = (quill, index, focus = true) => {
+  const nextIndex = Math.min(index + 1, Math.max((quill.getLength?.() || 1) - 1, 0))
+  quill.setSelection?.(nextIndex, 0, 'silent')
+  if (focus) quill.focus?.()
+  return nextIndex
+}
+
+export const insertUploadPlaceholder = (quill, type, range) => {
+  if (!quill?.insertEmbed) return null
+  const id = createUploadId()
+  const index = replaceSelectedContent(quill, range || quill.getSelection?.())
+  quill.insertEmbed(index, 'uploadPlaceholder', { id, type }, 'user')
+  return { id, index, nextIndex: setCursorAfterEmbed(quill, index) }
+}
+
+const findUploadPlaceholder = (quill, uploadId) => {
+  if (!quill?.getContents || !uploadId) return null
+  let index = 0
+  for (const operation of quill.getContents().ops || []) {
+    const placeholder = operation?.insert?.uploadPlaceholder
+    if (placeholder?.id === uploadId) return { index }
+    index += typeof operation?.insert === 'string' ? operation.insert.length : 1
+  }
+  return null
+}
+
+const restoreSelection = (quill, range) => {
+  if (!range) return
+  const normalized = normalizeEditorRange(quill, range)
+  quill.setSelection?.(normalized.index, normalized.length, 'silent')
+}
+
+export const replaceUploadPlaceholder = (quill, uploadId, snippet) => {
+  const placeholder = findUploadPlaceholder(quill, uploadId)
+  if (!placeholder) throw new Error('文件已上传，但原插入位置已被删除，请重新插入')
+  const currentRange = quill.getSelection?.() || null
+  quill.deleteText(placeholder.index, 1, 'user')
+  const nextIndex = insertHtmlSnippet(quill, placeholder.index, snippet, { moveCursor: false })
+  if (nextIndex === null) throw new Error('文件已上传，但插入正文失败，请重新插入')
+  restoreSelection(quill, currentRange)
+  return nextIndex
+}
+
+export const removeUploadPlaceholder = (quill, uploadId) => {
+  const placeholder = findUploadPlaceholder(quill, uploadId)
+  if (!placeholder) return false
+  const currentRange = quill.getSelection?.() || null
+  quill.deleteText(placeholder.index, 1, 'user')
+  if (currentRange) {
+    const nextRange = {
+      index: currentRange.index > placeholder.index ? currentRange.index - 1 : currentRange.index,
+      length: currentRange.length || 0
+    }
+    restoreSelection(quill, nextRange)
+  }
+  return true
 }
 
 const getRangeFromPoint = (quill, clientX, clientY) => {
@@ -568,7 +720,8 @@ const parseInsertSnippet = (snippet) => {
   if (img) {
     return {
       type: 'image',
-      src: img.getAttribute('src') || ''
+      src: img.getAttribute('src') || '',
+      alt: img.getAttribute('alt') || '图片'
     }
   }
 
@@ -584,7 +737,7 @@ const parseInsertSnippet = (snippet) => {
   if (link) {
     const text = (link.textContent || '').trim()
     return {
-      type: link.getAttribute('href') ? 'link' : null,
+      type: link.getAttribute('href') ? 'file' : null,
       href: link.getAttribute('href') || '',
       text: text || '附件'
     }
@@ -593,42 +746,38 @@ const parseInsertSnippet = (snippet) => {
   return null
 }
 
-export const insertHtmlSnippet = (quill, index, snippet) => {
+export const insertHtmlSnippet = (quill, index, snippet, options = {}) => {
   if (!quill || typeof index !== 'number' || Number.isNaN(index)) return null
   const parsed = parseInsertSnippet(snippet)
+  const moveCursor = options.moveCursor !== false
   try {
     const safeIndex = Math.min(Math.max(index, 0), Math.max((quill.getLength?.() || 1) - 1, 0))
 
     if (parsed?.type === 'image' && parsed.src && typeof quill.insertEmbed === 'function') {
-      quill.insertEmbed(safeIndex, 'image', parsed.src, 'user')
-      quill.insertText(safeIndex + 1, '\n', 'user')
-      quill.setSelection?.(safeIndex + 2, 0, 'silent')
-      quill.focus?.()
-      return safeIndex + 2
+      quill.insertEmbed(safeIndex, 'uploadedImage', { src: parsed.src, alt: parsed.alt }, 'user')
+      return moveCursor ? setCursorAfterEmbed(quill, safeIndex) : safeIndex + 1
     }
 
     if (parsed?.type === 'video' && parsed.src && typeof quill.insertEmbed === 'function') {
       quill.insertEmbed(safeIndex, 'uploadedVideo', parsed.src, 'user')
-      quill.insertText(safeIndex + 1, '\n', 'user')
-      quill.setSelection?.(safeIndex + 2, 0, 'silent')
-      quill.focus?.()
-      return safeIndex + 2
+      return moveCursor ? setCursorAfterEmbed(quill, safeIndex) : safeIndex + 1
     }
 
-    if (parsed?.type === 'link' && parsed.href && typeof quill.insertText === 'function') {
-      quill.insertText(safeIndex, parsed.text, 'link', parsed.href, 'user')
-      quill.insertText(safeIndex + parsed.text.length, '\n', 'user')
-      const nextIndex = safeIndex + parsed.text.length + 1
-      quill.setSelection?.(nextIndex, 0, 'silent')
-      quill.focus?.()
-      return nextIndex
+    if (parsed?.type === 'file' && parsed.href && typeof quill.insertEmbed === 'function') {
+      quill.insertEmbed(safeIndex, 'uploadedFile', { href: parsed.href, text: parsed.text }, 'user')
+      return moveCursor ? setCursorAfterEmbed(quill, safeIndex) : safeIndex + 1
     }
 
     if (snippet && quill.clipboard?.dangerouslyPasteHTML) {
+      const beforeLength = quill.getLength?.() || 1
       quill.clipboard.dangerouslyPasteHTML(safeIndex, sanitizeRichTextHtml(snippet), 'user')
-      quill.setSelection?.(safeIndex + 1, 0, 'silent')
-      quill.focus?.()
-      return safeIndex + 1
+      const insertedLength = Math.max((quill.getLength?.() || beforeLength) - beforeLength, 1)
+      const nextIndex = Math.min(safeIndex + insertedLength, Math.max((quill.getLength?.() || 1) - 1, 0))
+      if (moveCursor) {
+        quill.setSelection?.(nextIndex, 0, 'silent')
+        quill.focus?.()
+      }
+      return nextIndex
     }
   } catch (error) {
     console.error(error)
@@ -642,17 +791,14 @@ export const insertLinkButton = (quill, range, values) => {
   const href = normalizeLinkButtonUrl(values?.href)
   const text = String(values?.text || '').trim()
   if (!text) throw new Error('请填写按钮文字')
-  const index = getSafeInsertIndex(quill, range || quill.getSelection?.())
+  const index = replaceSelectedContent(quill, range || quill.getSelection?.())
   quill.insertEmbed(index, 'articleLinkButton', {
     href,
     text,
     style: values?.style,
     newWindow: values?.newWindow
   }, 'user')
-  quill.insertText(index + 1, '\n', 'user')
-  quill.setSelection?.(index + 2, 0, 'silent')
-  quill.focus?.()
-  return index + 2
+  return setCursorAfterEmbed(quill, index)
 }
 
 export const imageSnippet = (url, name) => {
