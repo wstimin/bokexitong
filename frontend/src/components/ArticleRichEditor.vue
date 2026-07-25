@@ -45,6 +45,12 @@
                 <option value="28px">28px</option>
                 <option value="32px">32px</option>
               </select>
+              <select class="ql-align" title="对齐" aria-label="对齐">
+                <option selected>左对齐</option>
+                <option value="center">居中</option>
+                <option value="right">右对齐</option>
+                <option value="justify">两端对齐</option>
+              </select>
             </span>
             <span class="ql-formats">
               <button type="button" class="ql-bold" title="加粗" aria-label="加粗"></button>

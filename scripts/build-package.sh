@@ -52,14 +52,14 @@ main() {
 EOF
 
   info "Building backend..."
-  (cd backend && mvn -q -DskipTests package)
+  (cd backend && mvn -q -DskipTests clean package)
 
   rm -rf "$BUILD_DIR"
   mkdir -p "$BUILD_DIR/backend" "$BUILD_DIR/frontend" "$BUILD_DIR/sql" "$BUILD_DIR/scripts" "$PACKAGE_DIR"
   rm -rf "$WEB_BUILD_DIR"
   mkdir -p "$WEB_BUILD_DIR/backend" "$WEB_BUILD_DIR/frontend" "$WEB_BUILD_DIR/config" "$WEB_BUILD_DIR/uploads" "$PACKAGE_DIR"
 
-  jar_file="$(find backend/target -maxdepth 1 -type f -name '*.jar' ! -name '*-sources.jar' ! -name '*-javadoc.jar' | head -n 1)"
+  jar_file="$(find backend/target -maxdepth 1 -type f -name '*.jar' ! -name '*-sources.jar' ! -name '*-javadoc.jar' -printf '%T@ %p\n' | sort -nr | head -n 1 | cut -d' ' -f2-)"
   [ -n "$jar_file" ] || fail "Backend jar was not found in backend/target."
   cp "$jar_file" "$BUILD_DIR/backend/app.jar"
   cp backend/Dockerfile.runtime "$BUILD_DIR/backend/Dockerfile.runtime"

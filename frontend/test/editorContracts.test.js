@@ -64,6 +64,18 @@ test('toolbar exposes every registered font and size option', async () => {
   assert.match(richTextSource, /sizeWhitelist = \['12px', '14px', '16px', '18px', '20px', '24px', '28px', '32px'\]/)
 })
 
+test('toolbar exposes all supported paragraph alignment options', async () => {
+  const editorSource = await readSource('../src/components/ArticleRichEditor.vue')
+  const stylesSource = await readSource('../src/assets/styles.css')
+
+  assert.match(editorSource, /<select class="ql-align"[^>]*>[\s\S]*?<\/select>/)
+  for (const alignment of ['center', 'right', 'justify']) {
+    assert.match(editorSource, new RegExp(`<option value="${alignment}"`))
+    assert.match(stylesSource, new RegExp(`\\.article-body \\.ql-align-${alignment} \\{ text-align: ${alignment}; \\}`))
+  }
+  assert.match(editorSource, /<option selected>左对齐<\/option>/)
+})
+
 test('media tools upload and insert image, video, and file content', async () => {
   const source = await readSource('../src/components/ArticleRichEditor.vue')
   assert.match(source, /@click="openPicker\('image'\)"/)
