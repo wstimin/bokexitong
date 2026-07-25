@@ -58,57 +58,26 @@
       <el-pagination background layout="total, prev, pager, next" :total="total" :page-size="query.size" v-model:current-page="query.current" @current-change="load" />
     </div>
 
-    <el-dialog v-model="editorVisible" :title="editingId ? '编辑文章' : '新增文章'" width="1020px" class="article-editor-dialog" destroy-on-close append-to-body :before-close="requestEditorClose">
-      <el-form v-loading="detailLoading" label-position="top" :disabled="saving || detailLoading">
-        <el-form-item label="标题">
-          <el-input v-model="form.title" maxlength="180" show-word-limit placeholder="请输入文章标题" />
-        </el-form-item>
-        <el-form-item label="摘要">
-          <el-input v-model="form.summary" type="textarea" :rows="2" maxlength="500" show-word-limit placeholder="用于首页和搜索结果展示" />
-        </el-form-item>
-
-        <div class="writer-meta-grid">
-          <el-form-item label="分类">
-            <el-select v-model="form.categoryId" placeholder="选择分类" clearable filterable>
-              <el-option v-for="item in categories" :key="item.id" :label="item.name" :value="item.id" />
-            </el-select>
-          </el-form-item>
-          <el-form-item label="标签">
-            <el-select v-model="form.tagIds" placeholder="选择标签" multiple clearable filterable collapse-tags collapse-tags-tooltip>
-              <el-option v-for="tag in tags" :key="tag.id" :label="tag.name" :value="tag.id" />
-            </el-select>
-          </el-form-item>
-          <el-form-item label="首页推荐">
-            <div class="recommend-setting-row">
-              <el-switch v-model="form.recommended" :active-value="1" :inactive-value="0" active-text="推荐" inactive-text="不推荐" />
-              <el-input-number v-model="form.recommendSort" :min="0" :step="1" controls-position="right" placeholder="排序" />
-            </div>
-          </el-form-item>
-        </div>
-
-        <el-form-item label="封面图">
-          <div class="cover-picker">
-            <img v-if="form.coverUrl" :src="coverPreviewSrc" alt="文章封面" />
-            <div v-else class="cover-empty">封面预览</div>
-            <div class="cover-fields">
-              <el-input v-model="form.coverUrl" placeholder="上传封面或粘贴图片地址" />
-              <FileUploadButton accept="image/*" :disabled="saving || detailLoading" @select="uploadCover">上传封面</FileUploadButton>
-            </div>
-          </div>
-        </el-form-item>
-
-        <el-form-item label="正文">
-          <ArticleRichEditor v-model="form.content" :disabled="saving || detailLoading" @pending-change="editorPendingUploads = $event" />
-        </el-form-item>
-      </el-form>
-
-      <template #footer>
-        <button class="btn-ghost" type="button" :disabled="saving || pendingUploads > 0" @click="requestEditorClose()">取消</button>
-        <button class="btn-ghost" type="button" :disabled="saving || detailLoading || pendingUploads > 0" @click="saveArticle('DRAFT')">保存草稿</button>
-        <button class="btn-ghost" type="button" :disabled="saving || detailLoading || pendingUploads > 0" @click="saveArticle('PENDING')">提交审核</button>
-        <button class="btn-primary" type="button" :disabled="saving || detailLoading || pendingUploads > 0" @click="saveArticle('PUBLISHED')">发布文章</button>
-      </template>
-    </el-dialog>
+    <Teleport to="body">
+      <ArticleComposer
+        v-if="editorVisible"
+        :article="form"
+        :categories="categories"
+        :tags="tags"
+        :editing="Boolean(editingId)"
+        admin
+        :dirty="hasUnsavedChanges"
+        :saving="saving"
+        :loading="detailLoading"
+        :pending-uploads="pendingUploads"
+        :disabled="saving || detailLoading"
+        @close="requestEditorClose()"
+        @save="saveArticle"
+        @upload-cover="uploadCover"
+        @pending-change="editorPendingUploads = $event"
+        @update-field="updateFormField"
+      />
+    </Teleport>
 
     <el-dialog v-model="previewVisible" title="文章预览" width="900px" class="article-preview-dialog" append-to-body>
       <div v-if="previewArticle.id" class="admin-preview">
@@ -138,8 +107,7 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import ArticleRichEditor from '../../components/ArticleRichEditor.vue'
-import FileUploadButton from '../../components/FileUploadButton.vue'
+import ArticleComposer from '../../components/ArticleComposer.vue'
 import { adminApi, articleApi, uploadApi } from '../../api/blog'
 import { normalizeAssetUrl } from '../../utils/assets'
 import { ensureRichTextFormats, isEmptyHtml, toDisplayHtml, toEditableHtml } from '../../utils/richText'
@@ -172,11 +140,11 @@ const form = reactive(emptyForm())
 const query = reactive({ current: 1, size: 10, keyword: '', status: '' })
 const previewHtml = computed(() => toDisplayHtml(previewArticle.value.content, previewArticle.value.contentType))
 const previewCoverSrc = computed(() => normalizeAssetUrl(previewArticle.value.coverUrl))
-const coverPreviewSrc = computed(() => normalizeAssetUrl(form.coverUrl))
 const formBaseline = ref('')
 const formSignature = () => JSON.stringify({ ...form, tagIds: [...form.tagIds] })
 const hasUnsavedChanges = computed(() => editorVisible.value && formSignature() !== formBaseline.value && Boolean(form.title.trim() || form.summary.trim() || form.coverUrl || !isEmptyHtml(form.content)))
 const markFormSaved = () => { formBaseline.value = formSignature() }
+const updateFormField = (key, value) => { form[key] = value }
 let editorRequestVersion = 0
 
 const invalidateEditorRequest = () => {

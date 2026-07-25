@@ -497,7 +497,7 @@ const restoreEditorSelection = (quill, index) => {
 export const insertUploadPlaceholder = (quill, type, range) => {
   if (!quill?.insertEmbed) return null
   const id = createUploadId()
-  const index = replaceSelectedContent(quill, range || quill.getSelection?.())
+  const index = replaceSelectedContent(quill, range)
   quill.insertEmbed(index, 'uploadPlaceholder', { id, type }, 'user')
   return { id, index, nextIndex: setCursorAfterEmbed(quill, index) }
 }

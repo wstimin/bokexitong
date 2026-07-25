@@ -54,36 +54,24 @@
           <button class="btn-primary" type="button" @click="changePassword">修改密码</button>
         </section>
 
-        <section v-if="activeSection === 'write'" class="form-panel user-section-panel writer-panel">
-          <div class="section-title writer-title">
-            <div><h2>{{ editingId ? '编辑文章' : '写新文章' }}</h2><p class="section-subtitle">草稿只有你自己可见，发布后会自动检测违禁词，合规内容可直接公开。</p></div>
-            <span class="anime-tag">富文本</span>
-          </div>
-
-          <el-form label-position="top" :disabled="articleSaving">
-            <el-form-item label="标题"><el-input v-model="articleForm.title" maxlength="180" show-word-limit placeholder="给文章起一个清晰的标题" /></el-form-item>
-            <el-form-item label="摘要"><el-input v-model="articleForm.summary" type="textarea" :rows="2" maxlength="500" show-word-limit placeholder="用一两句话介绍这篇文章" /></el-form-item>
-            <div class="writer-meta-grid">
-              <el-form-item label="分类"><el-select v-model="articleForm.categoryId" placeholder="选择分类" clearable filterable><el-option v-for="item in categories" :key="item.id" :label="item.name" :value="item.id" /></el-select></el-form-item>
-              <el-form-item label="标签"><el-select v-model="articleForm.tagIds" placeholder="选择标签" multiple clearable filterable collapse-tags collapse-tags-tooltip><el-option v-for="tag in tags" :key="tag.id" :label="tag.name" :value="tag.id" /></el-select></el-form-item>
-            </div>
-            <el-form-item label="封面图">
-              <div class="cover-picker">
-                <img v-if="articleForm.coverUrl" :src="coverPreviewSrc" alt="文章封面" />
-                <div v-else class="cover-empty">封面预览</div>
-                <div class="cover-fields"><el-input v-model="articleForm.coverUrl" placeholder="上传封面或粘贴图片地址" /><FileUploadButton accept="image/*" :disabled="articleSaving" @select="uploadArticleCover">上传封面</FileUploadButton></div>
-              </div>
-            </el-form-item>
-            <el-form-item label="正文">
-              <ArticleRichEditor v-model="articleForm.content" :disabled="articleSaving" @pending-change="editorPendingUploads = $event" />
-            </el-form-item>
-          </el-form>
-          <div class="hero-actions writer-actions">
-            <button class="btn-primary" type="button" :disabled="articleSaving || pendingUploads > 0" @click="saveArticle('PUBLISHED')">发布文章</button>
-            <button class="btn-ghost" type="button" :disabled="articleSaving || pendingUploads > 0" @click="saveArticle('DRAFT')">保存草稿</button>
-            <button v-if="editingId" class="btn-ghost" type="button" :disabled="articleSaving || pendingUploads > 0" @click="cancelArticleEdit">取消编辑</button>
-          </div>
-        </section>
+        <Teleport to="body">
+          <ArticleComposer
+            v-if="activeSection === 'write'"
+            :article="articleForm"
+            :categories="categories"
+            :tags="tags"
+            :editing="Boolean(editingId)"
+            :dirty="hasUnsavedArticle"
+            :saving="articleSaving"
+            :pending-uploads="pendingUploads"
+            :disabled="articleSaving"
+            @close="closeWriter"
+            @save="saveArticle"
+            @upload-cover="uploadArticleCover"
+            @pending-change="editorPendingUploads = $event"
+            @update-field="updateArticleField"
+          />
+        </Teleport>
 
         <section v-if="activeSection === 'articles'" class="form-panel user-section-panel my-articles">
           <div class="toolbar"><div><h2>我的文章</h2><p class="section-subtitle">查看草稿、审核状态和发布记录。</p></div><button class="btn-ghost" type="button" @click="loadMine(articlePage.current)">刷新</button></div>
@@ -113,7 +101,7 @@
 import { computed, defineComponent, h, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { onBeforeRouteLeave, useRouter } from 'vue-router'
 import { ElButton, ElMessage, ElMessageBox, ElTable, ElTableColumn, ElTag } from 'element-plus'
-import ArticleRichEditor from '../../components/ArticleRichEditor.vue'
+import ArticleComposer from '../../components/ArticleComposer.vue'
 import FileUploadButton from '../../components/FileUploadButton.vue'
 import PortalNav from '../../components/PortalNav.vue'
 import PortalFooter from '../../components/PortalFooter.vue'
@@ -160,7 +148,6 @@ const coverPendingUploads = ref(0)
 const pendingUploads = computed(() => editorPendingUploads.value + coverPendingUploads.value)
 const articleSaving = ref(false)
 const avatarPreviewSrc = computed(() => profile.avatar ? normalizeAssetUrl(profile.avatar) : '')
-const coverPreviewSrc = computed(() => normalizeAssetUrl(articleForm.coverUrl))
 const statusOptions = [{ label: '草稿', value: 'DRAFT' }, { label: '待审核', value: 'PENDING' }, { label: '已发布', value: 'PUBLISHED' }, { label: '已驳回', value: 'REJECTED' }, { label: '已下架', value: 'OFFLINE' }]
 const workbenchMenus = [
   { key: 'dashboard', title: '工作台', desc: '常用入口和账号概览' }, { key: 'write', title: '写文章', desc: '创作、排版和插入素材' }, { key: 'articles', title: '我的文章', desc: '草稿、审核和发布记录' }, { key: 'favorites', title: '我的收藏', desc: '收藏过的公开文章' }, { key: 'comments', title: '我的评论', desc: '评论状态和关联文章' }, { key: 'profile', title: '个人资料', desc: '昵称、头像和邮箱' }, { key: 'password', title: '修改密码', desc: '更新登录密码' }
@@ -176,6 +163,7 @@ const actionCards = computed(() => [
 const articleSignature = () => JSON.stringify({ ...articleForm, tagIds: [...articleForm.tagIds] })
 const hasUnsavedArticle = computed(() => activeSection.value === 'write' && articleSignature() !== articleBaseline.value && Boolean(articleForm.title.trim() || articleForm.summary.trim() || articleForm.coverUrl || !isEmptyHtml(articleForm.content)))
 const markArticleSaved = () => { articleBaseline.value = articleSignature() }
+const updateArticleField = (key, value) => { articleForm[key] = value }
 const confirmDiscardArticle = async () => {
   if (articleSaving.value) { ElMessage.warning('文章正在保存，请稍后再离开写作页'); return false }
   if (pendingUploads.value > 0) { ElMessage.warning('请等待文件上传完成后再离开写作页'); return false }
@@ -188,6 +176,7 @@ const confirmDiscardArticle = async () => {
   }
 }
 const cancelArticleEdit = async () => { if (await confirmDiscardArticle()) resetArticleForm() }
+const closeWriter = async () => { if (await confirmDiscardArticle()) { resetArticleForm(); activeSection.value = 'articles'; loadMine(articlePage.current) } }
 
 const loadProfile = async () => { try { const res = await userApi.me(); Object.assign(profile, { nickname: res.data.nickname || '', avatar: res.data.avatar || '', email: res.data.email || '' }); auth.setUser(res.data) } catch (error) { console.error(error) } }
 const loadMeta = async () => { try { const res = await portalApi.home(); categories.value = res.data.categories || []; tags.value = res.data.tags || [] } catch (error) { console.error(error) } }
@@ -206,7 +195,8 @@ const saveArticle = async (status) => {
     const savedArticle = res?.data || {}
     if (status === 'DRAFT') ElMessage.success('草稿已保存')
     else if (savedArticle.status === 'PUBLISHED') ElMessage.success('文章已发布')
-    else ElMessage.warning(savedArticle.reviewReason ? `内容含违禁词，已转入审核：${savedArticle.reviewReason}` : '内容已转入审核')
+    else if (savedArticle.status === 'REJECTED') ElMessage.error(savedArticle.reviewReason ? `发布未通过：${savedArticle.reviewReason}` : '发布未通过，请修改后重试')
+    else ElMessage.warning('文章已提交审核')
     resetArticleForm(); await loadMine(1); activeSection.value = 'articles'
   } catch (error) { console.error(error) } finally { articleSaving.value = false }
 }

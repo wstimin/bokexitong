@@ -1,5 +1,5 @@
 <template>
-  <div class="article-rich-editor" :class="{ 'is-disabled': disabled }">
+  <div class="article-rich-editor" :class="{ 'is-disabled': disabled, 'is-immersive': immersive }">
     <div v-if="!editorReady" class="article-rich-editor__loading" role="status">
       <LoaderCircle :size="18" class="is-spinning" aria-hidden="true" />
       编辑器加载中
@@ -21,83 +21,53 @@
         <div :id="toolbarId" class="article-rich-editor__toolbar" aria-label="文章编辑工具栏">
           <div class="article-rich-editor__formats">
             <span class="ql-formats">
-              <select class="ql-font" title="字体" aria-label="字体">
-                <option value="system" selected>系统字体</option>
-                <option value="songti">宋体</option>
-                <option value="heiti">黑体</option>
-                <option value="kaiti">楷体</option>
-                <option value="serif">衬线</option>
-                <option value="mono">等宽</option>
-              </select>
-              <select class="ql-size" title="字号" aria-label="字号">
-                <option value="12px">12px</option>
-                <option value="14px">14px</option>
-                <option value="16px" selected>16px</option>
-                <option value="18px">18px</option>
-                <option value="20px">20px</option>
-                <option value="24px">24px</option>
-                <option value="28px">28px</option>
-                <option value="32px">32px</option>
+              <select class="ql-header" title="段落样式" aria-label="段落样式">
+                <option value="1">一级标题</option>
+                <option value="2">二级标题</option>
+                <option value="3">三级标题</option>
+                <option selected>正文</option>
               </select>
             </span>
             <span class="ql-formats">
               <button type="button" class="ql-bold" title="加粗" aria-label="加粗"></button>
               <button type="button" class="ql-italic" title="斜体" aria-label="斜体"></button>
               <button type="button" class="ql-underline" title="下划线" aria-label="下划线"></button>
-              <button type="button" class="ql-strike" title="删除线" aria-label="删除线"></button>
             </span>
             <span class="ql-formats">
-              <select class="ql-color" title="文字颜色" aria-label="文字颜色"></select>
-              <select class="ql-background" title="背景色" aria-label="背景色"></select>
-              <select class="ql-align" title="对齐" aria-label="对齐"></select>
-            </span>
-            <span class="ql-formats">
-              <select class="ql-header" title="标题" aria-label="标题">
-                <option value="1">标题 1</option>
-                <option value="2">标题 2</option>
-                <option value="3">标题 3</option>
-                <option value="4">标题 4</option>
-                <option selected>正文</option>
-              </select>
               <button type="button" class="ql-list" value="ordered" title="有序列表" aria-label="有序列表"></button>
               <button type="button" class="ql-list" value="bullet" title="无序列表" aria-label="无序列表"></button>
               <button type="button" class="ql-blockquote" title="引用" aria-label="引用"></button>
               <button type="button" class="ql-code-block" title="代码块" aria-label="代码块"></button>
             </span>
             <span class="ql-formats">
-              <button type="button" class="ql-link" title="普通链接" aria-label="普通链接"></button>
+              <button type="button" class="ql-link" title="插入链接" aria-label="插入链接"></button>
               <button type="button" class="article-editor-history article-editor-history--undo" title="撤销" aria-label="撤销" :disabled="disabled" @click="undoEditor"></button>
               <button type="button" class="article-editor-history article-editor-history--redo" title="重做" aria-label="重做" :disabled="disabled" @click="redoEditor"></button>
               <button type="button" class="ql-clean" title="清除格式" aria-label="清除格式"></button>
             </span>
-          </div>
-
-          <div class="article-rich-editor__media-tools">
-            <button type="button" class="article-editor-tool" title="在光标位置插入图片" :disabled="disabled" @click="openPicker('image')">
+            <span class="article-rich-editor__media-tools">
+            <button type="button" class="article-editor-tool" title="插入图片" aria-label="插入图片" :disabled="disabled" @click="openPicker('image')">
               <ImagePlus :size="17" aria-hidden="true" />
-              <span>图片</span>
             </button>
-            <button type="button" class="article-editor-tool" title="在光标位置插入视频" :disabled="disabled" @click="openPicker('video')">
+            <button type="button" class="article-editor-tool" title="插入视频" aria-label="插入视频" :disabled="disabled" @click="openPicker('video')">
               <Video :size="17" aria-hidden="true" />
-              <span>视频</span>
             </button>
-            <button type="button" class="article-editor-tool" title="在光标位置插入附件" :disabled="disabled" @click="openPicker('file')">
+            <button type="button" class="article-editor-tool" title="插入附件" aria-label="插入附件" :disabled="disabled" @click="openPicker('file')">
               <Paperclip :size="17" aria-hidden="true" />
-              <span>附件</span>
             </button>
-            <button type="button" class="article-editor-tool article-editor-tool--link" title="插入带文字和样式的链接按钮" :disabled="disabled" @click="openLinkButton">
+            <button type="button" class="article-editor-tool article-editor-tool--link" title="插入按钮" aria-label="插入按钮" :disabled="disabled" @click="openLinkButton">
               <SquareArrowOutUpRight :size="17" aria-hidden="true" />
-              <span>链接按钮</span>
             </button>
             <span v-if="pendingUploads" class="article-rich-editor__upload-status" role="status">
               <LoaderCircle :size="16" class="is-spinning" aria-hidden="true" />
               {{ pendingUploads }} 个文件上传中
             </span>
+            </span>
           </div>
 
-          <input ref="imageInput" class="upload-native-input" type="file" accept="image/*" :disabled="disabled" @change="(event) => handlePickerChange(event, 'image')" @cancel="cancelPicker('image')" />
-          <input ref="videoInput" class="upload-native-input" type="file" accept="video/*" :disabled="disabled" @change="(event) => handlePickerChange(event, 'video')" @cancel="cancelPicker('video')" />
-          <input ref="fileInput" class="upload-native-input" type="file" :disabled="disabled" @change="(event) => handlePickerChange(event, 'file')" @cancel="cancelPicker('file')" />
+          <input ref="imageInput" class="upload-native-input" type="file" accept="image/*" :disabled="disabled" @change="(event) => handlePickerChange(event, 'image')" />
+          <input ref="videoInput" class="upload-native-input" type="file" accept="video/*" :disabled="disabled" @change="(event) => handlePickerChange(event, 'video')" />
+          <input ref="fileInput" class="upload-native-input" type="file" :disabled="disabled" @change="(event) => handlePickerChange(event, 'file')" />
         </div>
       </template>
     </QuillEditor>
@@ -136,6 +106,9 @@ import {
   imageSnippet,
   insertHtmlSnippet,
   insertLinkButton,
+  insertUploadPlaceholder,
+  removeUploadPlaceholder,
+  replaceUploadPlaceholder,
   setupRichTextEditor,
   videoSnippet
 } from '../utils/richText'
@@ -143,6 +116,7 @@ import {
 const props = defineProps({
   modelValue: { type: String, default: '' },
   disabled: { type: Boolean, default: false },
+  immersive: { type: Boolean, default: false },
   placeholder: { type: String, default: '开始写正文，支持字体、字号、颜色、对齐、图片、视频、附件和链接。' }
 })
 
@@ -160,7 +134,6 @@ const imageInput = ref(null)
 const videoInput = ref(null)
 const fileInput = ref(null)
 const pickerInputs = { image: imageInput, video: videoInput, file: fileInput }
-const pickerBookmarks = new Map()
 const activeBookmarks = new Set()
 const linkButtonVisible = ref(false)
 const linkBookmark = ref(null)
@@ -219,8 +192,8 @@ const onEditorReady = (quill) => {
   lastSelection.value = null
   editorCleanup = setupRichTextEditor(quill, {
     getLastSelection: () => lastSelection.value,
-    onImageFile: (file, range) => uploadMedia(file, 'image', createBookmark(range)),
-    onImageFiles: (files, range) => uploadImageBatch(files, range)
+    onImageFile: (file) => uploadMedia(file, 'image'),
+    onImageFiles: (files) => uploadImageBatch(files)
   })
   bookmarkChangeHandler = (delta) => activeBookmarks.forEach((bookmark) => transformBookmark(bookmark, delta))
   quill.on?.('text-change', bookmarkChangeHandler)
@@ -241,54 +214,34 @@ watch(() => props.modelValue, (value) => {
 
 const openPicker = (type) => {
   if (props.disabled || !editorRef.value) return
-  cancelPicker(type)
-  const bookmark = createBookmark()
-  if (!bookmark) return ElMessage.warning('编辑器还没有准备好，请稍后再试')
-  pickerBookmarks.set(type, bookmark)
   const input = pickerInputs[type]?.value
-  if (!input) return cancelPicker(type)
+  if (!input) return ElMessage.warning('编辑器还没有准备好，请稍后再试')
   input.value = ''
   input.click()
-}
-
-const cancelPicker = (type) => {
-  const bookmark = pickerBookmarks.get(type)
-  if (bookmark) releaseBookmark(bookmark)
-  pickerBookmarks.delete(type)
 }
 
 const handlePickerChange = async (event, type) => {
   const file = event?.target?.files?.[0]
   if (event?.target) event.target.value = ''
-  const bookmark = pickerBookmarks.get(type)
-  pickerBookmarks.delete(type)
-  if (!file) {
-    releaseBookmark(bookmark)
-    return
-  }
-  await uploadMedia(file, type, bookmark)
+  if (file) await uploadMedia(file, type)
 }
 
-const uploadMedia = async (file, type, bookmark = null) => {
-  if (props.disabled || !file) {
-    releaseBookmark(bookmark)
-    return
-  }
-  const insertionBookmark = bookmark || createBookmark()
-  if (!insertionBookmark) return ElMessage.warning('编辑器还没有准备好，请稍后再试')
+const uploadMedia = async (file, type) => {
+  if (props.disabled || !file) return
+  if (!editorRef.value) return ElMessage.warning('编辑器还没有准备好，请稍后再试')
+  const insertIndex = getSafeInsertIndex(editorRef.value, null)
+  const placeholder = insertUploadPlaceholder(editorRef.value, type, { index: insertIndex, length: 0 })
+  if (!placeholder) return ElMessage.warning('无法创建上传占位，请稍后再试')
   setPendingUploads(pendingUploads.value + 1)
   try {
     const res = await uploadApi.file(file)
     if (unmounted.value || !editorRef.value) return
     const { url, name } = res.data
     const snippet = type === 'image' ? imageSnippet(url, name) : type === 'video' ? videoSnippet(url, name) : fileSnippet(url, name)
-    const insertIndex = releaseBookmark(insertionBookmark)
-    const nextIndex = insertHtmlSnippet(editorRef.value, insertIndex, snippet)
-    if (nextIndex === null) throw new Error('文件已上传，但插入正文失败，请重新插入')
-    lastSelection.value = { index: nextIndex, length: 0 }
+    replaceUploadPlaceholder(editorRef.value, placeholder.id, snippet)
     ElMessage.success('上传并插入成功')
   } catch (error) {
-    releaseBookmark(insertionBookmark)
+    if (!unmounted.value && editorRef.value) removeUploadPlaceholder(editorRef.value, placeholder.id)
     console.error(error)
     if (!unmounted.value && !error?.response) ElMessage.error(error?.message || '文件上传失败')
   } finally {
@@ -296,33 +249,47 @@ const uploadMedia = async (file, type, bookmark = null) => {
   }
 }
 
-const uploadImageBatch = async (files, range) => {
+const uploadImageBatch = async (files) => {
   const images = Array.from(files || []).filter(Boolean)
   if (props.disabled || !images.length) return
-  const bookmark = createBookmark(range)
-  if (!bookmark) return ElMessage.warning('编辑器还没有准备好，请稍后再试')
+  if (!editorRef.value) return ElMessage.warning('编辑器还没有准备好，请稍后再试')
+  let placeholderIndex = getSafeInsertIndex(editorRef.value, null)
+  const placeholders = images.map(() => {
+    const placeholder = insertUploadPlaceholder(editorRef.value, 'image', { index: placeholderIndex, length: 0 })
+    if (placeholder) placeholderIndex = placeholder.nextIndex
+    return placeholder
+  })
+  if (placeholders.some((placeholder) => !placeholder)) {
+    placeholders.filter(Boolean).forEach((placeholder) => removeUploadPlaceholder(editorRef.value, placeholder.id))
+    return ElMessage.warning('无法创建图片上传占位，请稍后再试')
+  }
   setPendingUploads(pendingUploads.value + images.length)
   try {
     const results = await Promise.allSettled(images.map((file) => uploadApi.file(file)))
     if (unmounted.value || !editorRef.value) return
-    let insertIndex = releaseBookmark(bookmark)
     let inserted = 0
-    results.forEach((result) => {
-      if (result.status !== 'fulfilled') return
+    results.forEach((result, index) => {
+      const placeholder = placeholders[index]
+      if (result.status !== 'fulfilled') {
+        removeUploadPlaceholder(editorRef.value, placeholder.id)
+        return
+      }
       const { url, name } = result.value.data
-      const nextIndex = insertHtmlSnippet(editorRef.value, insertIndex, imageSnippet(url, name))
-      if (nextIndex === null) return
-      insertIndex = nextIndex
-      inserted += 1
+      try {
+        replaceUploadPlaceholder(editorRef.value, placeholder.id, imageSnippet(url, name))
+        inserted += 1
+      } catch (error) {
+        removeUploadPlaceholder(editorRef.value, placeholder.id)
+        console.error(error)
+      }
     })
     if (inserted) {
-      lastSelection.value = { index: insertIndex, length: 0 }
       ElMessage.success(inserted === images.length ? `${inserted} 张图片上传并插入成功` : `已插入 ${inserted} 张图片`)
     }
     const failed = images.length - inserted
     if (failed) ElMessage.error(`${failed} 张图片上传或插入失败，请重试`)
   } catch (error) {
-    releaseBookmark(bookmark)
+    if (!unmounted.value && editorRef.value) placeholders.forEach((placeholder) => removeUploadPlaceholder(editorRef.value, placeholder.id))
     console.error(error)
     ElMessage.error('图片上传失败')
   } finally {
@@ -381,7 +348,6 @@ onBeforeUnmount(() => {
   if (editorRef.value && bookmarkChangeHandler) editorRef.value.off?.('text-change', bookmarkChangeHandler)
   editorCleanup = null
   bookmarkChangeHandler = null
-  pickerBookmarks.forEach((bookmark) => releaseBookmark(bookmark))
   activeBookmarks.forEach((bookmark) => releaseBookmark(bookmark))
   clearLinkBookmark()
   pendingUploads.value = 0
