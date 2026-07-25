@@ -17,14 +17,35 @@ test('editor exposes Quill and cleans up listeners on unmount', async () => {
 
 test('link button keeps its dialog, style choices, and insertion command', async () => {
   const source = await readSource('../src/components/ArticleRichEditor.vue')
-  assert.match(source, /class="ql-link" title="文本链接" aria-label="文本链接"/)
-  assert.match(source, /@click="openLinkButton"/)
+  assert.match(source, /class="ql-link" title="文本链接（请先选中文字）" aria-label="文本链接"/)
+  assert.match(source, /@mousedown="rememberLinkButtonPosition" @click\.stop="openLinkButton"/)
   assert.match(source, /<span>链接按钮<\/span>/)
   assert.match(source, /getSafeInsertIndex,/)
   assert.match(source, /value="primary"/)
   assert.match(source, /value="secondary"/)
   assert.match(source, /value="download"/)
   assert.match(source, /insertLinkButton\(editorRef\.value/)
+})
+
+test('text link explains the required selection instead of failing silently', async () => {
+  const source = await readSource('../src/components/ArticleRichEditor.vue')
+
+  assert.match(source, /toolbar\?\.addHandler\?\.\('link'/)
+  assert.match(source, /if \(!range \|\| range\.length === 0\)/)
+  assert.match(source, /ElMessage\.warning\('请先选中要添加链接的文字'\)/)
+  assert.match(source, /theme\?\.tooltip\?\.edit\?\.\('link', preview\)/)
+})
+
+test('toolbar pickers are not clipped by the formatting row', async () => {
+  const source = await readSource('../src/assets/styles.css')
+  const formatsRule = source.match(/\.article-rich-editor__formats \{([^}]*)\}/)?.[1] || ''
+  const immersiveFormatsRule = source.match(/\.article-composer__document \.article-rich-editor__formats \{([^}]*)\}/)?.[1] || ''
+
+  assert.match(formatsRule, /flex-wrap: wrap/)
+  assert.match(formatsRule, /overflow: visible/)
+  assert.doesNotMatch(formatsRule, /overflow-y: hidden/)
+  assert.match(immersiveFormatsRule, /overflow: visible/)
+  assert.match(source, /\.ql-picker-options \{[^}]*z-index: 20;/)
 })
 
 test('media tools upload and insert image, video, and file content', async () => {

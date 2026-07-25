@@ -40,7 +40,7 @@
               <button type="button" class="ql-code-block" title="代码块" aria-label="代码块"></button>
             </span>
             <span class="ql-formats">
-              <button type="button" class="ql-link" title="文本链接" aria-label="文本链接"></button>
+              <button type="button" class="ql-link" title="文本链接（请先选中文字）" aria-label="文本链接"></button>
               <button type="button" class="article-editor-history article-editor-history--undo" title="撤销" aria-label="撤销" :disabled="disabled" @click="undoEditor"></button>
               <button type="button" class="article-editor-history article-editor-history--redo" title="重做" aria-label="重做" :disabled="disabled" @click="redoEditor"></button>
               <button type="button" class="ql-clean" title="清除格式" aria-label="清除格式"></button>
@@ -55,7 +55,7 @@
             <button type="button" class="article-editor-tool" title="插入附件" aria-label="插入附件" :disabled="disabled" @click="openPicker('file')">
               <Paperclip :size="17" aria-hidden="true" />
             </button>
-            <button type="button" class="article-editor-tool article-editor-tool--link" title="插入链接按钮" aria-label="插入链接按钮" :disabled="disabled" @click="openLinkButton">
+            <button type="button" class="article-editor-tool article-editor-tool--link" title="插入独立链接按钮" aria-label="插入独立链接按钮" :disabled="disabled" @mousedown="rememberLinkButtonPosition" @click.stop="openLinkButton">
               <SquareArrowOutUpRight :size="17" aria-hidden="true" />
               <span>链接按钮</span>
             </button>
@@ -198,6 +198,21 @@ const onEditorReady = (quill) => {
   })
   bookmarkChangeHandler = (delta) => activeBookmarks.forEach((bookmark) => transformBookmark(bookmark, delta))
   quill.on?.('text-change', bookmarkChangeHandler)
+  const toolbar = quill.getModule?.('toolbar')
+  toolbar?.addHandler?.('link', function (value) {
+    if (!value) {
+      this.quill.format?.('link', false, 'user')
+      return
+    }
+    const range = this.quill.getSelection?.()
+    if (!range || range.length === 0) {
+      ElMessage.warning('请先选中要添加链接的文字')
+      return
+    }
+    let preview = this.quill.getText?.(range) || ''
+    if (/^\S+@\S+\.\S+$/.test(preview) && !preview.startsWith('mailto:')) preview = `mailto:${preview}`
+    this.quill.theme?.tooltip?.edit?.('link', preview)
+  })
   emit('ready', quill)
 }
 
@@ -292,9 +307,15 @@ const uploadImageBatch = async (files) => {
   }
 }
 
-const openLinkButton = () => {
+const rememberLinkButtonPosition = () => {
+  if (props.disabled || !editorRef.value) return
   clearLinkBookmark()
   linkBookmark.value = createBookmark()
+}
+
+const openLinkButton = () => {
+  if (props.disabled) return
+  if (!linkBookmark.value) linkBookmark.value = createBookmark()
   if (!linkBookmark.value) return ElMessage.warning('编辑器还没有准备好，请稍后再试')
   Object.assign(linkButtonForm, { text: '', href: '', style: 'primary', newWindow: true })
   linkButtonVisible.value = true
@@ -310,6 +331,7 @@ const redoEditor = () => editorRef.value?.history?.redo?.()
 
 const confirmLinkButton = () => {
   const bookmark = linkBookmark.value
+  if (!editorRef.value || !bookmark) return ElMessage.warning('编辑器还没有准备好，请稍后再试')
   try {
     const index = releaseBookmark(bookmark)
     linkBookmark.value = null
