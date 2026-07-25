@@ -48,6 +48,22 @@ test('toolbar pickers are not clipped by the formatting row', async () => {
   assert.match(source, /\.ql-picker-options \{[^}]*z-index: 20;/)
 })
 
+test('toolbar exposes every registered font and size option', async () => {
+  const editorSource = await readSource('../src/components/ArticleRichEditor.vue')
+  const richTextSource = await readSource('../src/utils/richText.js')
+
+  assert.match(editorSource, /<select class="ql-font"[^>]*>[\s\S]*?<\/select>/)
+  assert.match(editorSource, /<select class="ql-size"[^>]*>[\s\S]*?<\/select>/)
+  for (const font of ['system', 'songti', 'heiti', 'kaiti', 'serif', 'mono']) {
+    assert.match(editorSource, new RegExp(`<option value="${font}"`))
+  }
+  for (const size of ['12px', '14px', '16px', '18px', '20px', '24px', '28px', '32px']) {
+    assert.match(editorSource, new RegExp(`<option value="${size}"`))
+  }
+  assert.match(richTextSource, /fontWhitelist = \['system', 'songti', 'heiti', 'kaiti', 'serif', 'mono'\]/)
+  assert.match(richTextSource, /sizeWhitelist = \['12px', '14px', '16px', '18px', '20px', '24px', '28px', '32px'\]/)
+})
+
 test('media tools upload and insert image, video, and file content', async () => {
   const source = await readSource('../src/components/ArticleRichEditor.vue')
   assert.match(source, /@click="openPicker\('image'\)"/)

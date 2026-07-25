@@ -27,6 +27,24 @@
                 <option value="3">三级标题</option>
                 <option selected>正文</option>
               </select>
+              <select class="ql-font" title="字体" aria-label="字体">
+                <option value="system" selected>系统字体</option>
+                <option value="songti">宋体</option>
+                <option value="heiti">黑体</option>
+                <option value="kaiti">楷体</option>
+                <option value="serif">衬线</option>
+                <option value="mono">等宽</option>
+              </select>
+              <select class="ql-size" title="字号" aria-label="字号">
+                <option value="12px">12px</option>
+                <option value="14px">14px</option>
+                <option value="16px" selected>16px</option>
+                <option value="18px">18px</option>
+                <option value="20px">20px</option>
+                <option value="24px">24px</option>
+                <option value="28px">28px</option>
+                <option value="32px">32px</option>
+              </select>
             </span>
             <span class="ql-formats">
               <button type="button" class="ql-bold" title="加粗" aria-label="加粗"></button>

@@ -17,6 +17,9 @@ public class SiteSettingService {
     public static final String HERO_TITLE = "heroTitle";
     public static final String HERO_SUBTITLE = "heroSubtitle";
     public static final String HERO_BADGE = "heroBadge";
+    public static final String HERO_TITLE_COLOR = "heroTitleColor";
+    public static final String HERO_SUBTITLE_COLOR = "heroSubtitleColor";
+    public static final String HERO_TEXT_SHADOW = "heroTextShadow";
     public static final String BACKGROUND_URL = "backgroundUrl";
     public static final String LOGO_URL = "logoUrl";
     public static final String SEO_DESCRIPTION = "seoDescription";
@@ -39,11 +42,13 @@ public class SiteSettingService {
     public static final String INSTALLATION_COMPLETE = "installationComplete";
 
     private static final Set<String> PUBLIC_KEYS = Set.of(
-            SITE_NAME, HERO_TITLE, HERO_SUBTITLE, HERO_BADGE, BACKGROUND_URL, LOGO_URL,
+            SITE_NAME, HERO_TITLE, HERO_SUBTITLE, HERO_BADGE, HERO_TITLE_COLOR, HERO_SUBTITLE_COLOR,
+            HERO_TEXT_SHADOW, BACKGROUND_URL, LOGO_URL,
             SEO_DESCRIPTION, SEO_KEYWORDS, ICP_BEIAN, FOOTER_TEXT, CONTACT_HTML, ALLOW_REGISTER, ADMIN_LOGIN_PATH
     );
     private static final Set<String> SITE_FORM_KEYS = Set.of(
-            SITE_NAME, HERO_TITLE, HERO_SUBTITLE, HERO_BADGE, BACKGROUND_URL, LOGO_URL,
+            SITE_NAME, HERO_TITLE, HERO_SUBTITLE, HERO_BADGE, HERO_TITLE_COLOR, HERO_SUBTITLE_COLOR,
+            HERO_TEXT_SHADOW, BACKGROUND_URL, LOGO_URL,
             SEO_DESCRIPTION, SEO_KEYWORDS, ICP_BEIAN, FOOTER_TEXT, CONTACT_HTML, ALLOW_REGISTER, ADMIN_LOGIN_PATH,
             FORBIDDEN_WORDS
     );
@@ -95,7 +100,7 @@ public class SiteSettingService {
         }
         for (SiteSetting row : rows) {
             if (settings.containsKey(row.getSettingKey()) && row.getSettingValue() != null) {
-                String value = row.getSettingValue();
+                String value = normalizeAppearanceSetting(row.getSettingKey(), row.getSettingValue(), source.get(row.getSettingKey()));
                 settings.put(row.getSettingKey(), shouldUseDefault(row.getSettingKey(), value) ? source.get(row.getSettingKey()) : value);
             }
         }
@@ -117,6 +122,10 @@ public class SiteSettingService {
                     next.put(key, normalizeBoolean(payload.get(key), next.get(key)));
                 } else if (ADMIN_LOGIN_PATH.equals(key)) {
                     next.put(key, normalizeAdminLoginPath(payload.get(key), next.get(key)));
+                } else if (HERO_TITLE_COLOR.equals(key) || HERO_SUBTITLE_COLOR.equals(key)) {
+                    next.put(key, normalizeColor(payload.get(key), next.get(key)));
+                } else if (HERO_TEXT_SHADOW.equals(key)) {
+                    next.put(key, normalizeHeroTextShadow(payload.get(key), next.get(key)));
                 } else {
                     next.put(key, clean(payload.get(key), next.get(key), REQUIRED_TEXT_KEYS.contains(key)));
                 }
@@ -137,6 +146,10 @@ public class SiteSettingService {
                     next.put(key, normalizeBoolean(filtered.get(key), next.get(key)));
                 } else if (ADMIN_LOGIN_PATH.equals(key)) {
                     next.put(key, normalizeAdminLoginPath(filtered.get(key), next.get(key)));
+                } else if (HERO_TITLE_COLOR.equals(key) || HERO_SUBTITLE_COLOR.equals(key)) {
+                    next.put(key, normalizeColor(filtered.get(key), next.get(key)));
+                } else if (HERO_TEXT_SHADOW.equals(key)) {
+                    next.put(key, normalizeHeroTextShadow(filtered.get(key), next.get(key)));
                 } else {
                     next.put(key, clean(filtered.get(key), next.get(key), REQUIRED_TEXT_KEYS.contains(key)));
                 }
@@ -180,6 +193,9 @@ public class SiteSettingService {
         settings.put(HERO_TITLE, "博客系统");
         settings.put(HERO_SUBTITLE, "用卡片浏览公开文章，点开后再阅读完整内容。登录后可以进入用户中心创作、管理自己的文章。");
         settings.put(HERO_BADGE, "博客");
+        settings.put(HERO_TITLE_COLOR, "#ffffff");
+        settings.put(HERO_SUBTITLE_COLOR, "#ffffff");
+        settings.put(HERO_TEXT_SHADOW, "dark");
         settings.put(BACKGROUND_URL, "");
         settings.put(LOGO_URL, "");
         settings.put(SEO_DESCRIPTION, "");
@@ -217,6 +233,26 @@ public class SiteSettingService {
             return trimmed.toLowerCase();
         }
         return fallback;
+    }
+
+    private String normalizeAppearanceSetting(String key, String value, String fallback) {
+        if (HERO_TITLE_COLOR.equals(key) || HERO_SUBTITLE_COLOR.equals(key)) {
+            return normalizeColor(value, fallback);
+        }
+        if (HERO_TEXT_SHADOW.equals(key)) {
+            return normalizeHeroTextShadow(value, fallback);
+        }
+        return value;
+    }
+
+    private String normalizeColor(String value, String fallback) {
+        String trimmed = value == null ? "" : value.trim();
+        return trimmed.matches("^#[0-9a-fA-F]{6}$") ? trimmed.toLowerCase() : fallback;
+    }
+
+    private String normalizeHeroTextShadow(String value, String fallback) {
+        String trimmed = value == null ? "" : value.trim().toLowerCase();
+        return Set.of("none", "dark", "light").contains(trimmed) ? trimmed : fallback;
     }
 
     private String normalizeAdminLoginPath(String value, String fallback) {

@@ -4,7 +4,7 @@
 
     <section class="hero">
       <div class="shell hero-feature">
-        <div class="hero-content">
+        <div class="hero-content" :style="heroTextStyle">
           <span class="eyebrow">{{ site.heroBadge }}</span>
           <h1>{{ site.heroTitle }}</h1>
           <p>{{ site.heroSubtitle }}</p>
@@ -132,6 +132,7 @@ import ArticleCard from '../../components/ArticleCard.vue'
 import { portalApi } from '../../api/blog'
 import { useSiteStore } from '../../stores/site'
 import { normalizeAssetUrl } from '../../utils/assets'
+import { createHeroTextStyle } from '../../utils/heroAppearance'
 
 const articles = ref([])
 const categories = ref([])
@@ -147,6 +148,7 @@ const selectedTagId = ref(null)
 const articleLoading = ref(false)
 const articlePage = reactive({ current: 1, size: 9, total: 0 })
 
+const heroTextStyle = computed(() => createHeroTextStyle(site.heroTitleColor, site.heroSubtitleColor, site.heroTextShadow))
 const activeRecommended = computed(() => recommendedArticles.value[activeRecommendIndex.value] || {})
 const recommendCoverSrc = computed(() => normalizeAssetUrl(activeRecommended.value.coverUrl))
 const filteredCategories = computed(() => {

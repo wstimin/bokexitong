@@ -46,6 +46,25 @@
           <el-form-item label="首页说明" class="field-full">
             <el-input v-model="form.heroSubtitle" type="textarea" :rows="4" maxlength="220" show-word-limit placeholder="写一段给访客看的介绍" />
           </el-form-item>
+          <el-form-item label="主标题颜色">
+            <div class="color-setting-field">
+              <el-color-picker v-model="form.heroTitleColor" :predefine="heroColorOptions" />
+              <span>{{ form.heroTitleColor }}</span>
+            </div>
+          </el-form-item>
+          <el-form-item label="介绍文字颜色">
+            <div class="color-setting-field">
+              <el-color-picker v-model="form.heroSubtitleColor" :predefine="heroColorOptions" />
+              <span>{{ form.heroSubtitleColor }}</span>
+            </div>
+          </el-form-item>
+          <el-form-item label="文字阴影" class="field-full">
+            <el-radio-group v-model="form.heroTextShadow">
+              <el-radio-button value="dark">深色阴影</el-radio-button>
+              <el-radio-button value="light">浅色阴影</el-radio-button>
+              <el-radio-button value="none">关闭阴影</el-radio-button>
+            </el-radio-group>
+          </el-form-item>
           <el-form-item label="全站背景图 URL" class="field-full">
             <div class="inline-field">
               <el-input v-model="form.backgroundUrl" placeholder="上传背景图或粘贴图片地址，留空使用默认背景" />
@@ -120,6 +139,14 @@ import { adminApi, uploadApi } from '../../api/blog'
 import FileUploadButton from '../../components/FileUploadButton.vue'
 import { useSiteStore } from '../../stores/site'
 import { normalizeAssetUrl } from '../../utils/assets'
+import {
+  createHeroTextStyle,
+  DEFAULT_HERO_SUBTITLE_COLOR,
+  DEFAULT_HERO_TEXT_SHADOW,
+  DEFAULT_HERO_TITLE_COLOR,
+  normalizeHeroColor,
+  normalizeHeroTextShadow
+} from '../../utils/heroAppearance'
 
 const site = useSiteStore()
 const loading = ref(false)
@@ -129,6 +156,9 @@ const form = reactive({
   heroTitle: '',
   heroSubtitle: '',
   heroBadge: '',
+  heroTitleColor: DEFAULT_HERO_TITLE_COLOR,
+  heroSubtitleColor: DEFAULT_HERO_SUBTITLE_COLOR,
+  heroTextShadow: DEFAULT_HERO_TEXT_SHADOW,
   backgroundUrl: '',
   forbiddenWords: '',
   seoDescription: '',
@@ -140,7 +170,11 @@ const form = reactive({
   allowRegister: true
 })
 
-const previewStyle = computed(() => form.backgroundUrl ? { backgroundImage: `url("${normalizeAssetUrl(form.backgroundUrl)}")` } : {})
+const heroColorOptions = ['#ffffff', '#f8fafc', '#111827', '#1f2937', '#fef3c7', '#dbeafe']
+const previewStyle = computed(() => ({
+  ...(form.backgroundUrl ? { backgroundImage: `url("${normalizeAssetUrl(form.backgroundUrl)}")` } : {}),
+  ...createHeroTextStyle(form.heroTitleColor, form.heroSubtitleColor, form.heroTextShadow)
+}))
 const logoPreviewSrc = computed(() => normalizeAssetUrl(form.logoUrl))
 
 const apply = (settings = {}) => {
@@ -149,6 +183,9 @@ const apply = (settings = {}) => {
   form.heroTitle = settings.heroTitle || form.siteName
   form.heroSubtitle = settings.heroSubtitle || '用透明卡片浏览公开文章，点开后阅读完整内容。登录后可进入用户中心创作和管理自己的文章。'
   form.heroBadge = settings.heroBadge || '博客'
+  form.heroTitleColor = normalizeHeroColor(settings.heroTitleColor, DEFAULT_HERO_TITLE_COLOR)
+  form.heroSubtitleColor = normalizeHeroColor(settings.heroSubtitleColor, DEFAULT_HERO_SUBTITLE_COLOR)
+  form.heroTextShadow = normalizeHeroTextShadow(settings.heroTextShadow)
   form.backgroundUrl = settings.backgroundUrl || ''
   form.forbiddenWords = settings.forbiddenWords || '赌博,色情,毒品,诈骗'
   form.seoDescription = settings.seoDescription || ''

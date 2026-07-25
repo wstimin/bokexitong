@@ -1,6 +1,13 @@
 import { defineStore } from 'pinia'
 import { portalApi } from '../api/blog'
 import { normalizeAssetUrl } from '../utils/assets'
+import {
+  DEFAULT_HERO_SUBTITLE_COLOR,
+  DEFAULT_HERO_TEXT_SHADOW,
+  DEFAULT_HERO_TITLE_COLOR,
+  normalizeHeroColor,
+  normalizeHeroTextShadow
+} from '../utils/heroAppearance'
 
 const SITE_NAME = '博客系统'
 const HERO_SUBTITLE = '用清透的卡片浏览公开文章，点开后阅读完整内容。登录后可以进入用户中心创作和管理自己的文章。'
@@ -34,6 +41,9 @@ export const useSiteStore = defineStore('site', {
     heroTitle: SITE_NAME,
     heroSubtitle: HERO_SUBTITLE,
     heroBadge: '博客',
+    heroTitleColor: DEFAULT_HERO_TITLE_COLOR,
+    heroSubtitleColor: DEFAULT_HERO_SUBTITLE_COLOR,
+    heroTextShadow: DEFAULT_HERO_TEXT_SHADOW,
     allowRegister: true,
     logoUrl: '',
     backgroundUrl: '',
@@ -58,6 +68,9 @@ export const useSiteStore = defineStore('site', {
       this.heroTitle = settings.heroTitle || this.name
       this.heroSubtitle = settings.heroSubtitle || HERO_SUBTITLE
       this.heroBadge = settings.heroBadge || '博客'
+      this.heroTitleColor = normalizeHeroColor(settings.heroTitleColor, DEFAULT_HERO_TITLE_COLOR)
+      this.heroSubtitleColor = normalizeHeroColor(settings.heroSubtitleColor, DEFAULT_HERO_SUBTITLE_COLOR)
+      this.heroTextShadow = normalizeHeroTextShadow(settings.heroTextShadow)
       this.allowRegister = settings.allowRegister !== 'false'
       this.backgroundUrl = settings.backgroundUrl || ''
       this.logoUrl = settings.logoUrl || logo?.url || ''
