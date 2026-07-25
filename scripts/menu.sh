@@ -131,8 +131,13 @@ safe_project_dir_for_replace() {
 download_build_package() {
   tmp_file="$(mktemp)"
   tmp_dir="$(mktemp -d)"
+  package_request_url="$PACKAGE_URL"
+  case "$package_request_url" in
+    *\?*) package_request_url="${package_request_url}&cache_bust=$(date +%s)" ;;
+    *) package_request_url="${package_request_url}?cache_bust=$(date +%s)" ;;
+  esac
   info "下载最新构建包：$PACKAGE_URL"
-  if ! curl -fL --connect-timeout 10 --retry 2 "$PACKAGE_URL" -o "$tmp_file"; then
+  if ! curl -fL --connect-timeout 10 --retry 2 -H 'Cache-Control: no-cache' -H 'Pragma: no-cache' "$package_request_url" -o "$tmp_file"; then
     rm -f "$tmp_file"
     rm -rf "$tmp_dir"
     fail "构建包下载失败，请确认仓库 main 分支已上传 package/bokexitong-linux.tar.gz。"

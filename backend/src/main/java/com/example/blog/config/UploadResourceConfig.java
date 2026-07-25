@@ -3,12 +3,14 @@ package com.example.blog.config;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.Resource;
+import org.springframework.http.CacheControl;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.resource.PathResourceResolver;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.time.Duration;
 
 @Configuration
 public class UploadResourceConfig implements WebMvcConfigurer {
@@ -25,10 +27,15 @@ public class UploadResourceConfig implements WebMvcConfigurer {
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         String location = Path.of(uploadDir).toAbsolutePath().normalize().toUri().toString();
         registry.addResourceHandler("/api/uploads/**").addResourceLocations(location);
-        registry.addResourceHandler("/assets/**").addResourceLocations(webRoot + "assets/");
-        registry.addResourceHandler("/favicon.ico").addResourceLocations(webRoot);
+        registry.addResourceHandler("/assets/**")
+                .addResourceLocations(webRoot + "assets/")
+                .setCacheControl(CacheControl.maxAge(Duration.ofDays(365)).cachePublic().immutable());
+        registry.addResourceHandler("/favicon.ico")
+                .addResourceLocations(webRoot)
+                .setCacheControl(CacheControl.noStore().mustRevalidate());
         registry.addResourceHandler("/**")
                 .addResourceLocations(webRoot)
+                .setCacheControl(CacheControl.noStore().mustRevalidate())
                 .resourceChain(true)
                 .addResolver(new SpaResourceResolver());
     }

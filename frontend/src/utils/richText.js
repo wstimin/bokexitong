@@ -429,14 +429,11 @@ export const setupRichTextEditor = (quill, options = {}) => {
     const images = files.filter((file) => file.type?.startsWith('image/'))
     if (!images.length) return
     event.preventDefault()
-    const range = event.type === 'drop'
-      ? getRangeFromPoint(quill, event.clientX, event.clientY)
-      : quill.getSelection?.() || quill.__blogEditorOptions?.getLastSelection?.() || null
     if (quill.__blogEditorOptions?.onImageFiles) {
-      quill.__blogEditorOptions.onImageFiles(images, range)
+      quill.__blogEditorOptions.onImageFiles(images)
       return
     }
-    images.forEach((image) => quill.__blogEditorOptions?.onImageFile?.(image, range))
+    images.forEach((image) => quill.__blogEditorOptions?.onImageFile?.(image))
   }
   quill.root?.addEventListener('paste', uploadClipboardImage, true)
   quill.root?.addEventListener('drop', uploadClipboardImage, true)

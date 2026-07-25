@@ -32,7 +32,9 @@ public class PageController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
         return ResponseEntity.ok()
-                .header(HttpHeaders.CACHE_CONTROL, "no-store")
+                .header(HttpHeaders.CACHE_CONTROL, "no-store, no-cache, must-revalidate")
+                .header(HttpHeaders.PRAGMA, "no-cache")
+                .header(HttpHeaders.EXPIRES, "0")
                 .contentType(MediaType.TEXT_HTML)
                 .body(index);
     }

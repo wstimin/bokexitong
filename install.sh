@@ -20,5 +20,5 @@ INSTALL_SCRIPT_URL="https://raw.githubusercontent.com/wstimin/bokexitong/${BRANC
 TMP_FILE="$(mktemp)"
 trap 'rm -f "$TMP_FILE"' EXIT
 
-curl -fsSL "$INSTALL_SCRIPT_URL" -o "$TMP_FILE"
+curl -fsSL -H 'Cache-Control: no-cache' -H 'Pragma: no-cache' "${INSTALL_SCRIPT_URL}?cache_bust=$(date +%s)" -o "$TMP_FILE"
 exec bash "$TMP_FILE" "$@"

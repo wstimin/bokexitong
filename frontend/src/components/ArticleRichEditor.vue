@@ -117,7 +117,7 @@ const props = defineProps({
   modelValue: { type: String, default: '' },
   disabled: { type: Boolean, default: false },
   immersive: { type: Boolean, default: false },
-  placeholder: { type: String, default: '开始写正文，支持字体、字号、颜色、对齐、图片、视频、附件和链接。' }
+  placeholder: { type: String, default: '开始写正文，支持标题、列表、引用、代码、图片、视频、附件和链接。' }
 })
 
 const emit = defineEmits(['update:modelValue', 'pending-change', 'ready'])

@@ -43,9 +43,13 @@ test('media uploads always reserve placeholders at the end of the article', asyn
   assert.match(editorSource, /let placeholderIndex = getSafeInsertIndex\(editorRef\.value, null\)/)
   assert.match(editorSource, /onImageFile: \(file\) => uploadMedia\(file, 'image'\)/)
   assert.match(editorSource, /onImageFiles: \(files\) => uploadImageBatch\(files\)/)
+  assert.match(richTextSource, /onImageFiles\(images\)/)
+  assert.match(richTextSource, /onImageFile\?\.\(image\)/)
   assert.doesNotMatch(editorSource, /pickerBookmarks/)
   assert.doesNotMatch(editorSource, /uploadMedia\(file, 'image', createBookmark\(range\)\)/)
   assert.doesNotMatch(editorSource, /const uploadImageBatch = async \(files, range\)/)
+  assert.doesNotMatch(richTextSource, /onImageFiles\(images, range\)/)
+  assert.doesNotMatch(richTextSource, /onImageFile\?\.\(image, range\)/)
   assert.match(richTextSource, /export const insertUploadPlaceholder[\s\S]*?const index = replaceSelectedContent\(quill, range\)[\s\S]*?return \{ id, index, nextIndex/)
 })
 

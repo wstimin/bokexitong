@@ -425,6 +425,49 @@ deploy() {
   ok "Services started."
 }
 
+frontend_local_url() {
+  frontend_bind="$(env_value FRONTEND_HTTP_BIND || true)"
+  [ -n "$frontend_bind" ] || frontend_bind="80"
+  case "$frontend_bind" in
+    127.0.0.1:*) printf 'http://127.0.0.1:%s/' "${frontend_bind#127.0.0.1:}" ;;
+    localhost:*) printf 'http://127.0.0.1:%s/' "${frontend_bind#localhost:}" ;;
+    *:*) printf 'http://127.0.0.1:%s/' "${frontend_bind##*:}" ;;
+    80) printf 'http://127.0.0.1/' ;;
+    *) printf 'http://127.0.0.1:%s/' "$frontend_bind" ;;
+  esac
+}
+
+expected_frontend_asset() {
+  index_file="$PROJECT_DIR/frontend/dist/index.html"
+  [ -f "$index_file" ] || return 1
+  grep -oE 'src="/assets/[^"]+\.js"' "$index_file" | head -n 1 | cut -d'"' -f2
+}
+
+verify_frontend_build() {
+  frontend_url="$1"
+  expected_asset="$(expected_frontend_asset || true)"
+  [ -n "$expected_asset" ] || fail "Cannot determine the frontend build asset from frontend/dist/index.html."
+
+  info "Verifying the running frontend build: $expected_asset"
+  runtime_html="$(mktemp)"
+  cache_buster="$(date +%s)"
+  if ! curl -fsS -H 'Cache-Control: no-cache' -H 'Pragma: no-cache' "${frontend_url}?build=${cache_buster}" -o "$runtime_html"; then
+    rm -f "$runtime_html"
+    fail "Frontend responded earlier but its build entry could not be downloaded."
+  fi
+  if ! grep -Fq "$expected_asset" "$runtime_html"; then
+    runtime_asset="$(grep -oE 'src="/assets/[^"]+\.js"' "$runtime_html" | head -n 1 | cut -d'"' -f2 || true)"
+    rm -f "$runtime_html"
+    fail "Running frontend is stale. Expected $expected_asset but received ${runtime_asset:-an unknown build}. Check the active port, reverse proxy, and frontend container."
+  fi
+  rm -f "$runtime_html"
+
+  if ! curl -fsS -H 'Cache-Control: no-cache' "${frontend_url%/}${expected_asset}" >/dev/null; then
+    fail "Running frontend references $expected_asset, but that asset is not available."
+  fi
+  ok "Running frontend matches the packaged build: $expected_asset"
+}
+
 sync_domain_runtime() {
   domain_value="$(env_value BLOG_DOMAIN || true)"
   if [ -n "$domain_value" ]; then
@@ -438,15 +481,11 @@ show_status() {
   info "Current service status:"
   compose_cmd ps
 
-  frontend_url="http://127.0.0.1/"
+  frontend_url="$(frontend_local_url)"
   public_url="http://YOUR_SERVER_IP/"
   if [ -n "$(env_value BLOG_DOMAIN)" ]; then
     public_url="https://$(env_value BLOG_DOMAIN)/"
   fi
-  if [ "$(env_value FRONTEND_HTTP_BIND)" = "127.0.0.1:18080" ]; then
-    frontend_url="http://127.0.0.1:18080/"
-  fi
-
   info "Waiting for frontend to respond..."
   frontend_ready=0
   for _ in $(seq 1 30); do
@@ -458,8 +497,10 @@ show_status() {
     sleep 2
   done
   if [ "$frontend_ready" != "1" ]; then
-    warn "Frontend did not respond at $frontend_url. Check with: docker compose logs -f frontend"
+    fail "Frontend did not respond at $frontend_url. Check with: docker compose logs -f frontend"
   fi
+
+  verify_frontend_build "$frontend_url"
 
   info "Waiting for install API to respond..."
   backend_check_url="${frontend_url%/}/api/install/status"
