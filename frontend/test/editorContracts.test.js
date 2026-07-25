@@ -17,7 +17,10 @@ test('editor exposes Quill and cleans up listeners on unmount', async () => {
 
 test('link button keeps its dialog, style choices, and insertion command', async () => {
   const source = await readSource('../src/components/ArticleRichEditor.vue')
+  assert.match(source, /class="ql-link" title="文本链接" aria-label="文本链接"/)
   assert.match(source, /@click="openLinkButton"/)
+  assert.match(source, /<span>链接按钮<\/span>/)
+  assert.match(source, /getSafeInsertIndex,/)
   assert.match(source, /value="primary"/)
   assert.match(source, /value="secondary"/)
   assert.match(source, /value="download"/)

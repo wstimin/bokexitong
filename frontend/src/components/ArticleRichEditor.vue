@@ -40,7 +40,7 @@
               <button type="button" class="ql-code-block" title="代码块" aria-label="代码块"></button>
             </span>
             <span class="ql-formats">
-              <button type="button" class="ql-link" title="插入链接" aria-label="插入链接"></button>
+              <button type="button" class="ql-link" title="文本链接" aria-label="文本链接"></button>
               <button type="button" class="article-editor-history article-editor-history--undo" title="撤销" aria-label="撤销" :disabled="disabled" @click="undoEditor"></button>
               <button type="button" class="article-editor-history article-editor-history--redo" title="重做" aria-label="重做" :disabled="disabled" @click="redoEditor"></button>
               <button type="button" class="ql-clean" title="清除格式" aria-label="清除格式"></button>
@@ -55,8 +55,9 @@
             <button type="button" class="article-editor-tool" title="插入附件" aria-label="插入附件" :disabled="disabled" @click="openPicker('file')">
               <Paperclip :size="17" aria-hidden="true" />
             </button>
-            <button type="button" class="article-editor-tool article-editor-tool--link" title="插入按钮" aria-label="插入按钮" :disabled="disabled" @click="openLinkButton">
+            <button type="button" class="article-editor-tool article-editor-tool--link" title="插入链接按钮" aria-label="插入链接按钮" :disabled="disabled" @click="openLinkButton">
               <SquareArrowOutUpRight :size="17" aria-hidden="true" />
+              <span>链接按钮</span>
             </button>
             <span v-if="pendingUploads" class="article-rich-editor__upload-status" role="status">
               <LoaderCircle :size="16" class="is-spinning" aria-hidden="true" />
@@ -102,6 +103,7 @@ import { uploadApi } from '../api/blog'
 import {
   ensureRichTextFormats,
   fileSnippet,
+  getSafeInsertIndex,
   imageSnippet,
   insertHtmlSnippet,
   insertLinkButton,
