@@ -39,18 +39,26 @@ test('media tools upload and insert image, video, and file content', async () =>
 test('media uploads always reserve placeholders at the end of the article', async () => {
   const editorSource = await readSource('../src/components/ArticleRichEditor.vue')
   const richTextSource = await readSource('../src/utils/richText.js')
-  assert.match(editorSource, /const insertIndex = getSafeInsertIndex\(editorRef\.value, null\)/)
-  assert.match(editorSource, /let placeholderIndex = getSafeInsertIndex\(editorRef\.value, null\)/)
+  const placeholderFunction = richTextSource.slice(
+    richTextSource.indexOf('export const insertUploadPlaceholder'),
+    richTextSource.indexOf('const findUploadPlaceholder')
+  )
+  assert.match(editorSource, /insertUploadPlaceholder\(editorRef\.value, type\)/)
+  assert.match(editorSource, /images\.map\(\(\) => insertUploadPlaceholder\(editorRef\.value, 'image'\)\)/)
   assert.match(editorSource, /onImageFile: \(file\) => uploadMedia\(file, 'image'\)/)
   assert.match(editorSource, /onImageFiles: \(files\) => uploadImageBatch\(files\)/)
   assert.match(richTextSource, /onImageFiles\(images\)/)
   assert.match(richTextSource, /onImageFile\?\.\(image\)/)
   assert.doesNotMatch(editorSource, /pickerBookmarks/)
+  assert.doesNotMatch(editorSource, /getSafeInsertIndex\(editorRef\.value, null\)/)
+  assert.doesNotMatch(editorSource, /insertUploadPlaceholder\(editorRef\.value,[^\n]+\{ index:/)
   assert.doesNotMatch(editorSource, /uploadMedia\(file, 'image', createBookmark\(range\)\)/)
   assert.doesNotMatch(editorSource, /const uploadImageBatch = async \(files, range\)/)
   assert.doesNotMatch(richTextSource, /onImageFiles\(images, range\)/)
   assert.doesNotMatch(richTextSource, /onImageFile\?\.\(image, range\)/)
-  assert.match(richTextSource, /export const insertUploadPlaceholder[\s\S]*?const index = replaceSelectedContent\(quill, range\)[\s\S]*?return \{ id, index, nextIndex/)
+  assert.match(placeholderFunction, /export const insertUploadPlaceholder = \(quill, type\)[\s\S]*?const index = getDocumentAppendIndex\(quill\)[\s\S]*?const currentRange = quill\.getSelection\?\.\(\) \|\| null[\s\S]*?restoreSelection\(quill, currentRange\)[\s\S]*?return \{ id, index, nextIndex/)
+  assert.doesNotMatch(placeholderFunction, /range/)
+  assert.doesNotMatch(placeholderFunction, /setCursorAfterEmbed/)
 })
 
 test('upload placeholders are visible in the article body', async () => {

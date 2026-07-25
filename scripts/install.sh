@@ -5,7 +5,8 @@ APP_NAME="bokexitong"
 REPO_URL="${REPO_URL:-https://github.com/wstimin/bokexitong.git}"
 BRANCH="${BRANCH:-main}"
 INSTALL_DIR="${INSTALL_DIR:-/opt/bokexitong}"
-PACKAGE_URL="${PACKAGE_URL:-https://raw.githubusercontent.com/wstimin/bokexitong/main/package/bokexitong-linux.tar.gz}"
+PACKAGE_URL="${PACKAGE_URL:-}"
+DEFAULT_PACKAGE_URL="https://raw.githubusercontent.com/wstimin/bokexitong/${BRANCH}/package/bokexitong-linux.tar.gz"
 
 info() { printf '\033[1;34m[INFO]\033[0m %s\n' "$*"; }
 ok() { printf '\033[1;32m[ OK ]\033[0m %s\n' "$*"; }
@@ -119,6 +120,24 @@ set_env_value() {
   mv "$tmp_file" "$env_file"
 }
 
+resolve_package_url() {
+  if [ -n "$PACKAGE_URL" ]; then
+    printf '%s' "$PACKAGE_URL"
+    return
+  fi
+
+  ref_api="https://api.github.com/repos/wstimin/bokexitong/git/ref/heads/${BRANCH}"
+  commit_sha="$(curl -fsSL -H 'Cache-Control: no-cache' -H 'Pragma: no-cache' "${ref_api}?cache_bust=$(date +%s)" 2>/dev/null \
+    | sed -n 's/^[[:space:]]*"sha":[[:space:]]*"\([0-9a-f]\{40\}\)".*/\1/p' \
+    | head -n 1 || true)"
+  if [ -n "$commit_sha" ]; then
+    printf 'https://raw.githubusercontent.com/wstimin/bokexitong/%s/package/bokexitong-linux.tar.gz' "$commit_sha"
+    return
+  fi
+
+  printf '%s' "$DEFAULT_PACKAGE_URL"
+}
+
 install_from_package() {
   prepare_install_dir
 
@@ -126,12 +145,13 @@ install_from_package() {
   tmp_dir="$(mktemp -d)"
   env_backup=""
 
-  package_request_url="$PACKAGE_URL"
+  package_download_url="$(resolve_package_url)"
+  package_request_url="$package_download_url"
   case "$package_request_url" in
     *\?*) package_request_url="${package_request_url}&cache_bust=$(date +%s)" ;;
     *) package_request_url="${package_request_url}?cache_bust=$(date +%s)" ;;
   esac
-  info "Trying build package: $PACKAGE_URL"
+  info "Trying build package: $package_download_url"
   if ! curl -fL --connect-timeout 10 --retry 2 -H 'Cache-Control: no-cache' -H 'Pragma: no-cache' "$package_request_url" -o "$tmp_file"; then
     rm -f "$tmp_file"
     rm -rf "$tmp_dir"

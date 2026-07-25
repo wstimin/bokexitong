@@ -102,7 +102,6 @@ import { uploadApi } from '../api/blog'
 import {
   ensureRichTextFormats,
   fileSnippet,
-  getSafeInsertIndex,
   imageSnippet,
   insertHtmlSnippet,
   insertLinkButton,
@@ -229,8 +228,7 @@ const handlePickerChange = async (event, type) => {
 const uploadMedia = async (file, type) => {
   if (props.disabled || !file) return
   if (!editorRef.value) return ElMessage.warning('编辑器还没有准备好，请稍后再试')
-  const insertIndex = getSafeInsertIndex(editorRef.value, null)
-  const placeholder = insertUploadPlaceholder(editorRef.value, type, { index: insertIndex, length: 0 })
+  const placeholder = insertUploadPlaceholder(editorRef.value, type)
   if (!placeholder) return ElMessage.warning('无法创建上传占位，请稍后再试')
   setPendingUploads(pendingUploads.value + 1)
   try {
@@ -253,12 +251,7 @@ const uploadImageBatch = async (files) => {
   const images = Array.from(files || []).filter(Boolean)
   if (props.disabled || !images.length) return
   if (!editorRef.value) return ElMessage.warning('编辑器还没有准备好，请稍后再试')
-  let placeholderIndex = getSafeInsertIndex(editorRef.value, null)
-  const placeholders = images.map(() => {
-    const placeholder = insertUploadPlaceholder(editorRef.value, 'image', { index: placeholderIndex, length: 0 })
-    if (placeholder) placeholderIndex = placeholder.nextIndex
-    return placeholder
-  })
+  const placeholders = images.map(() => insertUploadPlaceholder(editorRef.value, 'image'))
   if (placeholders.some((placeholder) => !placeholder)) {
     placeholders.filter(Boolean).forEach((placeholder) => removeUploadPlaceholder(editorRef.value, placeholder.id))
     return ElMessage.warning('无法创建图片上传占位，请稍后再试')

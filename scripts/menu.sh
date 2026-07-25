@@ -5,7 +5,8 @@ APP_NAME="bokexitong"
 REPO_URL="${REPO_URL:-https://github.com/wstimin/bokexitong.git}"
 BRANCH="${BRANCH:-main}"
 DEFAULT_INSTALL_DIR="/opt/bokexitong"
-PACKAGE_URL="${PACKAGE_URL:-https://raw.githubusercontent.com/wstimin/bokexitong/main/package/bokexitong-linux.tar.gz}"
+PACKAGE_URL="${PACKAGE_URL:-}"
+DEFAULT_PACKAGE_URL="https://raw.githubusercontent.com/wstimin/bokexitong/${BRANCH}/package/bokexitong-linux.tar.gz"
 
 SOURCE_PATH="${0:-}"
 if [ "${BASH_SOURCE+x}" = "x" ] && [ "${#BASH_SOURCE[@]}" -gt 0 ]; then
@@ -128,15 +129,34 @@ safe_project_dir_for_replace() {
   [ -f "$resolved/docker-compose.yml" ] || fail "项目目录缺少 docker-compose.yml，拒绝更新：$resolved"
 }
 
+resolve_package_url() {
+  if [ -n "$PACKAGE_URL" ]; then
+    printf '%s' "$PACKAGE_URL"
+    return
+  fi
+
+  ref_api="https://api.github.com/repos/wstimin/bokexitong/git/ref/heads/${BRANCH}"
+  commit_sha="$(curl -fsSL -H 'Cache-Control: no-cache' -H 'Pragma: no-cache' "${ref_api}?cache_bust=$(date +%s)" 2>/dev/null \
+    | sed -n 's/^[[:space:]]*"sha":[[:space:]]*"\([0-9a-f]\{40\}\)".*/\1/p' \
+    | head -n 1 || true)"
+  if [ -n "$commit_sha" ]; then
+    printf 'https://raw.githubusercontent.com/wstimin/bokexitong/%s/package/bokexitong-linux.tar.gz' "$commit_sha"
+    return
+  fi
+
+  printf '%s' "$DEFAULT_PACKAGE_URL"
+}
+
 download_build_package() {
   tmp_file="$(mktemp)"
   tmp_dir="$(mktemp -d)"
-  package_request_url="$PACKAGE_URL"
+  package_download_url="$(resolve_package_url)"
+  package_request_url="$package_download_url"
   case "$package_request_url" in
     *\?*) package_request_url="${package_request_url}&cache_bust=$(date +%s)" ;;
     *) package_request_url="${package_request_url}?cache_bust=$(date +%s)" ;;
   esac
-  info "下载最新构建包：$PACKAGE_URL"
+  info "下载最新构建包：$package_download_url"
   if ! curl -fL --connect-timeout 10 --retry 2 -H 'Cache-Control: no-cache' -H 'Pragma: no-cache' "$package_request_url" -o "$tmp_file"; then
     rm -f "$tmp_file"
     rm -rf "$tmp_dir"

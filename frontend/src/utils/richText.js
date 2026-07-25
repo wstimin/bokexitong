@@ -2,6 +2,7 @@ import { loadQuill } from '@vueup/vue-quill'
 import DOMPurify from 'dompurify'
 import { marked } from 'marked'
 import { normalizeAssetUrl } from './assets'
+import { getDocumentAppendIndex } from './richTextPosition'
 import {
   isSafeEmbeddedImageUrl,
   isSafeHttpUrl,
@@ -11,6 +12,7 @@ import {
 } from './richTextUrls'
 
 export { isSafeEmbeddedImageUrl, normalizeLinkButtonUrl } from './richTextUrls'
+export { getDocumentAppendIndex } from './richTextPosition'
 
 const fontWhitelist = ['system', 'songti', 'heiti', 'kaiti', 'serif', 'mono']
 const sizeWhitelist = ['12px', '14px', '16px', '18px', '20px', '24px', '28px', '32px']
@@ -491,12 +493,14 @@ const restoreEditorSelection = (quill, index) => {
   quill.setSelection?.(index, 0, 'silent')
 }
 
-export const insertUploadPlaceholder = (quill, type, range) => {
+export const insertUploadPlaceholder = (quill, type) => {
   if (!quill?.insertEmbed) return null
   const id = createUploadId()
-  const index = replaceSelectedContent(quill, range)
-  quill.insertEmbed(index, 'uploadPlaceholder', { id, type }, 'user')
-  return { id, index, nextIndex: setCursorAfterEmbed(quill, index) }
+  const index = getDocumentAppendIndex(quill)
+  const currentRange = quill.getSelection?.() || null
+  quill.insertEmbed(index, 'uploadPlaceholder', { id, type }, 'api')
+  restoreSelection(quill, currentRange)
+  return { id, index, nextIndex: index + 1 }
 }
 
 const findUploadPlaceholder = (quill, uploadId) => {
