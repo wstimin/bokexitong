@@ -45,6 +45,31 @@
                 <option value="28px">28px</option>
                 <option value="32px">32px</option>
               </select>
+              <select class="ql-color" title="文字颜色" aria-label="文字颜色">
+                <option selected></option>
+                <option value="#111827"></option>
+                <option value="#4b5563"></option>
+                <option value="#dc2626"></option>
+                <option value="#ea580c"></option>
+                <option value="#ca8a04"></option>
+                <option value="#16a34a"></option>
+                <option value="#0891b2"></option>
+                <option value="#2563eb"></option>
+                <option value="#7c3aed"></option>
+                <option value="#db2777"></option>
+              </select>
+              <select class="ql-background" title="背景高亮颜色" aria-label="背景高亮颜色">
+                <option selected></option>
+                <option value="#fee2e2"></option>
+                <option value="#ffedd5"></option>
+                <option value="#fef9c3"></option>
+                <option value="#dcfce7"></option>
+                <option value="#cffafe"></option>
+                <option value="#dbeafe"></option>
+                <option value="#ede9fe"></option>
+                <option value="#fce7f3"></option>
+                <option value="#e5e7eb"></option>
+              </select>
               <select class="ql-align" title="对齐" aria-label="对齐">
                 <option selected>左对齐</option>
                 <option value="center">居中</option>

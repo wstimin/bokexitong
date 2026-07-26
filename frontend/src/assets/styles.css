@@ -445,7 +445,7 @@ button, input, textarea, select { font: inherit; }
 .article-composer__workspace.settings-collapsed { grid-template-columns: minmax(0, 1fr) 0; }
 .article-composer__main { position: relative; min-width: 0; min-height: 0; overflow-y: auto; background: #fff; }
 .article-composer__loading { display: flex; min-height: 100%; align-items: center; justify-content: center; gap: 9px; color: #68727d; font-size: 14px; font-weight: 700; }
-.article-composer__document { width: min(820px, calc(100% - 64px)); min-height: calc(100vh - 64px); margin: 0 auto; padding: 58px 0 96px; }
+.article-composer__document { width: min(960px, calc(100% - 64px)); min-height: calc(100vh - 64px); margin: 0 auto; padding: 58px 0 96px; }
 .article-composer__title,
 .article-composer__summary {
   display: block;
@@ -489,7 +489,7 @@ button, input, textarea, select { font: inherit; }
 .article-composer__document .article-rich-editor__surface .ql-editor h2 { margin: 1.25em 0 .5em; font-size: 26px; line-height: 1.4; }
 .article-composer__document .article-rich-editor__surface .ql-editor h3 { margin: 1.2em 0 .45em; font-size: 21px; line-height: 1.45; }
 .article-composer__document .article-rich-editor__surface .ql-editor blockquote { margin: 1.2em 0; padding: 4px 0 4px 18px; border-left: 3px solid #16836f; color: #5b6570; }
-.article-composer__preview { width: min(780px, calc(100% - 64px)); min-height: calc(100vh - 104px); margin: 0 auto; padding: 54px 0 100px; }
+.article-composer__preview { width: min(900px, calc(100% - 64px)); min-height: calc(100vh - 104px); margin: 0 auto; padding: 54px 0 100px; }
 .article-composer__preview-cover { display: block; width: 100%; aspect-ratio: 16 / 9; margin-bottom: 32px; border-radius: 6px; object-fit: cover; background: #eef1f3; }
 .article-composer__preview-meta { display: flex; gap: 14px; color: #16836f; font-size: 13px; font-weight: 800; }
 .article-composer__preview h1 { margin: 12px 0 14px; font-size: 44px; line-height: 1.2; letter-spacing: 0; }

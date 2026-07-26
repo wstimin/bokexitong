@@ -106,12 +106,8 @@ public class ArticleService {
                 .eq(Article::getStatus, "PUBLISHED")
                 .eq(Article::getRecommended, 1)
                 .orderByAsc(Article::getRecommendSort)
-                .orderByDesc(Article::getPublishedAt, Article::getCreatedAt));
-        List<Article> records = articlePage.getRecords();
-        if (records == null || records.isEmpty()) {
-            records = page(1, size, null, "PUBLISHED", null, null).getRecords();
-        }
-        return toCardResponses(records);
+                .orderByDesc(Article::getPublishedAt, Article::getCreatedAt, Article::getId));
+        return toCardResponses(articlePage.getRecords());
     }
 
     public Article detail(Long id, boolean increaseView) {
@@ -308,8 +304,9 @@ public class ArticleService {
         if (!"PUBLISHED".equals(article.getStatus())) {
             throw new IllegalArgumentException("Only published articles can be recommended");
         }
-        article.setRecommended(Boolean.TRUE.equals(recommended) ? 1 : 0);
-        article.setRecommendSort(normalizeRecommendSort(recommendSort));
+        boolean shouldRecommend = Boolean.TRUE.equals(recommended);
+        article.setRecommended(shouldRecommend ? 1 : 0);
+        article.setRecommendSort(shouldRecommend ? normalizeRecommendSort(recommendSort) : 0);
         article.setUpdatedAt(LocalDateTime.now());
         articleMapper.updateById(article);
         return article;
@@ -357,7 +354,7 @@ public class ArticleService {
     }
 
     private Integer normalizeRecommendSort(Integer value) {
-        return value == null ? 0 : value;
+        return value == null ? 0 : Math.max(0, value);
     }
 
     private List<ArticleCardResponse> toCardResponses(List<Article> articles) {

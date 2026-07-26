@@ -183,7 +183,7 @@ export const richToolbarLabels = {
   underline: '下划线',
   strike: '删除线',
   color: '文字颜色',
-  background: '背景色',
+  background: '背景高亮颜色',
   align: '对齐',
   header: '标题',
   list: '列表',
@@ -223,7 +223,7 @@ const pickerValueLabels = {
   },
   color: {
     color: '文字颜色',
-    background: '背景色'
+    background: '背景高亮颜色'
   }
 }
 
@@ -277,7 +277,7 @@ const pickerLabelTexts = {
     justify: '两端对齐'
   },
   color: '文字颜色',
-  background: '背景色'
+  background: '背景高亮颜色'
 }
 
 const setTitle = (el, title) => {

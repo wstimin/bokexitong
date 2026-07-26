@@ -1,5 +1,6 @@
 package com.example.blog.service;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.blog.dto.ArticleRequest;
 import com.example.blog.entity.Article;
 import com.example.blog.mapper.ArticleMapper;
@@ -21,7 +22,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
@@ -55,7 +60,7 @@ class ArticleServiceTest {
                 siteSettingService,
                 richTextMediaMigrationService
         );
-        when(richTextMediaMigrationService.migrateEmbeddedImages(any(), any()))
+        lenient().when(richTextMediaMigrationService.migrateEmbeddedImages(any(), any()))
                 .thenAnswer(invocation -> invocation.getArgument(0));
     }
 
@@ -92,6 +97,47 @@ class ArticleServiceTest {
         assertEquals("REJECTED", captor.getValue().getStatus());
         assertEquals("\u547d\u4e2d\u8fdd\u7981\u8bcd\uff1a\u8d4c\u535a", captor.getValue().getReviewReason());
         verifyNoInteractions(articleTagMapper);
+    }
+
+    @Test
+    void recommendedCards_shouldStayEmpty_whenNoArticleIsRecommended() {
+        Page<Article> emptyPage = new Page<>(1, 6);
+        emptyPage.setRecords(List.of());
+        when(articleMapper.selectPage(any(Page.class), any())).thenReturn(emptyPage);
+
+        assertTrue(service.recommendedCards(6).isEmpty());
+
+        verify(articleMapper, times(1)).selectPage(any(Page.class), any());
+        verifyNoInteractions(categoryMapper, tagMapper, blogUserMapper);
+    }
+
+    @Test
+    void updateRecommendationByAdmin_shouldStoreOneForRecommendedAndZeroForNotRecommended() {
+        Article article = new Article();
+        article.setId(12L);
+        article.setStatus("PUBLISHED");
+        when(articleMapper.selectById(12L)).thenReturn(article);
+
+        service.updateRecommendationByAdmin(12L, true, 3);
+        assertEquals(1, article.getRecommended());
+        assertEquals(3, article.getRecommendSort());
+
+        service.updateRecommendationByAdmin(12L, false, 3);
+        assertEquals(0, article.getRecommended());
+        assertEquals(0, article.getRecommendSort());
+    }
+
+    @Test
+    void updateRecommendationByAdmin_shouldClampNegativeSortToZero() {
+        Article article = new Article();
+        article.setId(13L);
+        article.setStatus("PUBLISHED");
+        when(articleMapper.selectById(13L)).thenReturn(article);
+
+        service.updateRecommendationByAdmin(13L, true, -2);
+
+        assertEquals(1, article.getRecommended());
+        assertEquals(0, article.getRecommendSort());
     }
 
     private ArticleRequest baseRequest(String title, String summary, String content) {

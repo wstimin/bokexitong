@@ -54,7 +54,9 @@ test('immersive desktop toolbar stays on one compact row', async () => {
   const immersiveFormatsRule = source.match(/\.article-composer__document \.article-rich-editor__formats \{([^}]*)\}/)?.[1] || ''
   const mobileRule = source.match(/@media \(max-width: 720px\) \{([\s\S]*)\}\s*$/)?.[1] || ''
 
+  assert.match(source, /\.article-composer__document \{ width: min\(960px, calc\(100% - 64px\)\);/)
   assert.match(immersiveFormatsRule, /flex-wrap: nowrap/)
+  assert.match(mobileRule, /\.article-composer__document, \.article-composer__preview \{ width: calc\(100% - 32px\); \}/)
   assert.match(mobileRule, /\.article-composer__document \.article-rich-editor__formats \{[^}]*flex-wrap: wrap;/)
 })
 
@@ -72,6 +74,19 @@ test('toolbar exposes every registered font and size option', async () => {
   }
   assert.match(richTextSource, /fontWhitelist = \['system', 'songti', 'heiti', 'kaiti', 'serif', 'mono'\]/)
   assert.match(richTextSource, /sizeWhitelist = \['12px', '14px', '16px', '18px', '20px', '24px', '28px', '32px'\]/)
+})
+
+test('toolbar exposes text and highlight colors between size and alignment', async () => {
+  const editorSource = await readSource('../src/components/ArticleRichEditor.vue')
+  const richTextSource = await readSource('../src/utils/richText.js')
+  const toolbarOrder = editorSource.match(/<select class="ql-size"[\s\S]*?<select class="ql-align"/)?.[0] || ''
+
+  assert.match(toolbarOrder, /<select class="ql-color" title="文字颜色" aria-label="文字颜色">/)
+  assert.match(toolbarOrder, /<select class="ql-background" title="背景高亮颜色" aria-label="背景高亮颜色">/)
+  assert.ok(toolbarOrder.indexOf('ql-color') < toolbarOrder.indexOf('ql-background'))
+  assert.ok(toolbarOrder.indexOf('ql-background') < toolbarOrder.indexOf('ql-align'))
+  assert.match(richTextSource, /color: '文字颜色'/)
+  assert.match(richTextSource, /background: '背景高亮颜色'/)
 })
 
 test('toolbar exposes all supported paragraph alignment options', async () => {
