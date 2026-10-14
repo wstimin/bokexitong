@@ -111,6 +111,16 @@ test('dark theme gives Element controls themed surfaces and readable text', asyn
   assert.match(source, /:root \.el-loading-mask \{[\s\S]*?background-color: color-mix\(in srgb, var\(--bg-secondary\) 88%, transparent\) !important;/)
   assert.match(source, /\.el-loading-spinner \.path \{ stroke: var\(--accent\) !important; \}/)
   assert.match(source, /\.el-table__fixed-right-patch \{ background: var\(--el-table-header-bg-color\) !important; \}/)
+  assert.match(source, /:root\[data-theme="dark"\] \.el-button \{[\s\S]*?background: var\(--control-bg\) !important;[\s\S]*?border-color: var\(--control-border\) !important;/)
+  assert.match(source, /:root\[data-theme="dark"\] \.el-button--success \{[\s\S]*?background: var\(--success-soft\) !important;/)
+  assert.match(source, /:root\[data-theme="dark"\] \.el-button--danger \{[\s\S]*?background: var\(--danger-soft\) !important;/)
+  assert.match(source, /:root\[data-theme="dark"\] \.el-tag--success \{[\s\S]*?--el-tag-bg-color: var\(--success-soft\);/)
+  assert.match(source, /:root\[data-theme="dark"\] \.el-tag--danger \{[\s\S]*?--el-tag-bg-color: var\(--danger-soft\);/)
+  assert.match(source, /:root\[data-theme="dark"\] \.el-checkbox__inner \{[\s\S]*?background: var\(--control-bg\) !important;/)
+  assert.match(source, /:root\[data-theme="dark"\] \.el-switch \{[\s\S]*?--el-switch-on-color: var\(--accent\);/)
+  assert.match(source, /:root\[data-theme="dark"\] \.el-color-picker__trigger \{[\s\S]*?background: var\(--control-bg\) !important;/)
+  assert.match(source, /:root\[data-theme="dark"\] \.el-alert \{[\s\S]*?background: var\(--control-bg\) !important;/)
+  assert.match(source, /:root\[data-theme="dark"\] \.el-message,[\s\S]*?background: color-mix\(in srgb, var\(--bg-elevated\) 94%, var\(--bg-primary\)\) !important;/)
 })
 
 test('directional controls and multi-select tags stay readable in both themes', async () => {

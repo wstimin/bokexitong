@@ -31,7 +31,7 @@ public class PortalController {
     private final ImageResourceMapper imageResourceMapper;
     private final SiteSettingService siteSettingService;
 
-    @Value("${blog.version:1.1.18}")
+    @Value("${blog.version:1.1.19}")
     private String version;
 
     @Value("${blog.build-time:development}")
