@@ -149,7 +149,31 @@ h1, h2, h3, .brand { font-family: "Playfair Display", "Songti SC", serif; }
 .hero-cta .btn-primary, .hero-cta .btn-ghost { min-height: 48px; }
 .hero-secondary { color: var(--text-on-dark); border-color: color-mix(in srgb, var(--text-on-dark) 25%, transparent); background: color-mix(in srgb, var(--text-on-dark) 8%, transparent); }
 .hero-secondary:hover { color: var(--accent-hover); border-color: var(--accent); background: var(--accent-soft); }
-.recommend-panel { color: var(--text-primary); background: var(--bg-elevated); border-color: var(--border-strong); box-shadow: var(--shadow-lg), var(--glow); }
+.recommend-panel {
+  position: relative;
+  color: var(--text-primary);
+  border: 1px solid transparent;
+  background:
+    linear-gradient(var(--bg-elevated), var(--bg-elevated)) padding-box,
+    linear-gradient(125deg, #ff5c8a, #ffb347 24%, #e0b83a 43%, #54d6c7 67%, #7b8cff 84%, #ff5c8a) border-box;
+  box-shadow: var(--shadow-lg), 0 0 32px rgba(255, 92, 138, .1), 0 0 54px rgba(84, 214, 199, .08);
+}
+.recommend-panel::before {
+  position: absolute;
+  inset: -1px;
+  z-index: -1;
+  border-radius: inherit;
+  background: linear-gradient(125deg, #ff5c8a, #ffb347 24%, #e0b83a 43%, #54d6c7 67%, #7b8cff 84%, #ff5c8a);
+  content: "";
+  opacity: .34;
+  filter: blur(13px);
+  pointer-events: none;
+  animation: recommend-glow-shift 10s linear infinite;
+}
+@keyframes recommend-glow-shift {
+  0%, 100% { filter: blur(13px) hue-rotate(0deg); opacity: .3; }
+  50% { filter: blur(16px) hue-rotate(24deg); opacity: .48; }
+}
 .recommend-track { scrollbar-width: none; }
 .recommend-track::-webkit-scrollbar { display: none; }
 .recommend-nav button { color: var(--text-primary); background: var(--bg-secondary); border-color: var(--border); }
@@ -417,9 +441,24 @@ h1, h2, h3, .brand { font-family: "Playfair Display", "Songti SC", serif; }
 .el-overlay { background-color: var(--overlay) !important; }
 .el-popper, .el-select__popper, .el-picker__popper, .el-dropdown__popper, .el-autocomplete__popper { color: var(--text-primary); background: var(--bg-elevated) !important; border-color: var(--border) !important; box-shadow: var(--shadow-lg) !important; }
 .el-popper__arrow::before { background: var(--bg-elevated) !important; border-color: var(--border) !important; }
-.el-select-dropdown__item, .el-dropdown-menu__item { color: var(--text-secondary); background: transparent; font-size: 13px; font-weight: 650; }
-.el-select-dropdown__item.hover, .el-select-dropdown__item.is-hovering, .el-select-dropdown__item:hover, .el-dropdown-menu__item:not(.is-disabled):focus, .el-dropdown-menu__item:not(.is-disabled):hover { color: var(--text-primary); background: var(--accent-soft); }
-.el-select-dropdown__item.is-selected, .el-dropdown-menu__item.is-active { color: var(--accent); font-weight: 800; }
+.el-select-dropdown__item, .el-dropdown-menu__item {
+  color: var(--text-primary) !important;
+  background: transparent !important;
+  font-size: 13px;
+  font-weight: 650;
+}
+.el-select-dropdown__item.is-disabled, .el-dropdown-menu__item.is-disabled {
+  color: var(--text-tertiary) !important;
+  opacity: .9;
+}
+.el-select-dropdown__item.hover, .el-select-dropdown__item.is-hovering, .el-select-dropdown__item:hover, .el-dropdown-menu__item:not(.is-disabled):focus, .el-dropdown-menu__item:not(.is-disabled):hover {
+  color: var(--text-primary) !important;
+  background: var(--accent-soft) !important;
+}
+.el-select-dropdown__item.is-selected, .el-dropdown-menu__item.is-active {
+  color: var(--accent) !important;
+  font-weight: 800;
+}
 .el-table { --el-table-border-color: var(--border); --el-table-header-bg-color: var(--bg-secondary); --el-table-tr-bg-color: transparent; --el-table-row-hover-bg-color: var(--accent-soft); --el-table-text-color: var(--text-secondary); --el-table-header-text-color: var(--text-primary); }
 .el-pagination.is-background .btn-prev, .el-pagination.is-background .btn-next, .el-pagination.is-background .el-pager li { color: var(--text-primary); background: var(--bg-elevated) !important; border-color: var(--border); }
 .el-pagination.is-background .el-pager li.is-active { color: var(--text-inverse); background: var(--accent) !important; }
