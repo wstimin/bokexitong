@@ -328,6 +328,30 @@ button, input, textarea, select { font: inherit; }
 .user-menu-item span { color: var(--muted); font-size: 12px; line-height: 1.45; }
 .user-menu-item:hover, .user-menu-item.active { background: rgba(255,255,255,.72); color: var(--pink); }
 .user-workbench-main { min-width: 0; display: grid; gap: 18px; }
+
+@media (min-width: 1081px) {
+  .user-center-page { display: grid; grid-template-rows: auto minmax(0, 1fr); height: 100dvh; min-height: 0; overflow: hidden; }
+  .user-center-page .user-workbench {
+    height: 100%;
+    min-height: 0;
+    padding-block: 28px;
+    align-items: stretch;
+    overflow: hidden;
+  }
+  .user-center-page .user-workbench-sidebar,
+  .user-center-page .user-workbench-main {
+    min-height: 0;
+    height: 100%;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+    scrollbar-color: var(--border-strong) transparent;
+    scrollbar-width: thin;
+  }
+  .user-center-page .user-workbench-sidebar { position: static; align-content: start; }
+  .user-center-page .user-workbench-main { align-content: start; padding-right: 8px; }
+  .user-center-page > .portal-footer { display: none; }
+}
 .user-action-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 .user-form-grid, .settings-grid.two-cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 14px; }
 .field-full, .user-form-grid .field-full { grid-column: 1 / -1; }

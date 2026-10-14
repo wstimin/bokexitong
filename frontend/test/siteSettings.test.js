@@ -133,6 +133,19 @@ test('directional controls and multi-select tags stay readable in both themes', 
   assert.match(source, /:root \.el-pagination \.btn-prev:disabled,[\s\S]*?color: var\(--text-tertiary\) !important;/)
 })
 
+test('desktop user workbench keeps navigation and content scrolling independently', async () => {
+  const viewSource = await readSource('../src/views/portal/UserCenter.vue')
+  const styleSource = await readSource('../src/assets/styles.css')
+
+  assert.match(viewSource, /class="page user-center-page"/)
+  assert.match(viewSource, /ref="workbenchMainRef" class="user-workbench-main"/)
+  assert.match(viewSource, /workbenchMainRef\.value\?\.scrollTo\(\{ top: 0, behavior: 'auto' \}\)/)
+  assert.match(viewSource, /activeSection\.value = section; await scrollWorkbenchToTop\(\)/)
+  assert.match(styleSource, /@media \(min-width: 1081px\) \{[\s\S]*?\.user-center-page \{ display: grid; grid-template-rows: auto minmax\(0, 1fr\); height: 100dvh; min-height: 0; overflow: hidden; \}/)
+  assert.match(styleSource, /\.user-center-page \.user-workbench-main \{ align-content: start; padding-right: 8px; \}/)
+  assert.match(styleSource, /\.user-center-page \.user-workbench-sidebar,[\s\S]*?overflow-y: auto;[\s\S]*?overscroll-behavior: contain;/)
+})
+
 test('recommendation card keeps its surface while only the border glow moves', async () => {
   const source = await readSource('../src/assets/theme.css')
   const panelRule = source.match(/\.recommend-panel \{([\s\S]*?)\n\}/)?.[1] || ''

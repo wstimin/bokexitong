@@ -1,5 +1,5 @@
 <template>
-  <div class="page">
+  <div class="page user-center-page">
     <PortalNav />
     <main class="shell user-workbench">
       <aside class="form-panel user-workbench-sidebar">
@@ -19,7 +19,7 @@
         </nav>
       </aside>
 
-      <div class="user-workbench-main">
+      <div ref="workbenchMainRef" class="user-workbench-main">
         <section v-if="activeSection === 'dashboard'" class="form-panel user-section-panel">
           <div class="section-title writer-title">
             <div><h2>我的工作台</h2><p class="section-subtitle">在这里完成写作、资料维护和文章管理。</p></div>
@@ -98,7 +98,7 @@
 </template>
 
 <script setup>
-import { computed, defineComponent, h, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
+import { computed, defineComponent, h, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { onBeforeRouteLeave, useRouter } from 'vue-router'
 import { ElButton, ElMessage, ElMessageBox, ElTable, ElTableColumn, ElTag } from 'element-plus'
 import 'element-plus/theme-chalk/el-button.css'
@@ -133,6 +133,7 @@ const ArticleTable = defineComponent({
 const auth = useAuthStore()
 const router = useRouter()
 const activeSection = ref('dashboard')
+const workbenchMainRef = ref(null)
 const profile = reactive({ nickname: '', avatar: '', email: '' })
 const password = reactive({ oldPassword: '', newPassword: '' })
 const articleForm = reactive({ title: '', summary: '', coverUrl: '', content: '', contentType: 'HTML', categoryId: null, tagIds: [] })
@@ -168,6 +169,10 @@ const articleSignature = () => JSON.stringify({ ...articleForm, tagIds: [...arti
 const hasUnsavedArticle = computed(() => activeSection.value === 'write' && articleSignature() !== articleBaseline.value && Boolean(articleForm.title.trim() || articleForm.summary.trim() || articleForm.coverUrl || !isEmptyHtml(articleForm.content)))
 const markArticleSaved = () => { articleBaseline.value = articleSignature() }
 const updateArticleField = (key, value) => { articleForm[key] = value }
+const scrollWorkbenchToTop = async () => {
+  await nextTick()
+  workbenchMainRef.value?.scrollTo({ top: 0, behavior: 'auto' })
+}
 const confirmDiscardArticle = async () => {
   if (articleSaving.value) { ElMessage.warning('文章正在保存，请稍后再离开写作页'); return false }
   if (pendingUploads.value > 0) { ElMessage.warning('请等待文件上传完成后再离开写作页'); return false }
@@ -180,7 +185,7 @@ const confirmDiscardArticle = async () => {
   }
 }
 const cancelArticleEdit = async () => { if (await confirmDiscardArticle()) resetArticleForm() }
-const closeWriter = async () => { if (await confirmDiscardArticle()) { resetArticleForm(); activeSection.value = 'articles'; loadMine(articlePage.current) } }
+const closeWriter = async () => { if (await confirmDiscardArticle()) { resetArticleForm(); activeSection.value = 'articles'; await loadMine(articlePage.current) } }
 
 const loadProfile = async () => { try { const res = await userApi.me(); Object.assign(profile, { nickname: res.data.nickname || '', avatar: res.data.avatar || '', email: res.data.email || '' }); auth.setUser(res.data) } catch (error) { console.error(error) } }
 const loadMeta = async () => { try { const res = await portalApi.home(); categories.value = res.data.categories || []; tags.value = res.data.tags || [] } catch (error) { console.error(error) } }
@@ -209,11 +214,11 @@ const editArticle = async (row) => { if (!(await confirmDiscardArticle())) retur
 const removeArticle = async (row) => { await ElMessageBox.confirm(`确认删除《${row.title}》吗？`, '删除文章', { type: 'warning' }); await articleApi.removeMine(row.id); if (editingId.value === row.id) resetArticleForm(); ElMessage.success('文章已删除'); loadMine(Math.min(articlePage.current, pageCount(articlePage.total - 1, articlePage.size))) }
 const uploadProfileFile = async (options, field) => { try { const res = await uploadApi.file(options.file); profile[field] = res.data.url; options.onSuccess?.(res); ElMessage.success('上传成功') } catch (error) { console.error(error); options.onError?.(error) } }
 const uploadArticleCover = async (file) => { if (articleSaving.value) return ElMessage.warning('文章正在保存，请稍后再上传文件'); const validationMessage = validateCoverImage(file); if (validationMessage) return ElMessage.error(validationMessage); coverPendingUploads.value += 1; try { const res = await uploadApi.file(file); articleForm.coverUrl = res.data.url; ElMessage.success('上传成功') } catch (error) { console.error(error) } finally { coverPendingUploads.value = Math.max(0, coverPendingUploads.value - 1) } }
-const loadMine = async (page = articlePage.current) => { articlePage.current = page; try { const res = await articleApi.mine({ current: articlePage.current, size: articlePage.size, keyword: articleQuery.keyword?.trim() || undefined, status: articleQuery.status || undefined }); mineRows.value = res.data.records || []; articlePage.total = res.data.total || 0 } catch (error) { console.error(error) } }
-const loadFavorites = async (page = favoritePage.current) => { favoritePage.current = page; try { const res = await userApi.favorites({ current: favoritePage.current, size: favoritePage.size }); favoriteRows.value = res.data.records || []; favoritePage.total = res.data.total || 0 } catch (error) { console.error(error) } }
-const loadComments = async (page = commentPage.current) => { commentPage.current = page; try { const res = await userApi.comments({ current: commentPage.current, size: commentPage.size }); commentRows.value = res.data.records || []; commentPage.total = res.data.total || 0 } catch (error) { console.error(error) } }
+const loadMine = async (page = articlePage.current) => { articlePage.current = page; try { const res = await articleApi.mine({ current: articlePage.current, size: articlePage.size, keyword: articleQuery.keyword?.trim() || undefined, status: articleQuery.status || undefined }); mineRows.value = res.data.records || []; articlePage.total = res.data.total || 0; await scrollWorkbenchToTop() } catch (error) { console.error(error) } }
+const loadFavorites = async (page = favoritePage.current) => { favoritePage.current = page; try { const res = await userApi.favorites({ current: favoritePage.current, size: favoritePage.size }); favoriteRows.value = res.data.records || []; favoritePage.total = res.data.total || 0; await scrollWorkbenchToTop() } catch (error) { console.error(error) } }
+const loadComments = async (page = commentPage.current) => { commentPage.current = page; try { const res = await userApi.comments({ current: commentPage.current, size: commentPage.size }); commentRows.value = res.data.records || []; commentPage.total = res.data.total || 0; await scrollWorkbenchToTop() } catch (error) { console.error(error) } }
 async function focusWriter() { if (!(await confirmDiscardArticle())) return; await ensureRichTextFormats(); resetArticleForm(); activeSection.value = 'write' }
-const setSection = async (section) => { if (section !== 'write' && !(await confirmDiscardArticle())) return; if (activeSection.value === 'write' && section !== 'write') resetArticleForm(); if (section === 'write') await ensureRichTextFormats(); activeSection.value = section; if (section === 'articles') loadMine(articlePage.current); if (section === 'favorites') loadFavorites(favoritePage.current); if (section === 'comments') loadComments(commentPage.current) }
+const setSection = async (section) => { if (section !== 'write' && !(await confirmDiscardArticle())) return; if (activeSection.value === 'write' && section !== 'write') resetArticleForm(); if (section === 'write') await ensureRichTextFormats(); activeSection.value = section; await scrollWorkbenchToTop(); if (section === 'articles') await loadMine(articlePage.current); if (section === 'favorites') await loadFavorites(favoritePage.current); if (section === 'comments') await loadComments(commentPage.current) }
 const pageCount = (total, size) => Math.max(1, Math.ceil(Math.max(total, 0) / size))
 const openArticle = (id) => { if (id) router.push(`/article/${id}`) }
 const formatDate = (date) => String(date || '').slice(0, 16) || '-'
