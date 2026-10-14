@@ -2,7 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useSiteStore } from '../stores/site'
 import { installApi } from '../api/blog'
-import { adminBasePathFromLogin, adminPagePath } from '../utils/adminPath'
+import { adminBasePathFromLogin, adminPagePath, isAdminPagePath } from '../utils/adminPath'
 
 const adminAreaMeta = { requiresAuth: true, requiresAdmin: true, dynamicAdminArea: true }
 const adminPageRoute = (page, component) => ({

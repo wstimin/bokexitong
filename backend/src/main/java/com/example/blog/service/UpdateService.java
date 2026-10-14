@@ -32,7 +32,7 @@ public class UpdateService {
     private final boolean enabled;
 
     public UpdateService(ObjectMapper objectMapper,
-                         @Value("${blog.version:1.1.29}") String currentVersion,
+                         @Value("${blog.version:1.1.30}") String currentVersion,
                          @Value("${blog.build-time:development}") String buildTime,
                          @Value("${blog.update.manifest-url:}") String manifestUrl,
                          @Value("${blog.update.request-path:./config/update-request.json}") String requestPath,
