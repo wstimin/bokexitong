@@ -3,7 +3,9 @@ export const SITE_SETTINGS_SYNC_KEY = 'blog_site_settings_updated_at'
 export const PUBLIC_SITE_SETTING_KEYS = [
   'siteName', 'heroTitle', 'heroSubtitle', 'heroBadge', 'heroTitleColor', 'heroSubtitleColor',
   'heroTextShadow', 'backgroundUrl', 'logoUrl', 'seoDescription', 'seoKeywords', 'icpBeian',
-  'footerText', 'contactHtml', 'allowRegister'
+  'footerText', 'contactHtml', 'allowRegister', 'welcomeEnabled', 'welcomeAvatarUrl',
+  'welcomeBackgroundUrl', 'welcomeDisplayName', 'welcomeTitle', 'welcomeSubtitle',
+  'welcomeDescription', 'welcomeButtonText', 'welcomeAccentColor', 'welcomeAnimationEnabled'
 ]
 
 const FIELD_LABELS = {
@@ -15,7 +17,8 @@ const FIELD_LABELS = {
 
 const normalizeSettingValue = (key, value) => {
   const normalized = String(value ?? '').trim()
-  if (key === 'heroTitleColor' || key === 'heroSubtitleColor' || key === 'heroTextShadow' || key === 'allowRegister') {
+  if (key === 'heroTitleColor' || key === 'heroSubtitleColor' || key === 'heroTextShadow' || key === 'allowRegister'
+    || key === 'welcomeEnabled' || key === 'welcomeAccentColor' || key === 'welcomeAnimationEnabled') {
     return normalized.toLowerCase()
   }
   return normalized

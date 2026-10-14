@@ -382,6 +382,7 @@ button, input, textarea, select { font: inherit; }
 .settings-preview { margin-top: 18px; padding: 24px; background-size: cover; background-position: center; color: var(--ink); }
 .settings-preview h1 { margin: 14px 0 10px; color: var(--hero-title-color, var(--text-inverse)); font-size: 36px; line-height: 1.08; text-shadow: var(--hero-title-shadow, 0 5px 28px rgba(0,0,0,.46)); }
 .settings-preview p { margin: 0; max-width: 640px; line-height: 1.8; color: var(--hero-subtitle-color, var(--text-inverse)); text-shadow: var(--hero-subtitle-shadow, 0 3px 18px rgba(0,0,0,.48)); }
+.welcome-background-preview { min-height: 120px; margin-top: 10px; border-radius: 12px; background-size: cover; background-position: center; border: 1px solid var(--border); box-shadow: var(--shadow); }
 .color-setting-field { display: flex; align-items: center; gap: 10px; min-height: 32px; }
 .color-setting-field span { color: var(--muted); font-family: Consolas, monospace; font-size: 13px; }
 .admin-login-path-field { width: 100%; }

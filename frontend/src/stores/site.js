@@ -57,6 +57,16 @@ export const useSiteStore = defineStore('site', {
     icpBeian: '',
     footerText: '',
     contactHtml: '',
+    welcomeEnabled: true,
+    welcomeAvatarUrl: '',
+    welcomeBackgroundUrl: '',
+    welcomeDisplayName: 'Lily',
+    welcomeTitle: '愿你在这里，遇见温柔的光',
+    welcomeSubtitle: '每一次相遇，都值得被认真收藏',
+    welcomeDescription: '在字里行间，慢慢认识我。',
+    welcomeButtonText: '进入博客',
+    welcomeAccentColor: '#c9a227',
+    welcomeAnimationEnabled: true,
     adminLoginPath: localStorage.getItem('blog_admin_login_path') || '/admin/login',
     loaded: false,
     loading: false
@@ -84,6 +94,16 @@ export const useSiteStore = defineStore('site', {
       this.icpBeian = settings.icpBeian || ''
       this.footerText = settings.footerText || ''
       this.contactHtml = settings.contactHtml || ''
+      this.welcomeEnabled = settings.welcomeEnabled !== 'false'
+      this.welcomeAvatarUrl = settings.welcomeAvatarUrl || ''
+      this.welcomeBackgroundUrl = settings.welcomeBackgroundUrl || ''
+      this.welcomeDisplayName = settings.welcomeDisplayName || 'Lily'
+      this.welcomeTitle = settings.welcomeTitle || '愿你在这里，遇见温柔的光'
+      this.welcomeSubtitle = settings.welcomeSubtitle || '每一次相遇，都值得被认真收藏'
+      this.welcomeDescription = settings.welcomeDescription || '在字里行间，慢慢认识我。'
+      this.welcomeButtonText = settings.welcomeButtonText || '进入博客'
+      this.welcomeAccentColor = settings.welcomeAccentColor || '#c9a227'
+      this.welcomeAnimationEnabled = settings.welcomeAnimationEnabled !== 'false'
       this.setAdminLoginPath(settings.adminLoginPath)
       this.loaded = true
       this.applyHead()

@@ -34,6 +34,59 @@
         </div>
       </div>
 
+      <div class="setting-group welcome-settings-group">
+        <div class="setting-group-info">
+          <h3>访问欢迎页</h3>
+          <p>访客每次打开新的浏览会话时先看到这里；刷新页面不会重复显示。背景、头像和文案都可以在此修改。</p>
+        </div>
+        <div class="setting-group-fields">
+          <el-form-item label="启用欢迎页" class="field-full setting-switch-field">
+            <el-switch v-model="form.welcomeEnabled" active-text="启用" inactive-text="关闭" />
+          </el-form-item>
+          <el-form-item label="头像图片">
+            <div class="cover-picker settings-logo-picker">
+              <img v-if="form.welcomeAvatarUrl" :src="welcomeAvatarPreviewSrc" alt="欢迎页头像" />
+              <div v-else class="cover-empty">头像预览</div>
+              <div class="cover-fields">
+                <el-input v-model="form.welcomeAvatarUrl" placeholder="上传头像或粘贴图片地址" />
+                <FileUploadButton accept="image/*" @select="uploadWelcomeAvatarFile">上传头像</FileUploadButton>
+              </div>
+            </div>
+          </el-form-item>
+          <el-form-item label="欢迎页背景" class="field-full">
+            <div class="inline-field">
+              <el-input v-model="form.welcomeBackgroundUrl" placeholder="上传背景图或粘贴图片地址" />
+              <FileUploadButton accept="image/*" @select="uploadWelcomeBackgroundFile">上传背景</FileUploadButton>
+            </div>
+            <div v-if="form.welcomeBackgroundUrl" class="welcome-background-preview" :style="welcomeBackgroundPreviewStyle"></div>
+          </el-form-item>
+          <el-form-item label="显示名称">
+            <el-input v-model="form.welcomeDisplayName" maxlength="40" show-word-limit placeholder="例如：Lily" />
+          </el-form-item>
+          <el-form-item label="主标题">
+            <el-input v-model="form.welcomeTitle" maxlength="80" show-word-limit placeholder="欢迎页主标题" />
+          </el-form-item>
+          <el-form-item label="副标题">
+            <el-input v-model="form.welcomeSubtitle" maxlength="120" show-word-limit placeholder="欢迎页副标题" />
+          </el-form-item>
+          <el-form-item label="介绍文字" class="field-full">
+            <el-input v-model="form.welcomeDescription" type="textarea" :rows="2" maxlength="180" show-word-limit placeholder="放在头像和按钮之间的短句" />
+          </el-form-item>
+          <el-form-item label="进入按钮文字">
+            <el-input v-model="form.welcomeButtonText" maxlength="24" show-word-limit placeholder="例如：进入博客" />
+          </el-form-item>
+          <el-form-item label="动态边框颜色">
+            <div class="color-setting-field">
+              <el-color-picker v-model="form.welcomeAccentColor" :predefine="welcomeColorOptions" />
+              <span>{{ form.welcomeAccentColor }}</span>
+            </div>
+          </el-form-item>
+          <el-form-item label="欢迎页动效" class="field-full setting-switch-field">
+            <el-switch v-model="form.welcomeAnimationEnabled" active-text="开启动态粒子与头像边框" inactive-text="关闭动效" />
+          </el-form-item>
+        </div>
+      </div>
+
       <div class="setting-group">
         <div class="setting-group-info">
           <h3>首页展示</h3>
@@ -195,15 +248,29 @@ const form = reactive({
   footerText: '',
   contactHtml: '',
   adminLoginPath: '/admin/login',
-  allowRegister: true
+  allowRegister: true,
+  welcomeEnabled: true,
+  welcomeAvatarUrl: '',
+  welcomeBackgroundUrl: '',
+  welcomeDisplayName: 'Lily',
+  welcomeTitle: '愿你在这里，遇见温柔的光',
+  welcomeSubtitle: '每一次相遇，都值得被认真收藏',
+  welcomeDescription: '在字里行间，慢慢认识我。',
+  welcomeButtonText: '进入博客',
+  welcomeAccentColor: '#c9a227',
+  welcomeAnimationEnabled: true
 })
 
 const heroColorOptions = ['#f7f5f2', '#f0ebe3', '#2c2a26', '#5c574e', '#f1dfa6', '#d8dfeb']
+const welcomeColorOptions = ['#c9a227', '#d8b4a0', '#c9d8cf', '#b9c8df', '#f0d7a8', '#e8c6d4']
 const previewStyle = computed(() => ({
   ...(form.backgroundUrl ? { backgroundImage: `url("${normalizeAssetUrl(form.backgroundUrl)}")` } : {}),
   ...createHeroTextStyle(form.heroTitleColor, form.heroSubtitleColor, form.heroTextShadow)
 }))
 const logoPreviewSrc = computed(() => normalizeAssetUrl(form.logoUrl))
+const welcomeAvatarPreviewSrc = computed(() => normalizeAssetUrl(form.welcomeAvatarUrl))
+const welcomeBackgroundPreviewSrc = computed(() => normalizeAssetUrl(form.welcomeBackgroundUrl))
+const welcomeBackgroundPreviewStyle = computed(() => ({ backgroundImage: `url("${welcomeBackgroundPreviewSrc.value}")` }))
 const contactPreviewHtml = computed(() => sanitizeContactHtml(form.contactHtml).trim())
 const saveStateText = computed(() => {
   if (saveState.value === 'saving') return '正在写入数据库并同步前台…'
@@ -228,7 +295,17 @@ const settingsSignature = () => JSON.stringify({
   icpBeian: form.icpBeian,
   footerText: form.footerText,
   contactHtml: form.contactHtml,
-  allowRegister: form.allowRegister
+  allowRegister: form.allowRegister,
+  welcomeEnabled: form.welcomeEnabled,
+  welcomeAvatarUrl: form.welcomeAvatarUrl,
+  welcomeBackgroundUrl: form.welcomeBackgroundUrl,
+  welcomeDisplayName: form.welcomeDisplayName,
+  welcomeTitle: form.welcomeTitle,
+  welcomeSubtitle: form.welcomeSubtitle,
+  welcomeDescription: form.welcomeDescription,
+  welcomeButtonText: form.welcomeButtonText,
+  welcomeAccentColor: form.welcomeAccentColor,
+  welcomeAnimationEnabled: form.welcomeAnimationEnabled
 })
 watch(settingsSignature, () => {
   if (saveState.value === 'saved') saveState.value = 'dirty'
@@ -253,6 +330,16 @@ const apply = (settings = {}) => {
   form.contactHtml = settings.contactHtml || ''
   form.adminLoginPath = settings.adminLoginPath || '/admin/login'
   form.allowRegister = settings.allowRegister !== 'false'
+  form.welcomeEnabled = settings.welcomeEnabled !== 'false'
+  form.welcomeAvatarUrl = settings.welcomeAvatarUrl || ''
+  form.welcomeBackgroundUrl = settings.welcomeBackgroundUrl || ''
+  form.welcomeDisplayName = settings.welcomeDisplayName || 'Lily'
+  form.welcomeTitle = settings.welcomeTitle || '愿你在这里，遇见温柔的光'
+  form.welcomeSubtitle = settings.welcomeSubtitle || '每一次相遇，都值得被认真收藏'
+  form.welcomeDescription = settings.welcomeDescription || '在字里行间，慢慢认识我。'
+  form.welcomeButtonText = settings.welcomeButtonText || '进入博客'
+  form.welcomeAccentColor = settings.welcomeAccentColor || '#c9a227'
+  form.welcomeAnimationEnabled = settings.welcomeAnimationEnabled !== 'false'
 }
 
 const load = async () => {
@@ -274,7 +361,12 @@ const save = async () => {
   loading.value = true
   saveState.value = 'saving'
   try {
-    const payload = { ...form, allowRegister: String(form.allowRegister) }
+    const payload = {
+      ...form,
+      allowRegister: String(form.allowRegister),
+      welcomeEnabled: String(form.welcomeEnabled),
+      welcomeAnimationEnabled: String(form.welcomeAnimationEnabled)
+    }
     const adminLoginPathDraft = payload.adminLoginPath
     delete payload.adminLoginPath
     const res = await adminApi.saveSiteSettings(payload)
@@ -348,6 +440,29 @@ const uploadLogo = async (file) => {
 
 const uploadBackgroundFile = (file) => uploadBackground(file)
 const uploadLogoFile = (file) => uploadLogo(file)
+
+const uploadWelcomeAvatar = async (file) => {
+  try {
+    const res = await uploadApi.file(file)
+    form.welcomeAvatarUrl = res.data.url
+    ElMessage.success('欢迎页头像已上传')
+  } catch (error) {
+    console.error(error)
+  }
+}
+
+const uploadWelcomeBackground = async (file) => {
+  try {
+    const res = await uploadApi.file(file)
+    form.welcomeBackgroundUrl = res.data.url
+    ElMessage.success('欢迎页背景已上传')
+  } catch (error) {
+    console.error(error)
+  }
+}
+
+const uploadWelcomeAvatarFile = (file) => uploadWelcomeAvatar(file)
+const uploadWelcomeBackgroundFile = (file) => uploadWelcomeBackground(file)
 
 onMounted(load)
 </script>

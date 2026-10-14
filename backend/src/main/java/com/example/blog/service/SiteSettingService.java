@@ -42,17 +42,31 @@ public class SiteSettingService {
     public static final String MAIL_STARTTLS_ENABLE = "mailStarttlsEnable";
     public static final String MAIL_SSL_ENABLE = "mailSslEnable";
     public static final String INSTALLATION_COMPLETE = "installationComplete";
+    public static final String WELCOME_ENABLED = "welcomeEnabled";
+    public static final String WELCOME_AVATAR_URL = "welcomeAvatarUrl";
+    public static final String WELCOME_BACKGROUND_URL = "welcomeBackgroundUrl";
+    public static final String WELCOME_DISPLAY_NAME = "welcomeDisplayName";
+    public static final String WELCOME_TITLE = "welcomeTitle";
+    public static final String WELCOME_SUBTITLE = "welcomeSubtitle";
+    public static final String WELCOME_DESCRIPTION = "welcomeDescription";
+    public static final String WELCOME_BUTTON_TEXT = "welcomeButtonText";
+    public static final String WELCOME_ACCENT_COLOR = "welcomeAccentColor";
+    public static final String WELCOME_ANIMATION_ENABLED = "welcomeAnimationEnabled";
 
     private static final Set<String> PUBLIC_KEYS = Set.of(
             SITE_NAME, HERO_TITLE, HERO_SUBTITLE, HERO_BADGE, HERO_TITLE_COLOR, HERO_SUBTITLE_COLOR,
             HERO_TEXT_SHADOW, BACKGROUND_URL, LOGO_URL,
-            SEO_DESCRIPTION, SEO_KEYWORDS, ICP_BEIAN, FOOTER_TEXT, CONTACT_HTML, ALLOW_REGISTER, ADMIN_LOGIN_PATH
+            SEO_DESCRIPTION, SEO_KEYWORDS, ICP_BEIAN, FOOTER_TEXT, CONTACT_HTML, ALLOW_REGISTER, ADMIN_LOGIN_PATH,
+            WELCOME_ENABLED, WELCOME_AVATAR_URL, WELCOME_BACKGROUND_URL, WELCOME_DISPLAY_NAME, WELCOME_TITLE,
+            WELCOME_SUBTITLE, WELCOME_DESCRIPTION, WELCOME_BUTTON_TEXT, WELCOME_ACCENT_COLOR, WELCOME_ANIMATION_ENABLED
     );
     private static final Set<String> SITE_FORM_KEYS = Set.of(
             SITE_NAME, HERO_TITLE, HERO_SUBTITLE, HERO_BADGE, HERO_TITLE_COLOR, HERO_SUBTITLE_COLOR,
             HERO_TEXT_SHADOW, BACKGROUND_URL, LOGO_URL,
             SEO_DESCRIPTION, SEO_KEYWORDS, ICP_BEIAN, FOOTER_TEXT, CONTACT_HTML, ALLOW_REGISTER, ADMIN_LOGIN_PATH,
-            FORBIDDEN_WORDS
+            FORBIDDEN_WORDS, WELCOME_ENABLED, WELCOME_AVATAR_URL, WELCOME_BACKGROUND_URL, WELCOME_DISPLAY_NAME,
+            WELCOME_TITLE, WELCOME_SUBTITLE, WELCOME_DESCRIPTION, WELCOME_BUTTON_TEXT, WELCOME_ACCENT_COLOR,
+            WELCOME_ANIMATION_ENABLED
     );
     private static final Set<String> MAIL_FORM_KEYS = Set.of(
             MAIL_ENABLED, MAIL_HOST, MAIL_PORT, MAIL_USERNAME, MAIL_PASSWORD, MAIL_FROM_NAME,
@@ -143,11 +157,11 @@ public class SiteSettingService {
         Map<String, String> filtered = filter(payload, SITE_FORM_KEYS);
         for (String key : next.keySet()) {
             if (filtered.containsKey(key)) {
-                if (ALLOW_REGISTER.equals(key)) {
+                if (ALLOW_REGISTER.equals(key) || WELCOME_ENABLED.equals(key) || WELCOME_ANIMATION_ENABLED.equals(key)) {
                     next.put(key, normalizeBoolean(filtered.get(key), next.get(key)));
                 } else if (ADMIN_LOGIN_PATH.equals(key)) {
                     next.put(key, normalizeAdminLoginPath(filtered.get(key), next.get(key)));
-                } else if (HERO_TITLE_COLOR.equals(key) || HERO_SUBTITLE_COLOR.equals(key)) {
+                } else if (HERO_TITLE_COLOR.equals(key) || HERO_SUBTITLE_COLOR.equals(key) || WELCOME_ACCENT_COLOR.equals(key)) {
                     next.put(key, normalizeColor(filtered.get(key), next.get(key)));
                 } else if (HERO_TEXT_SHADOW.equals(key)) {
                     next.put(key, normalizeHeroTextShadow(filtered.get(key), next.get(key)));
@@ -220,6 +234,16 @@ public class SiteSettingService {
         settings.put(ALLOW_REGISTER, "true");
         settings.put(ADMIN_LOGIN_PATH, "/admin/login");
         settings.put(FORBIDDEN_WORDS, "赌博,色情,毒品,诈骗");
+        settings.put(WELCOME_ENABLED, "true");
+        settings.put(WELCOME_AVATAR_URL, "");
+        settings.put(WELCOME_BACKGROUND_URL, "");
+        settings.put(WELCOME_DISPLAY_NAME, "Lily");
+        settings.put(WELCOME_TITLE, "愿你在这里，遇见温柔的光");
+        settings.put(WELCOME_SUBTITLE, "每一次相遇，都值得被认真收藏");
+        settings.put(WELCOME_DESCRIPTION, "在字里行间，慢慢认识我。");
+        settings.put(WELCOME_BUTTON_TEXT, "进入博客");
+        settings.put(WELCOME_ACCENT_COLOR, "#c9a227");
+        settings.put(WELCOME_ANIMATION_ENABLED, "true");
         settings.put(MAIL_ENABLED, "false");
         settings.put(MAIL_HOST, "");
         settings.put(MAIL_PORT, "587");
@@ -250,7 +274,7 @@ public class SiteSettingService {
     }
 
     private String normalizeAppearanceSetting(String key, String value, String fallback) {
-        if (HERO_TITLE_COLOR.equals(key) || HERO_SUBTITLE_COLOR.equals(key)) {
+        if (HERO_TITLE_COLOR.equals(key) || HERO_SUBTITLE_COLOR.equals(key) || WELCOME_ACCENT_COLOR.equals(key)) {
             return normalizeColor(value, fallback);
         }
         if (HERO_TEXT_SHADOW.equals(key)) {
