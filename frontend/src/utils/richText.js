@@ -290,7 +290,6 @@ const setPickerText = (picker, values, fallback) => {
   picker.querySelectorAll('.ql-picker-item').forEach((item) => {
     const value = item.getAttribute('data-value') ?? ''
     const text = values[value] || fallback || item.textContent || ''
-    item.textContent = text
     item.setAttribute('data-label', text)
     setTitle(item, text)
   })

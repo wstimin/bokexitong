@@ -196,6 +196,10 @@ h1, h2, h3, .brand { font-family: "Playfair Display", "Songti SC", serif; }
 .filter-status { align-self: center; min-width: 66px; color: var(--text-tertiary); font-size: 11px; opacity: 0; transition: opacity .16s cubic-bezier(.4, 0, .2, 1); }
 .filter-status.active { opacity: 1; }
 .article-grid { gap: 22px; }
+.home-articles .article-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+.home-articles .card-body { padding: 18px; }
+.home-articles .article-card h3 { min-height: 2.8em; margin-top: 10px; font-size: clamp(18px, 1.45vw, 21px); line-height: 1.4; }
+.home-articles .article-card p { -webkit-line-clamp: 2; }
 .article-results { min-height: 260px; opacity: 1; transition: opacity .16s cubic-bezier(.4, 0, .2, 1); }
 .article-results.is-updating { opacity: .72; }
 .article-skeleton { overflow: hidden; border: 1px solid var(--border); border-radius: 16px; background: var(--bg-elevated); }
@@ -209,6 +213,7 @@ h1, h2, h3, .brand { font-family: "Playfair Display", "Songti SC", serif; }
 .card-body { padding: 20px; }
 .card-kicker { color: var(--text-tertiary); }
 .article-card h3 { font-family: "Playfair Display", "Songti SC", serif; }
+.article-card p { color: var(--text-secondary); }
 .card-read-more { color: var(--accent); border-color: var(--border); }
 .anime-tag, .badge-tag { color: var(--accent); background: var(--accent-soft); border-color: var(--border-strong); }
 .side-panel { background: color-mix(in srgb, var(--bg-elevated) 86%, transparent); box-shadow: none; }
@@ -275,15 +280,16 @@ h1, h2, h3, .brand { font-family: "Playfair Display", "Songti SC", serif; }
 .contact-panel p { color: var(--text-secondary); line-height: 1.8; }
 
 /* Article reading */
-.detail { width: min(1180px, calc(100% - 48px)); padding: 56px 0 84px; }
-.detail-layout { display: grid; grid-template-columns: minmax(0, 1fr) 230px; gap: 24px; align-items: start; }
-.detail-article { padding: clamp(30px, 6vw, 76px); background: var(--bg-elevated); }
-.article-header { max-width: 820px; margin: 0 auto 26px; text-align: center; }
-.detail-article h1 { color: var(--text-primary); font-family: "Playfair Display", "Songti SC", serif; font-size: clamp(40px, 6vw, 66px); line-height: 1.12; }
+.detail { width: min(1420px, calc(100% - 48px)); padding: 56px 0 84px; }
+.detail-layout { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 28px; align-items: start; }
+.detail-article { padding: clamp(32px, 4.5vw, 64px); background: var(--bg-elevated); }
+.article-header { max-width: 980px; margin: 0 auto 30px; text-align: center; }
+.detail-article h1 { color: var(--text-primary); font-family: "Playfair Display", "Songti SC", serif; font-size: clamp(38px, 4.5vw, 58px); line-height: 1.16; }
 .detail-summary { color: var(--text-secondary); }
 .detail-meta, .detail-tags, .detail-actions { justify-content: center; }
 .detail-cover { border-radius: 12px; }
-.article-body, .markdown { max-width: 760px; margin-inline: auto; color: var(--text-primary); font-family: Georgia, "Songti SC", serif; font-size: 18px; line-height: 1.95; }
+.article-body, .markdown { max-width: 960px; margin-inline: auto; color: var(--text-primary); font-family: Georgia, "Songti SC", serif; font-size: 18px; line-height: 1.88; }
+.article-body img, .markdown img { max-width: 100%; }
 .article-body a, .markdown a, .article-inline-file { color: var(--accent); }
 .article-body blockquote, .markdown blockquote { margin: 1.5em 0; padding: 18px 22px; border-left-color: var(--accent); color: var(--text-secondary); background: var(--accent-soft); }
 .article-body pre, .markdown pre { border: 1px solid var(--border); color: var(--text-primary); background: var(--bg-secondary); }
@@ -410,9 +416,108 @@ h1, h2, h3, .brand { font-family: "Playfair Display", "Songti SC", serif; }
 .el-dialog, .el-message-box { color: var(--text-primary); background: var(--bg-elevated) !important; border-color: var(--border-strong); box-shadow: var(--shadow-lg), var(--glow) !important; }
 .el-overlay { background-color: var(--overlay) !important; }
 .el-popper, .el-select__popper, .el-picker__popper, .el-dropdown__popper, .el-autocomplete__popper { color: var(--text-primary); background: var(--bg-elevated) !important; border-color: var(--border) !important; box-shadow: var(--shadow-lg) !important; }
+.el-popper__arrow::before { background: var(--bg-elevated) !important; border-color: var(--border) !important; }
+.el-select-dropdown__item, .el-dropdown-menu__item { color: var(--text-secondary); background: transparent; font-size: 13px; font-weight: 650; }
+.el-select-dropdown__item.hover, .el-select-dropdown__item.is-hovering, .el-select-dropdown__item:hover, .el-dropdown-menu__item:not(.is-disabled):focus, .el-dropdown-menu__item:not(.is-disabled):hover { color: var(--text-primary); background: var(--accent-soft); }
+.el-select-dropdown__item.is-selected, .el-dropdown-menu__item.is-active { color: var(--accent); font-weight: 800; }
 .el-table { --el-table-border-color: var(--border); --el-table-header-bg-color: var(--bg-secondary); --el-table-tr-bg-color: transparent; --el-table-row-hover-bg-color: var(--accent-soft); --el-table-text-color: var(--text-secondary); --el-table-header-text-color: var(--text-primary); }
 .el-pagination.is-background .btn-prev, .el-pagination.is-background .btn-next, .el-pagination.is-background .el-pager li { color: var(--text-primary); background: var(--bg-elevated) !important; border-color: var(--border); }
 .el-pagination.is-background .el-pager li.is-active { color: var(--text-inverse); background: var(--accent) !important; }
+
+/* Rich text composer and Quill controls */
+.article-composer, .article-composer__document, .article-composer__preview { color: var(--text-primary); }
+.article-composer__identity strong, .article-composer__preview h1 { color: var(--text-primary); }
+.article-composer__document .article-rich-editor__surface .ql-editor,
+.article-composer__preview .article-body { max-width: 960px; color: var(--text-primary); }
+.article-rich-editor .ql-toolbar.ql-snow button,
+.article-rich-editor .ql-toolbar.ql-snow .ql-picker-label { color: var(--text-secondary); border-radius: 5px; }
+.article-rich-editor .ql-toolbar.ql-snow button:hover,
+.article-rich-editor .ql-toolbar.ql-snow button:focus,
+.article-rich-editor .ql-toolbar.ql-snow button.ql-active,
+.article-rich-editor .ql-toolbar.ql-snow .ql-picker-label:hover,
+.article-rich-editor .ql-toolbar.ql-snow .ql-picker.ql-expanded .ql-picker-label { color: var(--accent); background: var(--accent-soft); }
+.article-rich-editor .ql-snow .ql-stroke { stroke: currentColor; }
+.article-rich-editor .ql-snow .ql-fill,
+.article-rich-editor .ql-snow .ql-stroke.ql-fill { fill: currentColor; }
+.article-rich-editor .ql-toolbar.ql-snow .ql-picker-options {
+  min-width: 118px;
+  max-height: 320px;
+  padding: 6px;
+  overflow-y: auto;
+  border-color: var(--border) !important;
+  color: var(--text-primary);
+  background: color-mix(in srgb, var(--bg-elevated) 96%, var(--bg-primary)) !important;
+  box-shadow: var(--shadow-lg), var(--glow);
+}
+.article-rich-editor .ql-toolbar.ql-snow .ql-picker-item {
+  min-height: 30px;
+  padding: 6px 9px;
+  border-radius: 5px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+.article-rich-editor .ql-toolbar.ql-snow .ql-picker-item:hover,
+.article-rich-editor .ql-toolbar.ql-snow .ql-picker-item.ql-selected { color: var(--accent); background: var(--accent-soft); }
+.article-rich-editor .ql-toolbar.ql-snow .ql-header { width: 104px; }
+.article-rich-editor .ql-toolbar.ql-snow .ql-font { width: 116px; }
+.article-rich-editor .ql-toolbar.ql-snow .ql-size { width: 72px; }
+.article-rich-editor .ql-toolbar.ql-snow .ql-picker-label { padding-left: 8px; color: var(--text-secondary); font-size: 13px; font-weight: 650; }
+.article-rich-editor .ql-toolbar.ql-snow .ql-picker-label::before,
+.article-rich-editor .ql-toolbar.ql-snow .ql-picker-item::before { color: inherit; }
+.article-rich-editor .ql-toolbar.ql-snow .ql-font .ql-picker-label[data-value="songti"]::before { content: "宋体" !important; }
+.article-rich-editor .ql-toolbar.ql-snow .ql-font .ql-picker-label[data-value="heiti"]::before { content: "黑体" !important; }
+.article-rich-editor .ql-toolbar.ql-snow .ql-font .ql-picker-label[data-value="kaiti"]::before { content: "楷体" !important; }
+.article-rich-editor .ql-toolbar.ql-snow .ql-font .ql-picker-label[data-value="serif"]::before { content: "衬线" !important; }
+.article-rich-editor .ql-toolbar.ql-snow .ql-font .ql-picker-label[data-value="mono"]::before { content: "等宽" !important; }
+.article-rich-editor .ql-toolbar.ql-snow .ql-header .ql-picker-label[data-value="1"]::before { content: "标题 1" !important; }
+.article-rich-editor .ql-toolbar.ql-snow .ql-header .ql-picker-label[data-value="2"]::before { content: "标题 2" !important; }
+.article-rich-editor .ql-toolbar.ql-snow .ql-header .ql-picker-label[data-value="3"]::before { content: "标题 3" !important; }
+.article-rich-editor .ql-toolbar.ql-snow .ql-header .ql-picker-label[data-value="4"]::before { content: "标题 4" !important; }
+.article-rich-editor .ql-toolbar.ql-snow .ql-size .ql-picker-label[data-value="12px"]::before { content: "12px" !important; }
+.article-rich-editor .ql-toolbar.ql-snow .ql-size .ql-picker-label[data-value="14px"]::before { content: "14px" !important; }
+.article-rich-editor .ql-toolbar.ql-snow .ql-size .ql-picker-label[data-value="16px"]::before { content: "16px" !important; }
+.article-rich-editor .ql-toolbar.ql-snow .ql-size .ql-picker-label[data-value="18px"]::before { content: "18px" !important; }
+.article-rich-editor .ql-toolbar.ql-snow .ql-size .ql-picker-label[data-value="20px"]::before { content: "20px" !important; }
+.article-rich-editor .ql-toolbar.ql-snow .ql-size .ql-picker-label[data-value="24px"]::before { content: "24px" !important; }
+.article-rich-editor .ql-toolbar.ql-snow .ql-size .ql-picker-label[data-value="28px"]::before { content: "28px" !important; }
+.article-rich-editor .ql-toolbar.ql-snow .ql-size .ql-picker-label[data-value="32px"]::before { content: "32px" !important; }
+.article-rich-editor .ql-toolbar.ql-snow .ql-font .ql-picker-label[data-value="system"]::before,
+.article-rich-editor .ql-toolbar.ql-snow .ql-font .ql-picker-item[data-value="system"]::before { font-family: Inter, "PingFang SC", "Microsoft YaHei", sans-serif; }
+.article-rich-editor .ql-toolbar.ql-snow .ql-font .ql-picker-label[data-value="songti"]::before,
+.article-rich-editor .ql-toolbar.ql-snow .ql-font .ql-picker-item[data-value="songti"]::before { font-family: "Songti SC", "SimSun", serif; }
+.article-rich-editor .ql-toolbar.ql-snow .ql-font .ql-picker-label[data-value="heiti"]::before,
+.article-rich-editor .ql-toolbar.ql-snow .ql-font .ql-picker-item[data-value="heiti"]::before { font-family: "SimHei", sans-serif; }
+.article-rich-editor .ql-toolbar.ql-snow .ql-font .ql-picker-label[data-value="kaiti"]::before,
+.article-rich-editor .ql-toolbar.ql-snow .ql-font .ql-picker-item[data-value="kaiti"]::before { font-family: "STKaiti", "KaiTi", cursive; }
+.article-rich-editor .ql-toolbar.ql-snow .ql-font .ql-picker-label[data-value="serif"]::before,
+.article-rich-editor .ql-toolbar.ql-snow .ql-font .ql-picker-item[data-value="serif"]::before { font-family: Georgia, "Songti SC", serif; }
+.article-rich-editor .ql-toolbar.ql-snow .ql-font .ql-picker-label[data-value="mono"]::before,
+.article-rich-editor .ql-toolbar.ql-snow .ql-font .ql-picker-item[data-value="mono"]::before { font-family: Consolas, "SFMono-Regular", monospace; }
+.article-rich-editor .ql-snow .ql-tooltip { color: var(--text-primary); background: var(--bg-elevated); border-color: var(--border); box-shadow: var(--shadow-lg); }
+.article-rich-editor .ql-snow .ql-tooltip input[type="text"] { color: var(--text-primary); background: var(--bg-secondary); border-color: var(--border); }
+.article-rich-editor__surface .ql-editor.ql-blank::before { color: var(--text-tertiary); }
+.article-rich-editor__surface .ql-editor { caret-color: var(--accent); }
+
+/* Keep legacy rich-text colors readable without flattening intentional accents. */
+:root[data-theme="dark"] :where(.article-body, .markdown, .ql-editor) [style*="#111827"],
+:root[data-theme="dark"] :where(.article-body, .markdown, .ql-editor) [style*="rgb(17, 24, 39)"],
+:root[data-theme="dark"] :where(.article-body, .markdown, .ql-editor) [style*="rgb(17,24,39)"],
+:root[data-theme="dark"] :where(.article-body, .markdown, .ql-editor) [style*="#000000"],
+:root[data-theme="dark"] :where(.article-body, .markdown, .ql-editor) [style*="rgb(0, 0, 0)"] { color: var(--text-primary) !important; }
+:root[data-theme="dark"] :where(.article-body, .markdown, .ql-editor) [style*="#4b5563"],
+:root[data-theme="dark"] :where(.article-body, .markdown, .ql-editor) [style*="rgb(75, 85, 99)"],
+:root[data-theme="dark"] :where(.article-body, .markdown, .ql-editor) [style*="rgb(75,85,99)"] { color: var(--text-secondary) !important; }
+:root[data-theme="dark"] :where(.article-body, .markdown, .ql-editor) [style*="background-color: rgb(254, 226, 226)"],
+:root[data-theme="dark"] :where(.article-body, .markdown, .ql-editor) [style*="background-color: rgb(255, 237, 213)"],
+:root[data-theme="dark"] :where(.article-body, .markdown, .ql-editor) [style*="background-color: rgb(254, 249, 195)"],
+:root[data-theme="dark"] :where(.article-body, .markdown, .ql-editor) [style*="background-color: rgb(220, 252, 231)"],
+:root[data-theme="dark"] :where(.article-body, .markdown, .ql-editor) [style*="background-color: rgb(207, 250, 254)"],
+:root[data-theme="dark"] :where(.article-body, .markdown, .ql-editor) [style*="background-color: rgb(219, 234, 254)"],
+:root[data-theme="dark"] :where(.article-body, .markdown, .ql-editor) [style*="background-color: rgb(237, 233, 254)"],
+:root[data-theme="dark"] :where(.article-body, .markdown, .ql-editor) [style*="background-color: rgb(252, 231, 243)"],
+:root[data-theme="dark"] :where(.article-body, .markdown, .ql-editor) [style*="background-color: rgb(229, 231, 235)"] { background-color: var(--accent-soft) !important; }
 
 /* Footer and utility */
 .portal-footer { padding: 58px 0 28px; color: var(--text-secondary); border-top: 1px solid var(--border); background: var(--bg-secondary); }
@@ -433,6 +538,7 @@ h1, h2, h3, .brand { font-family: "Playfair Display", "Songti SC", serif; }
 
 @media (max-width: 1080px) {
   .hero-feature, .archive-layout, .about-grid, .detail-layout { grid-template-columns: 1fr; }
+  .home-articles .article-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .hero-content { max-width: 780px; }
   .archive-sidebar { position: static; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .editorial-strip__inner { grid-template-columns: repeat(3, 1fr); padding-block: 22px; }
@@ -481,7 +587,7 @@ h1, h2, h3, .brand { font-family: "Playfair Display", "Songti SC", serif; }
   .hero { min-height: auto; }
   .hero h1 { font-size: clamp(42px, 13vw, 62px); }
   .hero-feature { gap: 42px; }
-  .recommend-card, .archive-sidebar, .article-grid, .archive-grid, .interest-grid, .main-grid > aside, .post-navigation, .related-grid { grid-template-columns: 1fr; }
+  .recommend-card, .archive-sidebar, .article-grid, .home-articles .article-grid, .archive-grid, .interest-grid, .main-grid > aside, .post-navigation, .related-grid { grid-template-columns: 1fr; }
   .editorial-strip__inner { grid-template-columns: repeat(3, 1fr); gap: 10px; }
   .editorial-strip__inner > div { padding-right: 8px; }
   .editorial-strip__inner strong { font-size: 24px; }
@@ -492,6 +598,7 @@ h1, h2, h3, .brand { font-family: "Playfair Display", "Songti SC", serif; }
   .about-grid { margin-top: 64px; }
   .contact-panel { margin-top: 54px; padding: 26px; }
   .detail-article { padding: 26px 20px; }
+  .article-body, .markdown { font-size: 17px; line-height: 1.82; }
   .portal-footer-inner { grid-template-columns: 1fr; }
   .footer-brand, .footer-bottom { grid-column: 1; }
   .footer-bottom { flex-wrap: wrap; }
