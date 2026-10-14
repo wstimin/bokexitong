@@ -143,7 +143,7 @@ const names = {
 const title = computed(() => names[route.meta.adminPage] || '后台管理')
 const passwordVisible = ref(false)
 const passwordSaving = ref(false)
-const version = ref('1.1.24')
+const version = ref('1.1.25')
 const password = reactive({ oldPassword: '', newPassword: '', confirmPassword: '' })
 const passwordMatches = computed(() => password.newPassword === password.confirmPassword)
 const hasLetterAndNumber = computed(() => /[A-Za-z]/.test(password.newPassword) && /\d/.test(password.newPassword))

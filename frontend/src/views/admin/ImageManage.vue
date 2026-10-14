@@ -53,6 +53,7 @@ import { adminApi, uploadApi } from '../../api/blog'
 import FileUploadButton from '../../components/FileUploadButton.vue'
 import { useSiteStore } from '../../stores/site'
 import { normalizeAssetUrl } from '../../utils/assets'
+import { SITE_SETTINGS_SYNC_KEY } from '../../utils/siteSettings'
 
 const imageTypes = [
   { label: '站点 Logo', value: 'LOGO' },
@@ -75,8 +76,9 @@ const emptyForm = () => ({ id: null, title: '', url: '', type: query.type || 'CO
 const load = async () => { loading.value = true; try { const res = await adminApi.images({ current: 1, size: 50, type: query.type || undefined }); rows.value = res.data.records || [] } catch (error) { console.error(error); ElMessage.error('图片资源加载失败') } finally { loading.value = false } }
 const open = (row) => { Object.assign(form, row || emptyForm()); visible.value = true }
 const siteImageTypes = ['LOGO', 'BACKGROUND', 'HERO', 'WELCOME_BACKGROUND', 'WELCOME_AVATAR']
-const save = async () => { if (!form.title?.trim() || !form.url?.trim()) return ElMessage.warning('请填写标题和图片 URL'); try { await adminApi.saveImage({ ...form }); if (siteImageTypes.includes(form.type)) await site.loadSite(true); visible.value = false; ElMessage.success('图片资源已保存'); await load() } catch (error) { console.error(error) } }
-const remove = async (row) => { await ElMessageBox.confirm('确认删除这条图片资源吗？', '删除图片', { type: 'warning' }); try { await adminApi.deleteImage(row.id); if (siteImageTypes.includes(row.type)) await site.loadSite(true); ElMessage.success('图片资源已删除'); await load() } catch (error) { console.error(error) } }
+const notifySiteSettingsChanged = () => localStorage.setItem(SITE_SETTINGS_SYNC_KEY, String(Date.now()))
+const save = async () => { if (!form.title?.trim() || !form.url?.trim()) return ElMessage.warning('请填写标题和图片 URL'); try { await adminApi.saveImage({ ...form }); if (siteImageTypes.includes(form.type)) { await site.loadSite(true); notifySiteSettingsChanged() } visible.value = false; ElMessage.success('图片资源已保存'); await load() } catch (error) { console.error(error) } }
+const remove = async (row) => { await ElMessageBox.confirm('确认删除这条图片资源吗？', '删除图片', { type: 'warning' }); try { await adminApi.deleteImage(row.id); if (siteImageTypes.includes(row.type)) { await site.loadSite(true); notifySiteSettingsChanged() } ElMessage.success('图片资源已删除'); await load() } catch (error) { console.error(error) } }
 const uploadIntoForm = async (file) => { try { const res = await uploadApi.file(file); form.url = res.data.url; if (!form.title) form.title = fileTitle(res.data.name); ElMessage.success('上传成功') } catch (error) { console.error(error) } }
 const uploadAndOpen = async (file) => { try { const res = await uploadApi.file(file); await adminApi.saveImage({ ...emptyForm(), title: fileTitle(res.data.name), url: res.data.url }); ElMessage.success('图片已上传并保存到资源库'); await load() } catch (error) { console.error(error) } }
 const uploadIntoFormFile = (file) => uploadIntoForm(file)
