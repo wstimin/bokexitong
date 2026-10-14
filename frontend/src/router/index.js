@@ -44,11 +44,17 @@ const routes = [
 const router = createRouter({ history: createWebHistory(), routes })
 
 const INSTALL_CACHE_KEY = 'blog_installation_complete'
-let installState = typeof localStorage !== 'undefined' && localStorage.getItem(INSTALL_CACHE_KEY) === 'true'
+const cachedInstallState = typeof localStorage !== 'undefined'
+  ? localStorage.getItem(INSTALL_CACHE_KEY)
+  : null
+let installState = cachedInstallState === 'true' ? true : null
 let installStatePromise
 
 const resolveInstallState = async () => {
-  if (typeof installState === 'boolean') return installState
+  // Only a confirmed installed state can skip the server check. A missing or
+  // cached false value must be revalidated so a stale cache cannot trap an
+  // already-installed deployment on the installation page.
+  if (installState === true) return true
   if (!installStatePromise) {
     installStatePromise = installApi.status()
       .then((res) => {
