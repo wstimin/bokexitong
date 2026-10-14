@@ -70,6 +70,12 @@ public class InstallService {
         if (isBlank(request.getAdminPassword())) {
             throw new IllegalArgumentException("请填写管理员密码");
         }
+        if (isBlank(request.getAdminUsername())) {
+            throw new IllegalArgumentException("请填写管理员用户名");
+        }
+        if (request.getAdminUsername().trim().length() < 3 || request.getAdminUsername().trim().matches(".*\\s+.*")) {
+            throw new IllegalArgumentException("管理员用户名至少 3 位且不能包含空格");
+        }
         if (request.getAdminPassword().trim().length() < 8) {
             throw new IllegalArgumentException("管理员密码至少 8 位");
         }
@@ -140,7 +146,7 @@ public class InstallService {
     }
 
     private void initializeData(Connection connection, InstallRequest request) throws SQLException {
-        upsertAdmin(connection, request.getAdminPassword().trim());
+        upsertAdmin(connection, request.getAdminUsername().trim(), request.getAdminPassword().trim());
         String siteName = fallback(request.getSiteName(), DEFAULT_SITE_NAME);
         upsertSetting(connection, "siteName", siteName, "站点名称");
         upsertSetting(connection, "heroTitle", siteName, "首页大标题");
@@ -165,16 +171,13 @@ public class InstallService {
         upsertSetting(connection, "mailSmtpAuth", "true", "SMTP 是否需要认证");
         upsertSetting(connection, "mailStarttlsEnable", "true", "SMTP 是否启用 STARTTLS");
         upsertSetting(connection, "mailSslEnable", "false", "SMTP 是否启用 SSL");
-        if (!isBlank(request.getDomain())) {
-            upsertSetting(connection, "blogDomain", request.getDomain().trim(), "访问域名");
-        }
         upsertSetting(connection, "installationComplete", "true", "安装完成标记");
     }
 
-    private void upsertAdmin(Connection connection, String password) throws SQLException {
+    private void upsertAdmin(Connection connection, String username, String password) throws SQLException {
         Long id = null;
         try (PreparedStatement statement = connection.prepareStatement("SELECT id FROM blog_user WHERE username = ? LIMIT 1")) {
-            statement.setString(1, "admin");
+            statement.setString(1, username);
             try (ResultSet resultSet = statement.executeQuery()) {
                 if (resultSet.next()) {
                     id = resultSet.getLong("id");
@@ -183,8 +186,18 @@ public class InstallService {
         }
         String encoded = passwordEncoder.encode(password);
         if (id == null) {
+            try (PreparedStatement statement = connection.prepareStatement("SELECT id FROM blog_user WHERE role = ? ORDER BY id LIMIT 1")) {
+                statement.setString(1, "ADMIN");
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    if (resultSet.next()) {
+                        id = resultSet.getLong("id");
+                    }
+                }
+            }
+        }
+        if (id == null) {
             try (PreparedStatement statement = connection.prepareStatement("INSERT INTO blog_user(username, nickname, password, avatar, email, role, status, created_at, updated_at) VALUES (?, ?, ?, ?, NULL, ?, ?, ?, ?)")) {
-                statement.setString(1, "admin");
+                statement.setString(1, username);
                 statement.setString(2, "站长");
                 statement.setString(3, encoded);
                 statement.setString(4, "");
@@ -196,12 +209,13 @@ public class InstallService {
             }
             return;
         }
-        try (PreparedStatement statement = connection.prepareStatement("UPDATE blog_user SET password = ?, role = ?, status = ?, updated_at = ? WHERE id = ?")) {
-            statement.setString(1, encoded);
-            statement.setString(2, "ADMIN");
-            statement.setInt(3, 1);
-            statement.setObject(4, LocalDateTime.now());
-            statement.setLong(5, id);
+        try (PreparedStatement statement = connection.prepareStatement("UPDATE blog_user SET username = ?, password = ?, role = ?, status = ?, updated_at = ? WHERE id = ?")) {
+            statement.setString(1, username);
+            statement.setString(2, encoded);
+            statement.setString(3, "ADMIN");
+            statement.setInt(4, 1);
+            statement.setObject(5, LocalDateTime.now());
+            statement.setLong(6, id);
             statement.executeUpdate();
         }
     }

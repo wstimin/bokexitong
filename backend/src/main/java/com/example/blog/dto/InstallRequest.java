@@ -6,6 +6,7 @@ import lombok.Data;
 public class InstallRequest {
     private String siteName;
     private String domain;
+    private String adminUsername;
     private String adminPassword;
     private String dbHost;
     private String dbPort;

@@ -30,17 +30,18 @@
 
         <div class="install-section">
           <h2>站点信息</h2>
+          <el-form-item label="站点名称">
+            <el-input v-model="form.siteName" placeholder="博客系统" />
+          </el-form-item>
           <div class="install-grid">
-            <el-form-item label="站点名称">
-              <el-input v-model="form.siteName" placeholder="博客系统" />
+            <el-form-item label="管理员用户名">
+              <el-input v-model="form.adminUsername" autocomplete="username" placeholder="例如 admin" />
             </el-form-item>
-            <el-form-item label="访问域名">
-              <el-input v-model="form.domain" placeholder="example.com" />
+            <el-form-item label="管理员密码">
+              <el-input v-model="form.adminPassword" type="password" show-password autocomplete="new-password" placeholder="至少 8 位" />
             </el-form-item>
           </div>
-          <el-form-item label="管理员密码">
-            <el-input v-model="form.adminPassword" type="password" show-password placeholder="至少 8 位" />
-          </el-form-item>
+          <p class="install-domain-tip">访问域名由 1Panel / Nginx 统一配置，安装向导不重复设置。</p>
         </div>
       </el-form>
 
@@ -64,7 +65,7 @@ const restarting = ref(false)
 const sleep = (milliseconds) => new Promise((resolve) => window.setTimeout(resolve, milliseconds))
 const form = reactive({
   siteName: '博客系统',
-  domain: '',
+  adminUsername: 'admin',
   adminPassword: '',
   dbHost: '127.0.0.1',
   dbPort: '3306',
@@ -115,8 +116,12 @@ const isRestartDisconnect = (error) => {
 }
 
 const submit = async () => {
-  if (!form.dbHost.trim() || !form.dbPort.trim() || !form.dbName.trim() || !form.dbUsername.trim() || !form.adminPassword.trim()) {
+  if (!form.dbHost.trim() || !form.dbPort.trim() || !form.dbName.trim() || !form.dbUsername.trim() || !form.adminUsername.trim() || !form.adminPassword.trim()) {
     ElMessage.warning('请把必填项填完整')
+    return
+  }
+  if (form.adminUsername.trim().length < 3 || /\s/.test(form.adminUsername)) {
+    ElMessage.warning('管理员用户名至少 3 位且不能包含空格')
     return
   }
   if (form.adminPassword.trim().length < 8) {
