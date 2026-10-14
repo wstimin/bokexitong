@@ -45,7 +45,7 @@ class SiteSettingServiceTest {
                 .collect(java.util.stream.Collectors.toMap(SiteSetting::getSettingKey, SiteSetting::getSettingValue));
 
         assertEquals("#a1b2c3", saved.get(SiteSettingService.HERO_TITLE_COLOR));
-        assertEquals("#ffffff", saved.get(SiteSettingService.HERO_SUBTITLE_COLOR));
+        assertEquals("#f0ebe3", saved.get(SiteSettingService.HERO_SUBTITLE_COLOR));
         assertEquals("dark", saved.get(SiteSettingService.HERO_TEXT_SHADOW));
     }
 }

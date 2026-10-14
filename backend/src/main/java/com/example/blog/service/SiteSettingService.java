@@ -13,6 +13,7 @@ import java.util.Set;
 
 @Service
 public class SiteSettingService {
+    private static final long CACHE_TTL_MILLIS = 30_000L;
     public static final String SITE_NAME = "siteName";
     public static final String HERO_TITLE = "heroTitle";
     public static final String HERO_SUBTITLE = "heroSubtitle";
@@ -61,6 +62,8 @@ public class SiteSettingService {
     );
 
     private final SiteSettingMapper siteSettingMapper;
+    private volatile List<SiteSetting> cachedRows = List.of();
+    private volatile long cacheExpiresAt;
 
     public SiteSettingService(SiteSettingMapper siteSettingMapper) {
         this.siteSettingMapper = siteSettingMapper;
@@ -92,12 +95,7 @@ public class SiteSettingService {
         for (String key : keys) {
             settings.put(key, source.getOrDefault(key, ""));
         }
-        List<SiteSetting> rows;
-        try {
-            rows = siteSettingMapper.selectList(null);
-        } catch (Exception ignored) {
-            return settings;
-        }
+        List<SiteSetting> rows = settingRows();
         for (SiteSetting row : rows) {
             if (settings.containsKey(row.getSettingKey()) && row.getSettingValue() != null) {
                 String value = normalizeAppearanceSetting(row.getSettingKey(), row.getSettingValue(), source.get(row.getSettingKey()));
@@ -193,8 +191,8 @@ public class SiteSettingService {
         settings.put(HERO_TITLE, "博客系统");
         settings.put(HERO_SUBTITLE, "用卡片浏览公开文章，点开后再阅读完整内容。登录后可以进入用户中心创作、管理自己的文章。");
         settings.put(HERO_BADGE, "博客");
-        settings.put(HERO_TITLE_COLOR, "#ffffff");
-        settings.put(HERO_SUBTITLE_COLOR, "#ffffff");
+        settings.put(HERO_TITLE_COLOR, "#f7f5f2");
+        settings.put(HERO_SUBTITLE_COLOR, "#f0ebe3");
         settings.put(HERO_TEXT_SHADOW, "dark");
         settings.put(BACKGROUND_URL, "");
         settings.put(LOGO_URL, "");
@@ -336,5 +334,31 @@ public class SiteSettingService {
             row.setUpdatedAt(LocalDateTime.now());
             siteSettingMapper.updateById(row);
         }
+        invalidateCache();
+    }
+
+    private List<SiteSetting> settingRows() {
+        long now = System.currentTimeMillis();
+        if (now < cacheExpiresAt) {
+            return cachedRows;
+        }
+        synchronized (this) {
+            now = System.currentTimeMillis();
+            if (now < cacheExpiresAt) {
+                return cachedRows;
+            }
+            try {
+                cachedRows = List.copyOf(siteSettingMapper.selectList(null));
+                cacheExpiresAt = now + CACHE_TTL_MILLIS;
+            } catch (Exception ignored) {
+                cachedRows = List.of();
+                cacheExpiresAt = now + 2_000L;
+            }
+            return cachedRows;
+        }
+    }
+
+    private void invalidateCache() {
+        cacheExpiresAt = 0L;
     }
 }

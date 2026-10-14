@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.util.HashMap;
 import java.util.List;
@@ -30,6 +31,12 @@ public class PortalController {
     private final ImageResourceMapper imageResourceMapper;
     private final SiteSettingService siteSettingService;
 
+    @Value("${blog.version:1.1.0}")
+    private String version;
+
+    @Value("${blog.build-time:development}")
+    private String buildTime;
+
     public PortalController(ArticleService articleService, CategoryMapper categoryMapper, TagMapper tagMapper,
                             ImageResourceMapper imageResourceMapper, SiteSettingService siteSettingService) {
         this.articleService = articleService;
@@ -42,16 +49,43 @@ public class PortalController {
     @GetMapping("/home")
     public Result<Map<String, Object>> home() {
         Map<String, Object> data = new HashMap<>();
-        Map<String, String> settings = siteSettingService.publicSettings();
-        data.put("articles", articleService.publicCardPage(1, 6, null, null, null).getRecords());
         data.put("recommendedArticles", articleService.recommendedCards(6));
         data.put("categories", categoryMapper.selectList(new LambdaQueryWrapper<Category>().orderByAsc(Category::getSort)));
         data.put("tags", tagMapper.selectList(new LambdaQueryWrapper<Tag>().orderByDesc(Tag::getCreatedAt)));
-        data.put("settings", settings);
         data.put("hero", imageResourceMapper.selectList(new LambdaQueryWrapper<ImageResource>()
                 .eq(ImageResource::getEnabled, 1)
                 .eq(ImageResource::getType, "HERO")
                 .orderByAsc(ImageResource::getSort)));
+        return Result.ok(data);
+    }
+
+    @GetMapping("/taxonomies")
+    public Result<Map<String, Object>> taxonomies() {
+        return Result.ok(Map.of(
+                "categories", categoryMapper.selectList(new LambdaQueryWrapper<Category>().orderByAsc(Category::getSort)),
+                "tags", tagMapper.selectList(new LambdaQueryWrapper<Tag>().orderByDesc(Tag::getCreatedAt))
+        ));
+    }
+
+    @GetMapping("/site")
+    public Result<Map<String, Object>> site() {
+        Map<String, Object> data = new HashMap<>();
+        Map<String, String> settings = siteSettingService.publicSettings();
+        data.put("settings", settings);
+        data.put("logo", resolveLogo(settings));
+        return Result.ok(data);
+    }
+
+    @GetMapping("/version")
+    public Result<Map<String, String>> version() {
+        return Result.ok(Map.of(
+                "version", version,
+                "buildTime", buildTime,
+                "channel", "stable"
+        ));
+    }
+
+    private ImageResource resolveLogo(Map<String, String> settings) {
         String logoUrl = settings.get(SiteSettingService.LOGO_URL);
         if (logoUrl != null && !logoUrl.isBlank()) {
             ImageResource logo = new ImageResource();
@@ -59,16 +93,17 @@ public class PortalController {
             logo.setUrl(logoUrl);
             logo.setType("LOGO");
             logo.setEnabled(1);
-            data.put("logo", logo);
-        } else {
-            List<ImageResource> logos = imageResourceMapper.selectList(new LambdaQueryWrapper<ImageResource>()
-                    .eq(ImageResource::getEnabled, 1)
-                    .eq(ImageResource::getType, "LOGO")
-                    .orderByAsc(ImageResource::getSort)
-                    .orderByDesc(ImageResource::getCreatedAt));
-            data.put("logo", logos.isEmpty() ? null : logos.get(0));
+            return logo;
         }
-        return Result.ok(data);
+        return imageResourceMapper.selectList(new LambdaQueryWrapper<ImageResource>()
+                        .eq(ImageResource::getEnabled, 1)
+                        .eq(ImageResource::getType, "LOGO")
+                        .orderByAsc(ImageResource::getSort)
+                        .orderByDesc(ImageResource::getCreatedAt)
+                        .last("LIMIT 1"))
+                .stream()
+                .findFirst()
+                .orElse(null);
     }
 
     @GetMapping("/articles")
@@ -83,5 +118,10 @@ public class PortalController {
     @GetMapping("/articles/{id}")
     public Result<ArticleDetailResponse> detail(@PathVariable Long id) {
         return Result.ok(articleService.publicDetailResponse(id));
+    }
+
+    @GetMapping("/articles/{id}/context")
+    public Result<Map<String, Object>> articleContext(@PathVariable Long id) {
+        return Result.ok(articleService.publicReadingContext(id));
     }
 }

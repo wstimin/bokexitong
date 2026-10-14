@@ -39,6 +39,8 @@ mybatis-plus:
       logic-not-delete-value: 0
 
 blog:
+  version: "${BLOG_VERSION:@project.version@}"
+  build-time: "${BLOG_BUILD_TIME:@maven.build.timestamp@}"
   jwt:
     secret: change-this-secret-to-a-long-random-value-for-production
     expiration-minutes: 1440
@@ -47,6 +49,12 @@ blog:
   install:
     runtime-config-path: ./config/bokexitong-runtime.properties
     restart-after-install: false
+  update:
+    enabled: ${BLOG_UPDATE_ENABLED:true}
+    mode: ${BLOG_UPDATE_MODE:disabled}
+    manifest-url: ${BLOG_UPDATE_MANIFEST_URL:https://raw.githubusercontent.com/wstimin/bokexitong/main/package/update-manifest.json}
+    request-path: ${BLOG_UPDATE_REQUEST_PATH:./config/update-request.json}
+    status-path: ${BLOG_UPDATE_STATUS_PATH:./config/update-status.json}
   article:
     forbidden-words: ${BLOG_ARTICLE_FORBIDDEN_WORDS:赌博,色情,毒品,诈骗}
   admin:

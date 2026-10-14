@@ -16,9 +16,13 @@ export const userApi = {
 }
 
 export const portalApi = {
+  site: () => http.get('/portal/site'),
+  version: () => http.get('/portal/version'),
   home: () => http.get('/portal/home'),
+  taxonomies: () => http.get('/portal/taxonomies'),
   articles: (params) => http.get('/portal/articles', { params }),
-  detail: (id) => http.get(`/portal/articles/${id}`)
+  detail: (id) => http.get(`/portal/articles/${id}`),
+  articleContext: (id) => http.get(`/portal/articles/${id}/context`)
 }
 
 export const installApi = {
@@ -46,6 +50,9 @@ export const articleApi = {
 
 export const adminApi = {
   dashboard: () => http.get('/admin/dashboard'),
+  updateStatus: () => http.get('/admin/update/status'),
+  checkUpdate: () => http.post('/admin/update/check'),
+  installUpdate: () => http.post('/admin/update/install'),
   settings: () => http.get('/admin/settings'),
   saveSettings: (data) => http.put('/admin/settings', data),
   siteSettings: () => http.get('/admin/site-settings'),

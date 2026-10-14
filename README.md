@@ -148,3 +148,35 @@ shiye-bk update
 shiye-bk domain example.com
 shiye-bk ssl example.com
 ```
+
+## 后台一键更新
+
+后台“版本与更新”页面支持检查更新并一键安装。更新清单通过 HTTPS 获取，安装包在替换前必须通过 SHA-256 校验。
+
+- Linux / Docker Compose 包由独立的 `updater` 服务执行更新，数据库、上传文件和 `.env` 不会被覆盖。
+- 1Panel / 宝塔 Web 包由 `web-start.sh` 托管进程，并在应用退出码为 `42` 时调用内置更新代理后重新启动。
+- 源码调试环境默认使用 `disabled` 模式，不会修改开发目录；生产部署包会自动启用对应代理。
+
+更新代理拥有替换应用文件和重启服务所需的高权限，因此只有管理员接口能够创建更新任务。发布新版本时必须同时发布 `package/update-manifest.json` 和其中声明的两个构建包。
+
+## 版本迭代与推送规范
+
+项目使用统一语义化版本号，根 Maven 工程、后端、前端和页面兜底版本必须保持一致。每次向已有远端分支推送代码前都必须提升版本号。
+
+```bash
+# 按改动范围选择其一
+node scripts/version.mjs patch
+node scripts/version.mjs minor
+node scripts/version.mjs major
+
+# 只检查所有版本号是否一致
+node scripts/version.mjs verify
+```
+
+仓库内置 `.githooks/pre-push`。首次克隆后执行下面的命令启用；当前维护仓库已经启用：
+
+```bash
+git config core.hooksPath .githooks
+```
+
+如果本次版本号没有高于远端版本，`git push` 会被直接阻止。GitHub Actions 还会再次执行版本策略、前端测试与构建、后端测试与打包，避免绕过本地钩子。

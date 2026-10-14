@@ -8,8 +8,8 @@ import {
 
 test('hero colors only accept six-digit hex values', () => {
   assert.equal(normalizeHeroColor('#A1B2C3'), '#a1b2c3')
-  assert.equal(normalizeHeroColor('red'), '#ffffff')
-  assert.equal(normalizeHeroColor('url(javascript:alert(1))'), '#ffffff')
+  assert.equal(normalizeHeroColor('red'), '#f7f5f2')
+  assert.equal(normalizeHeroColor('url(javascript:alert(1))'), '#f7f5f2')
 })
 
 test('hero shadow mode uses the supported presets', () => {

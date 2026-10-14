@@ -1,6 +1,6 @@
 <template>
-  <RouterLink class="article-card" :to="`/article/${article.id}`">
-    <img v-if="article.coverUrl" class="cover" :src="coverSrc" :alt="article.title" />
+  <RouterLink class="article-card post-card" :to="`/article/${article.id}`">
+    <img v-if="article.coverUrl" class="cover" :src="coverSrc" :alt="article.title" loading="lazy" decoding="async" />
     <div v-else class="cover cover-placeholder">{{ article.categoryName || '未设封面' }}</div>
 
     <div class="card-body">
@@ -24,6 +24,8 @@
           {{ tag.name }}
         </span>
       </div>
+      <div class="card-read-more"><span>阅读全文</span><span aria-hidden="true">↗</span></div>
+
     </div>
   </RouterLink>
 </template>

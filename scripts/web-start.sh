@@ -31,10 +31,9 @@ export BLOG_WEB_ROOT="${BLOG_WEB_ROOT:-file:$SCRIPT_DIR/frontend/dist/}"
 export BLOG_UPLOAD_DIR="${BLOG_UPLOAD_DIR:-$SCRIPT_DIR/uploads}"
 export BOKEXITONG_RUNTIME_CONFIG="${BOKEXITONG_RUNTIME_CONFIG:-$SCRIPT_DIR/config/bokexitong-runtime.properties}"
 export BLOG_INSTALL_RESTART_AFTER_INSTALL="${BLOG_INSTALL_RESTART_AFTER_INSTALL:-true}"
-
-if [ -f "$BOKEXITONG_RUNTIME_CONFIG" ]; then
-  exec java -jar "$SCRIPT_DIR/backend/app.jar" --spring.profiles.active=prod --spring.config.additional-location="optional:file:$BOKEXITONG_RUNTIME_CONFIG" "$@"
-fi
+export BLOG_UPDATE_MODE="${BLOG_UPDATE_MODE:-web}"
+export BLOG_UPDATE_REQUEST_PATH="${BLOG_UPDATE_REQUEST_PATH:-$SCRIPT_DIR/config/update-request.json}"
+export BLOG_UPDATE_STATUS_PATH="${BLOG_UPDATE_STATUS_PATH:-$SCRIPT_DIR/config/update-status.json}"
 
 child_pid=""
 stopping=0
@@ -48,22 +47,34 @@ stop_child() {
 
 trap stop_child INT TERM
 
-java -jar "$SCRIPT_DIR/backend/app.jar" --spring.profiles.active=prod "$@" &
-child_pid=$!
+while :; do
+  if [ -f "$BOKEXITONG_RUNTIME_CONFIG" ]; then
+    started_with_config=1
+    java -jar "$SCRIPT_DIR/backend/app.jar" --spring.profiles.active=prod --spring.config.additional-location="optional:file:$BOKEXITONG_RUNTIME_CONFIG" "$@" &
+  else
+    started_with_config=0
+    java -jar "$SCRIPT_DIR/backend/app.jar" --spring.profiles.active=prod "$@" &
+  fi
+  child_pid=$!
+  set +e
+  wait "$child_pid"
+  exit_code=$?
+  set -e
+  child_pid=""
 
-set +e
-wait "$child_pid"
-exit_code=$?
-set -e
-child_pid=""
-
-if [ "$stopping" -eq 1 ]; then
+  [ "$stopping" -eq 0 ] || exit "$exit_code"
+  if [ "$exit_code" -eq 42 ] && [ -f "$SCRIPT_DIR/scripts/update-agent.sh" ]; then
+    echo "Update requested. Handing off to the update agent..."
+    update_agent_copy="$(mktemp)"
+    cp "$SCRIPT_DIR/scripts/update-agent.sh" "$update_agent_copy"
+    BLOG_PROJECT_DIR="$SCRIPT_DIR" BLOG_UPDATE_STATE_DIR="$SCRIPT_DIR/config" \
+      sh "$update_agent_copy" --once web || true
+    rm -f "$update_agent_copy"
+    continue
+  fi
+  if [ "$started_with_config" -eq 0 ] && [ -f "$BOKEXITONG_RUNTIME_CONFIG" ]; then
+    echo "Runtime configuration detected. Restarting Java..."
+    continue
+  fi
   exit "$exit_code"
-fi
-
-if [ -f "$BOKEXITONG_RUNTIME_CONFIG" ]; then
-  echo "Installation configuration detected. Restarting Java with the runtime configuration..."
-  exec java -jar "$SCRIPT_DIR/backend/app.jar" --spring.profiles.active=prod --spring.config.additional-location="optional:file:$BOKEXITONG_RUNTIME_CONFIG" "$@"
-fi
-
-exit "$exit_code"
+done

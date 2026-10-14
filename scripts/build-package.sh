@@ -89,6 +89,8 @@ EOF
   cp -R "$BUILD_DIR/frontend/dist" "$WEB_BUILD_DIR/frontend/dist"
   cp "$BUILD_DIR/build-info.txt" "$WEB_BUILD_DIR/build-info.txt"
   cp "$PROJECT_DIR/scripts/web-start.sh" "$WEB_BUILD_DIR/web-start.sh"
+  mkdir -p "$WEB_BUILD_DIR/scripts"
+  cp "$PROJECT_DIR/scripts/update-agent.sh" "$WEB_BUILD_DIR/scripts/update-agent.sh"
   copy_path "$PROJECT_DIR/docs/web-package-readme.md" "$WEB_BUILD_DIR/README.md"
   : > "$WEB_BUILD_DIR/config/.gitkeep"
   : > "$WEB_BUILD_DIR/uploads/.gitkeep"
@@ -98,10 +100,18 @@ EOF
   tar -C "$(dirname "$BUILD_DIR")" -czf "$PACKAGE_FILE" "$APP_NAME"
   ok "Package created: $PACKAGE_FILE"
 
-  chmod +x "$WEB_BUILD_DIR"/*.sh 2>/dev/null || true
+  chmod +x "$WEB_BUILD_DIR"/*.sh "$WEB_BUILD_DIR/scripts"/*.sh 2>/dev/null || true
   rm -f "$WEB_PACKAGE_FILE"
   tar -C "$(dirname "$WEB_BUILD_DIR")" -czf "$WEB_PACKAGE_FILE" "$WEB_APP_NAME"
   ok "Web package created: $WEB_PACKAGE_FILE"
+
+  app_version="$(cd backend && mvn help:evaluate -Dexpression=project.version -q -DforceStdout -Dstyle.color=never | tr -d '\r')"
+  linux_sha="$(sha256sum "$PACKAGE_FILE" | awk '{print $1}')"
+  web_sha="$(sha256sum "$WEB_PACKAGE_FILE" | awk '{print $1}')"
+  cat > "$PACKAGE_DIR/update-manifest.json" <<EOF
+{"version":"$app_version","releaseDate":"$built_at","notes":"性能、视觉体验与稳定性更新。","packages":{"docker":{"url":"https://raw.githubusercontent.com/wstimin/bokexitong/main/package/bokexitong-linux.tar.gz","sha256":"$linux_sha"},"web":{"url":"https://raw.githubusercontent.com/wstimin/bokexitong/main/package/bokexitong-web.tar.gz","sha256":"$web_sha"}}}
+EOF
+  ok "Update manifest created: $PACKAGE_DIR/update-manifest.json"
 }
 
 main "$@"

@@ -105,12 +105,13 @@ const renderCharts = () => {
   const statusPie = stats.value.statusPie || []
   const categoryPie = stats.value.categoryPie || []
 
+  const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#c9a227'
   initChart(trendRef.value, {
     tooltip: { trigger: 'axis' },
     grid: { left: 36, right: 18, top: 28, bottom: 34 },
     xAxis: { type: 'category', data: trend.map((item) => item.date), boundaryGap: false },
     yAxis: { type: 'value', minInterval: 1 },
-    series: [{ name: '发布数', type: 'line', smooth: true, areaStyle: {}, data: trend.map((item) => item.count), color: '#3677e6' }]
+    series: [{ name: '发布数', type: 'line', smooth: true, areaStyle: { opacity: 0.12 }, data: trend.map((item) => item.count), color: accent }]
   })
 
   initChart(statusRef.value, {

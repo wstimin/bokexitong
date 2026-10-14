@@ -11,6 +11,7 @@ import com.example.blog.mapper.CommentMapper;
 import com.example.blog.mapper.FavoriteMapper;
 import com.example.blog.mapper.ImageResourceMapper;
 import com.example.blog.mapper.LikeRecordMapper;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -47,8 +48,13 @@ public class DashboardService {
     }
 
     public DashboardStats stats() {
-        List<Article> articles = articleMapper.selectList(null);
-        List<Comment> comments = commentMapper.selectList(null);
+        // Dashboard charts only need a handful of columns. Avoid hydrating article
+        // bodies and comment content, which can otherwise make this endpoint grow
+        // linearly with the full text stored in the site.
+        List<Article> articles = articleMapper.selectList(new LambdaQueryWrapper<Article>()
+                .select(Article::getStatus, Article::getPublishedAt, Article::getCreatedAt, Article::getCategoryId));
+        List<Comment> comments = commentMapper.selectList(new LambdaQueryWrapper<Comment>()
+                .select(Comment::getStatus));
         Map<String, Long> articleStatusCounts = countBy(articles, Article::getStatus);
         Map<String, Long> commentStatusCounts = countBy(comments, Comment::getStatus);
 

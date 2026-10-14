@@ -6,6 +6,8 @@ import { installApi } from '../api/blog'
 const routes = [
   { path: '/install', component: () => import('../views/InstallView.vue') },
   { path: '/', component: () => import('../views/portal/HomeView.vue') },
+  { path: '/archive', component: () => import('../views/portal/ArchiveView.vue') },
+  { path: '/about', component: () => import('../views/portal/AboutView.vue') },
   { path: '/article/:id', component: () => import('../views/portal/ArticleDetail.vue') },
   { path: '/create', redirect: '/user' },
   { path: '/user', component: () => import('../views/portal/UserCenter.vue'), meta: { requiresAuth: true, requiresUser: true } },
@@ -20,6 +22,7 @@ const routes = [
       { path: 'dashboard', component: () => import('../views/admin/DashboardView.vue') },
       { path: 'settings', component: () => import('../views/admin/SiteSetting.vue') },
       { path: 'mail-settings', component: () => import('../views/admin/MailSetting.vue') },
+      { path: 'system-update', component: () => import('../views/admin/SystemUpdate.vue') },
       { path: 'articles', component: () => import('../views/admin/ArticleManage.vue') },
       { path: 'taxonomies', component: () => import('../views/admin/TaxonomyManage.vue') },
       { path: 'images', component: () => import('../views/admin/ImageManage.vue') },
@@ -33,6 +36,22 @@ const routes = [
 
 const router = createRouter({ history: createWebHistory(), routes })
 
+let installState
+let installStatePromise
+
+const resolveInstallState = async () => {
+  if (typeof installState === 'boolean') return installState
+  if (!installStatePromise) {
+    installStatePromise = installApi.status()
+      .then((res) => {
+        installState = Boolean(res.data?.installed)
+        return installState
+      })
+      .finally(() => { installStatePromise = null })
+  }
+  return installStatePromise
+}
+
 router.beforeEach(async (to) => {
   const auth = useAuthStore()
   const site = useSiteStore()
@@ -44,8 +63,7 @@ router.beforeEach(async (to) => {
   }
 
   try {
-    const res = await installApi.status()
-    const installed = Boolean(res.data?.installed)
+    const installed = await resolveInstallState()
     if (!installed) {
       return '/install'
     }

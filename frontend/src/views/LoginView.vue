@@ -1,9 +1,23 @@
 <template>
   <main class="login-page">
-    <section class="login-box">
+    <div class="auth-shell">
+      <aside class="login-intro">
+        <RouterLink class="brand brand-inverse" to="/">
+          <span class="brand-mark">B</span>
+          <span>{{ site.name }}</span>
+        </RouterLink>
+        <div>
+          <span class="eyebrow">WRITE · THINK · SHARE</span>
+          <h2>把值得留下的想法，写成一篇好文章。</h2>
+          <p>专注写作，清晰阅读。这里没有信息噪声，只有内容本身。</p>
+        </div>
+        <RouterLink class="login-back" to="/">← 返回首页</RouterLink>
+      </aside>
+
+      <section class="login-box">
       <RouterLink class="brand" to="/">
         <img v-if="site.logoSrc" class="brand-logo" :src="site.logoSrc" :alt="site.name" />
-        <span v-else class="brand-mark"></span>
+        <span v-else class="brand-mark">B</span>
         <span>{{ site.name }}</span>
       </RouterLink>
 
@@ -82,7 +96,8 @@
         <button v-if="!isForgot && !isAdminLogin" class="auth-switch" type="button" @click="setMode('forgot')">忘记密码</button>
         <RouterLink v-if="isAdminLogin" class="auth-switch" to="/login">前台用户登录</RouterLink>
       </div>
-    </section>
+      </section>
+    </div>
   </main>
 </template>
 

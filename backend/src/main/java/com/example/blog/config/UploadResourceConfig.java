@@ -26,7 +26,9 @@ public class UploadResourceConfig implements WebMvcConfigurer {
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         String location = Path.of(uploadDir).toAbsolutePath().normalize().toUri().toString();
-        registry.addResourceHandler("/api/uploads/**").addResourceLocations(location);
+        registry.addResourceHandler("/api/uploads/**")
+                .addResourceLocations(location)
+                .setCacheControl(CacheControl.maxAge(Duration.ofDays(365)).cachePublic().immutable());
         registry.addResourceHandler("/assets/**")
                 .addResourceLocations(webRoot + "assets/")
                 .setCacheControl(CacheControl.maxAge(Duration.ofDays(365)).cachePublic().immutable());

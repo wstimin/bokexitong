@@ -1,6 +1,7 @@
 package com.example.blog.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.blog.dto.ArticleCardResponse;
 import com.example.blog.dto.ArticleDetailResponse;
@@ -95,19 +96,87 @@ public class ArticleService {
     }
 
     public Page<ArticleCardResponse> publicCardPage(long current, long size, String keyword, Long categoryId, Long tagId) {
-        Page<Article> articlePage = page(current, size, keyword, "PUBLISHED", categoryId, tagId);
+        List<Long> taggedArticleIds = resolveTaggedArticleIds(tagId);
+        if (tagId != null && taggedArticleIds.isEmpty()) {
+            Page<ArticleCardResponse> emptyPage = new Page<>(current, size);
+            emptyPage.setRecords(Collections.emptyList());
+            emptyPage.setTotal(0);
+            return emptyPage;
+        }
+        boolean hasKeyword = keyword != null && !keyword.isBlank();
+        QueryWrapper<Article> query = cardQuery()
+                .and(hasKeyword, wrapper -> wrapper.like("title", keyword)
+                        .or().like("summary", keyword)
+                        .or().like("content", keyword))
+                .eq("status", "PUBLISHED")
+                .eq(categoryId != null, "category_id", categoryId)
+                .in(taggedArticleIds != null, "id", taggedArticleIds)
+                .orderByDesc("published_at", "created_at");
+        Page<Article> articlePage = articleMapper.selectPage(new Page<>(current, size), query);
         Page<ArticleCardResponse> responsePage = new Page<>(articlePage.getCurrent(), articlePage.getSize(), articlePage.getTotal());
         responsePage.setRecords(toCardResponses(articlePage.getRecords()));
         return responsePage;
     }
 
     public List<ArticleCardResponse> recommendedCards(int size) {
-        Page<Article> articlePage = articleMapper.selectPage(new Page<>(1, size), new LambdaQueryWrapper<Article>()
-                .eq(Article::getStatus, "PUBLISHED")
-                .eq(Article::getRecommended, 1)
-                .orderByAsc(Article::getRecommendSort)
-                .orderByDesc(Article::getPublishedAt, Article::getCreatedAt, Article::getId));
+        Page<Article> articlePage = articleMapper.selectPage(new Page<>(1, size), cardQuery()
+                .eq("status", "PUBLISHED")
+                .eq("recommended", 1)
+                .orderByAsc("recommend_sort")
+                .orderByDesc("published_at", "created_at", "id"));
         return toCardResponses(articlePage.getRecords());
+    }
+
+    public Map<String, Object> publicReadingContext(Long id) {
+        Article current = articleMapper.selectOne(new LambdaQueryWrapper<Article>()
+                .select(Article::getId, Article::getStatus, Article::getCategoryId)
+                .eq(Article::getId, id)
+                .last("LIMIT 1"));
+        if (current == null || !"PUBLISHED".equals(current.getStatus())) {
+            throw new IllegalArgumentException("Article does not exist");
+        }
+        Article previous = articleMapper.selectOne(cardQuery()
+                .eq("status", "PUBLISHED")
+                .lt("id", id)
+                .orderByDesc("id")
+                .last("LIMIT 1"));
+        Article next = articleMapper.selectOne(cardQuery()
+                .eq("status", "PUBLISHED")
+                .gt("id", id)
+                .orderByAsc("id")
+                .last("LIMIT 1"));
+        List<Article> relatedRows = articleMapper.selectList(cardQuery()
+                .eq("status", "PUBLISHED")
+                .eq(current.getCategoryId() != null, "category_id", current.getCategoryId())
+                .ne("id", id)
+                .orderByDesc("published_at", "created_at")
+                .last("LIMIT 3"));
+
+        Map<String, Object> context = new java.util.HashMap<>();
+        context.put("previous", previous == null ? null : toCardResponses(List.of(previous)).get(0));
+        context.put("next", next == null ? null : toCardResponses(List.of(next)).get(0));
+        context.put("related", toCardResponses(relatedRows));
+        return context;
+    }
+
+    private List<Long> resolveTaggedArticleIds(Long tagId) {
+        if (tagId == null) {
+            return null;
+        }
+        return articleTagMapper.selectList(new LambdaQueryWrapper<ArticleTag>()
+                        .select(ArticleTag::getArticleId)
+                        .eq(ArticleTag::getTagId, tagId))
+                .stream()
+                .map(ArticleTag::getArticleId)
+                .toList();
+    }
+
+    private QueryWrapper<Article> cardQuery() {
+        return new QueryWrapper<Article>().select(
+                "id", "user_id", "category_id", "title", "summary", "cover_url", "status",
+                "recommended", "recommend_sort", "view_count", "like_count", "favorite_count",
+                "published_at", "review_reason", "reviewed_at", "created_at", "updated_at"
+        );
     }
 
     public Article detail(Long id, boolean increaseView) {
@@ -128,7 +197,7 @@ public class ArticleService {
             throw new IllegalArgumentException("Article does not exist");
         }
         article.setViewCount((article.getViewCount() == null ? 0 : article.getViewCount()) + 1);
-        articleMapper.updateById(article);
+        articleMapper.incrementViewCount(id);
         return article;
     }
 

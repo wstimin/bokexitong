@@ -37,6 +37,8 @@ mybatis-plus:
       logic-not-delete-value: 0
 
 blog:
+  version: "${BLOG_VERSION:@project.version@}"
+  build-time: "${BLOG_BUILD_TIME:@maven.build.timestamp@}"
   jwt:
     secret: ${BLOG_JWT_SECRET:change-this-secret-to-a-long-random-value-for-production}
     expiration-minutes: ${BLOG_JWT_EXPIRATION_MINUTES:1440}
@@ -45,6 +47,12 @@ blog:
   install:
     runtime-config-path: ${BOKEXITONG_RUNTIME_CONFIG:./config/bokexitong-runtime.properties}
     restart-after-install: ${BLOG_INSTALL_RESTART_AFTER_INSTALL:false}
+  update:
+    enabled: ${BLOG_UPDATE_ENABLED:true}
+    mode: ${BLOG_UPDATE_MODE:disabled}
+    manifest-url: ${BLOG_UPDATE_MANIFEST_URL:https://raw.githubusercontent.com/wstimin/bokexitong/main/package/update-manifest.json}
+    request-path: ${BLOG_UPDATE_REQUEST_PATH:./config/update-request.json}
+    status-path: ${BLOG_UPDATE_STATUS_PATH:./config/update-status.json}
   admin:
     initial-password: ${BLOG_ADMIN_INITIAL_PASSWORD:}
   mail:

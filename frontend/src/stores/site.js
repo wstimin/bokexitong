@@ -88,7 +88,7 @@ export const useSiteStore = defineStore('site', {
       if (this.loading || (this.loaded && !force)) return
       this.loading = true
       try {
-        const res = await portalApi.home()
+        const res = await portalApi.site()
         this.applySettings(res.data || {})
       } catch (error) {
         console.error(error)

@@ -65,14 +65,17 @@ CREATE TABLE article (
   deleted TINYINT DEFAULT 0,
   INDEX idx_article_status(status),
   INDEX idx_article_recommend(recommended, recommend_sort),
-  INDEX idx_article_category(category_id)
+  INDEX idx_article_category(category_id),
+  INDEX idx_article_public_list(status, published_at, created_at),
+  INDEX idx_article_category_list(status, category_id, published_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE article_tag (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
   article_id BIGINT NOT NULL,
   tag_id BIGINT NOT NULL,
-  UNIQUE KEY uk_article_tag(article_id, tag_id)
+  UNIQUE KEY uk_article_tag(article_id, tag_id),
+  INDEX idx_article_tag_reverse(tag_id, article_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE comment (
@@ -85,7 +88,9 @@ CREATE TABLE comment (
   review_reason VARCHAR(500),
   reviewed_at DATETIME,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  INDEX idx_comment_article(article_id)
+  INDEX idx_comment_article(article_id),
+  INDEX idx_comment_public_list(article_id, status, created_at),
+  INDEX idx_comment_user_list(user_id, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE like_record (

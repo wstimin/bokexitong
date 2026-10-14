@@ -5,9 +5,13 @@
     <section class="hero">
       <div class="shell hero-feature">
         <div class="hero-content" :style="heroTextStyle">
-          <span class="eyebrow">{{ site.heroBadge }}</span>
+          <span class="eyebrow">{{ site.heroBadge }} · CURATED JOURNAL</span>
           <h1>{{ site.heroTitle }}</h1>
           <p>{{ site.heroSubtitle }}</p>
+          <div class="hero-actions hero-cta">
+            <a class="btn-primary" href="#articles">开始阅读</a>
+            <RouterLink class="btn-ghost hero-secondary" to="/archive">浏览全部文章</RouterLink>
+          </div>
         </div>
 
         <aside v-if="recommendedArticles.length" class="recommend-panel">
@@ -23,7 +27,7 @@
           </div>
 
           <RouterLink class="recommend-card" :to="`/article/${activeRecommended.id}`">
-            <img v-if="recommendCoverSrc" :src="recommendCoverSrc" :alt="activeRecommended.title" />
+            <img v-if="recommendCoverSrc" :src="recommendCoverSrc" :alt="activeRecommended.title" decoding="async" />
             <div v-else class="recommend-placeholder">{{ activeRecommended.title?.slice(0, 1) || '文' }}</div>
             <div class="recommend-body">
               <div class="card-kicker">
@@ -55,10 +59,20 @@
       </div>
     </section>
 
+    <section class="editorial-strip">
+      <div class="shell editorial-strip__inner">
+        <div><strong>{{ articlePage.total }}</strong><span>篇公开文章</span></div>
+        <div><strong>{{ categories.length }}</strong><span>个内容分类</span></div>
+        <div><strong>{{ tags.length }}</strong><span>个灵感标签</span></div>
+        <p>慢下来阅读，认真地记录。<br />每一篇内容都值得被好好呈现。</p>
+      </div>
+    </section>
+
     <main id="articles" class="shell main-grid">
       <section>
         <div class="section-title article-toolbar">
           <div>
+            <span class="section-kicker">LATEST STORIES</span>
             <h2>{{ activeCategoryName }}</h2>
             <p class="section-subtitle">{{ filterSummary }}，共 {{ articlePage.total }} 篇文章</p>
           </div>
@@ -173,7 +187,6 @@ const filterSummary = computed(() => {
 const loadHomeMeta = async () => {
   const res = await portalApi.home()
   const data = res.data || {}
-  site.applySettings(data)
   categories.value = data.categories || []
   tags.value = data.tags || []
   hero.value = data.hero || []
@@ -235,11 +248,9 @@ const nextRecommend = () => {
 const formatDate = (date) => String(date || '').slice(0, 10)
 
 onMounted(async () => {
-  try {
-    await loadHomeMeta()
-  } catch (error) {
-    console.error(error)
-  }
-  await loadArticles()
+  const results = await Promise.allSettled([loadHomeMeta(), loadArticles()])
+  results
+    .filter((result) => result.status === 'rejected')
+    .forEach((result) => console.error(result.reason))
 })
 </script>

@@ -143,6 +143,7 @@
 </template>
 
 <script setup>
+import '@vueup/vue-quill/dist/vue-quill.snow.css'
 import { computed, onBeforeUnmount, onMounted, reactive, ref, shallowRef, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { QuillEditor } from '@vueup/vue-quill'

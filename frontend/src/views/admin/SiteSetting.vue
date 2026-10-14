@@ -170,7 +170,7 @@ const form = reactive({
   allowRegister: true
 })
 
-const heroColorOptions = ['#ffffff', '#f8fafc', '#111827', '#1f2937', '#fef3c7', '#dbeafe']
+const heroColorOptions = ['#f7f5f2', '#f0ebe3', '#2c2a26', '#5c574e', '#f1dfa6', '#d8dfeb']
 const previewStyle = computed(() => ({
   ...(form.backgroundUrl ? { backgroundImage: `url("${normalizeAssetUrl(form.backgroundUrl)}")` } : {}),
   ...createHeroTextStyle(form.heroTitleColor, form.heroSubtitleColor, form.heroTextShadow)

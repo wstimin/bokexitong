@@ -1,5 +1,5 @@
-export const DEFAULT_HERO_TITLE_COLOR = '#ffffff'
-export const DEFAULT_HERO_SUBTITLE_COLOR = '#ffffff'
+export const DEFAULT_HERO_TITLE_COLOR = '#f7f5f2'
+export const DEFAULT_HERO_SUBTITLE_COLOR = '#f0ebe3'
 export const DEFAULT_HERO_TEXT_SHADOW = 'dark'
 
 const HERO_SHADOW_STYLES = {

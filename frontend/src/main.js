@@ -1,20 +1,22 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
-import ElementPlus from 'element-plus'
-import 'element-plus/dist/index.css'
-import '@vueup/vue-quill/dist/vue-quill.snow.css'
-import 'highlight.js/styles/atom-one-light.css'
+import 'element-plus/theme-chalk/el-message.css'
+import 'element-plus/theme-chalk/el-message-box.css'
 import App from './App.vue'
 import router from './router'
 import { setUnauthorizedHandler } from './api/http'
 import { useAuthStore } from './stores/auth'
 import { useSiteStore } from './stores/site'
+import { initializeTheme } from './utils/theme'
 import './assets/styles.css'
+import './assets/theme.css'
 
 const pinia = createPinia()
 const app = createApp(App)
 
-app.use(pinia).use(router).use(ElementPlus)
+initializeTheme()
+
+app.use(pinia).use(router)
 
 setUnauthorizedHandler(() => {
   const auth = useAuthStore()
