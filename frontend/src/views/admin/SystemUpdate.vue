@@ -29,6 +29,28 @@
           <div><dt>更新代理</dt><dd>{{ info.agentAvailable ? '已连接' : '未启用' }}</dd></div>
         </dl>
         <div class="update-message">{{ message }}</div>
+        <div v-if="progressVisible" class="update-progress" :class="{ 'is-complete': updateProgress === 100, 'is-error': updateFailed }" aria-live="polite">
+          <div class="update-progress__head">
+            <strong>{{ updateProgressTitle }}</strong>
+            <span>{{ updateProgress }}%</span>
+          </div>
+          <div
+            class="update-progress__track"
+            role="progressbar"
+            aria-label="系统更新进度"
+            aria-valuemin="0"
+            aria-valuemax="100"
+            :aria-valuenow="updateProgress"
+            :aria-valuetext="updateProgressTitle"
+          >
+            <span
+              class="update-progress__fill"
+              :class="{ 'is-active': installing && updateProgress < 100 }"
+              :style="{ transform: `scaleX(${updateProgress / 100})` }"
+            />
+          </div>
+          <small>更新期间请保持本页面开启，博客服务可能短暂离线。</small>
+        </div>
         <div class="update-actions">
           <button class="btn-ghost" type="button" :disabled="checking || installing" @click="checkUpdate">
             {{ checking ? '正在检查…' : '检查更新' }}
@@ -62,9 +84,13 @@ const info = ref({})
 const checked = ref({})
 const checking = ref(false)
 const installing = ref(false)
+const updateProgress = ref(0)
+const updateProgressTitle = ref('准备更新')
+const updateFailed = ref(false)
 
 const activeState = computed(() => info.value.state || 'IDLE')
 const canInstall = computed(() => checked.value.available && info.value.agentAvailable)
+const progressVisible = computed(() => installing.value || updateProgress.value > 0)
 const latestVersion = computed(() => checked.value.latestVersion ? `v${checked.value.latestVersion}` : '尚未检查')
 const modeLabel = computed(() => ({ docker: 'Docker Compose', web: '面板 / Java 包', disabled: '未配置' }[info.value.mode] || info.value.mode || '未知'))
 const message = computed(() => checked.value.message || info.value.message || '准备检查新版本')
@@ -102,35 +128,80 @@ const installUpdate = async () => {
     { confirmButtonText: '确认更新', cancelButtonText: '稍后再说', type: 'warning' }
   )
   installing.value = true
+  updateFailed.value = false
+  updateProgress.value = 8
+  updateProgressTitle.value = '正在提交更新任务'
   try {
     await adminApi.installUpdate()
     info.value.state = 'REQUESTED'
     info.value.message = '更新任务已提交，部署代理正在接管。页面将在服务恢复后重新连接。'
+    updateProgress.value = 22
+    updateProgressTitle.value = '正在下载并校验更新包'
     ElMessage.success('更新任务已提交')
     await waitForUpdatedVersion(checked.value.latestVersion)
   } catch (error) {
+    if (isRestartWindowError(error)) {
+      updateProgress.value = Math.max(updateProgress.value, 72)
+      updateProgressTitle.value = '正在安装并重启 Java 服务'
+      await waitForUpdatedVersion(checked.value.latestVersion)
+      return
+    }
+    updateFailed.value = true
+    updateProgressTitle.value = '更新任务提交失败'
     installing.value = false
     throw error
   }
 }
 
 const sleep = (milliseconds) => new Promise((resolve) => window.setTimeout(resolve, milliseconds))
+const restartRequestConfig = { timeout: 5000, silentRestartError: true }
+const isRestartWindowError = (error) => {
+  const status = error.response?.status
+  return [502, 503, 504].includes(status) || ['ECONNABORTED', 'ERR_NETWORK'].includes(error.code) || !error.response
+}
+const syncProgressFromState = (state) => {
+  if (state === 'REQUESTED') {
+    updateProgress.value = Math.max(updateProgress.value, 22)
+    updateProgressTitle.value = '更新任务已接收，等待部署代理接管'
+  } else if (state === 'DOWNLOADING') {
+    updateProgress.value = Math.max(updateProgress.value, 42)
+    updateProgressTitle.value = '正在下载并校验更新包'
+  } else if (state === 'INSTALLING') {
+    updateProgress.value = Math.max(updateProgress.value, 68)
+    updateProgressTitle.value = '正在安装新版本'
+  } else if (state === 'RESTARTING') {
+    updateProgress.value = Math.max(updateProgress.value, 84)
+    updateProgressTitle.value = '正在重启 Java 服务'
+  }
+}
 const waitForUpdatedVersion = async (targetVersion) => {
   const deadline = Date.now() + 180_000
-  await sleep(3500)
+  await sleep(1800)
   while (Date.now() < deadline) {
-    try {
-      const response = await portalApi.version()
-      if (response.data?.version === targetVersion) {
-        window.location.reload()
-        return
-      }
-    } catch (error) {
-      console.debug('Waiting for updated service', error)
+    const [statusResult, versionResult] = await Promise.allSettled([
+      adminApi.updateStatus(restartRequestConfig),
+      portalApi.version(restartRequestConfig)
+    ])
+    if (statusResult.status === 'fulfilled') {
+      info.value = statusResult.value.data || info.value
+      syncProgressFromState(info.value.state)
     }
-    await sleep(1800)
+    if (versionResult.status === 'fulfilled' && versionResult.value.data?.version === targetVersion) {
+      updateProgress.value = 100
+      updateProgressTitle.value = `v${targetVersion} 更新完成`
+      await sleep(700)
+      window.location.reload()
+      return
+    }
+    if (statusResult.status === 'rejected' && versionResult.status === 'rejected') {
+      updateProgress.value = Math.max(updateProgress.value, 76)
+      updateProgressTitle.value = '正在安装并等待 Java 服务恢复'
+    }
+    await sleep(1200)
   }
   installing.value = false
+  updateFailed.value = true
+  updateProgressTitle.value = '等待服务恢复超时'
   info.value.message = '更新耗时较长，请稍后刷新页面查看版本状态。'
   ElMessage.warning(info.value.message)
 }

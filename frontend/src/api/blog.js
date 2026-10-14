@@ -17,7 +17,7 @@ export const userApi = {
 
 export const portalApi = {
   site: () => http.get('/portal/site'),
-  version: () => http.get('/portal/version'),
+  version: (config = {}) => http.get('/portal/version', config),
   home: () => http.get('/portal/home'),
   taxonomies: () => http.get('/portal/taxonomies'),
   articles: (params, config = {}) => http.get('/portal/articles', { ...config, params }),
@@ -50,9 +50,9 @@ export const articleApi = {
 
 export const adminApi = {
   dashboard: () => http.get('/admin/dashboard'),
-  updateStatus: () => http.get('/admin/update/status'),
+  updateStatus: (config = {}) => http.get('/admin/update/status', config),
   checkUpdate: () => http.post('/admin/update/check'),
-  installUpdate: () => http.post('/admin/update/install'),
+  installUpdate: () => http.post('/admin/update/install', null, { timeout: 30000, silentRestartError: true }),
   settings: () => http.get('/admin/settings'),
   saveSettings: (data) => http.put('/admin/settings', data),
   siteSettings: () => http.get('/admin/site-settings'),

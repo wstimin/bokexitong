@@ -407,6 +407,21 @@ h1, h2, h3, .brand { font-family: "Playfair Display", "Songti SC", serif; }
 .system-facts dt { margin-bottom: 7px; color: var(--text-tertiary); font-size: 10px; font-weight: 800; letter-spacing: .08em; }
 .system-facts dd { margin: 0; color: var(--text-primary); font-weight: 800; }
 .update-message { padding: 14px 16px; border-left: 2px solid var(--accent); color: var(--text-secondary); background: var(--accent-soft); font-size: 13px; line-height: 1.6; }
+.update-progress { display: grid; gap: 9px; margin-top: 16px; }
+.update-progress__head { display: flex; align-items: center; justify-content: space-between; gap: 16px; color: var(--text-secondary); font-size: 12px; }
+.update-progress__head strong { color: var(--text-primary); font-weight: 750; }
+.update-progress__head span { color: var(--accent); font-variant-numeric: tabular-nums; font-weight: 800; }
+.update-progress__track { position: relative; height: 8px; overflow: hidden; border: 1px solid var(--border); border-radius: 999px; background: var(--bg-tertiary); }
+.update-progress__fill { position: absolute; inset: 0; overflow: hidden; border-radius: inherit; background: linear-gradient(90deg, var(--accent), var(--accent-hover)); transform: scaleX(0); transform-origin: left center; transition: transform 300ms cubic-bezier(.4, 0, .2, 1); }
+.update-progress__fill::after { position: absolute; inset: 0; width: 34%; background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--text-inverse) 34%, transparent), transparent); content: ""; opacity: 0; transform: translateX(-110%); }
+.update-progress__fill.is-active::after { opacity: 1; animation: update-progress-shimmer 1.25s linear infinite; }
+.update-progress > small { color: var(--text-tertiary); font-size: 11px; line-height: 1.5; }
+.update-progress.is-complete .update-progress__fill { background: var(--success); }
+.update-progress.is-error .update-progress__head strong,
+.update-progress.is-error .update-progress__head span { color: var(--danger); }
+@keyframes update-progress-shimmer {
+  to { transform: translateX(400%); }
+}
 .update-actions { display: flex; gap: 10px; margin-top: 22px; }
 .update-actions button:disabled { cursor: not-allowed; opacity: .45; transform: none; }
 .release-notes { display: flex; flex-direction: column; }
@@ -700,4 +715,5 @@ h1, h2, h3, .brand { font-family: "Playfair Display", "Songti SC", serif; }
   html { scroll-behavior: auto; }
   *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
   .recommend-panel::before, .recommend-panel::after { background-position: 50% 50%; }
+  .update-progress__fill.is-active::after { animation: none; opacity: .28; transform: translateX(190%); }
 }

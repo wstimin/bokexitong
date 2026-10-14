@@ -65,3 +65,19 @@ test('recommendation card keeps its surface while only the border glow moves', a
   assert.match(borderRule, /mask-composite: exclude;/)
   assert.match(borderRule, /animation: recommend-border-flow 8s linear infinite;/)
 })
+
+test('system update shows staged progress and keeps restart polling silent', async () => {
+  const apiSource = await readSource('../src/api/blog.js')
+  const viewSource = await readSource('../src/views/admin/SystemUpdate.vue')
+  const themeSource = await readSource('../src/assets/theme.css')
+
+  assert.match(apiSource, /version: \(config = \{\}\) => http\.get\('\/portal\/version', config\)/)
+  assert.match(apiSource, /updateStatus: \(config = \{\}\) => http\.get\('\/admin\/update\/status', config\)/)
+  assert.match(apiSource, /installUpdate: \(\) => http\.post\('\/admin\/update\/install', null, \{ timeout: 30000, silentRestartError: true \}\)/)
+  assert.match(viewSource, /role="progressbar"/)
+  assert.match(viewSource, /const restartRequestConfig = \{ timeout: 5000, silentRestartError: true \}/)
+  assert.match(viewSource, /Promise\.allSettled\(\[/)
+  assert.match(viewSource, /updateProgress\.value = 100/)
+  assert.match(themeSource, /\.update-progress__fill\.is-active::after \{ opacity: 1; animation: update-progress-shimmer 1\.25s linear infinite; \}/)
+  assert.match(themeSource, /@media \(prefers-reduced-motion: reduce\)[\s\S]*?\.update-progress__fill\.is-active::after \{ animation: none;/)
+})
