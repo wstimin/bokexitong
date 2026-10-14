@@ -11,6 +11,11 @@ import {
   adminPagePath,
   isAdminPagePath
 } from '../src/utils/adminPath.js'
+import {
+  findMissingRequiredSiteField,
+  findSettingMismatches,
+  PUBLIC_SITE_SETTING_KEYS
+} from '../src/utils/siteSettings.js'
 
 const readSource = (relativePath) => readFile(new URL(relativePath, import.meta.url), 'utf8')
 
@@ -32,6 +37,37 @@ test('hero style exposes normalized CSS variables', () => {
     '--hero-title-shadow': 'none',
     '--hero-subtitle-shadow': 'none'
   })
+})
+
+test('site setting persistence checks normalize harmless formatting but catch stale values', () => {
+  assert.deepEqual(findSettingMismatches(
+    { contactHtml: '新版说明\n', heroTitleColor: '#ABCDEF', allowRegister: 'TRUE' },
+    { contactHtml: '新版说明', heroTitleColor: '#abcdef', allowRegister: 'true' }
+  ), [])
+  assert.deepEqual(findSettingMismatches(
+    { contactHtml: '新版说明', footerText: '新页脚' },
+    { contactHtml: '旧版说明', footerText: '新页脚' }
+  ), ['contactHtml'])
+  assert.ok(PUBLIC_SITE_SETTING_KEYS.includes('contactHtml'))
+  assert.equal(findMissingRequiredSiteField({ siteName: '', heroTitle: '标题', heroSubtitle: '说明', heroBadge: '博客' }), '站点名称')
+})
+
+test('site settings save is verified through the public endpoint and refreshes other tabs', async () => {
+  const settingSource = await readSource('../src/views/admin/SiteSetting.vue')
+  const storeSource = await readSource('../src/stores/site.js')
+  const mainSource = await readSource('../src/main.js')
+  const footerSource = await readSource('../src/components/PortalFooter.vue')
+  const serviceSource = await readSource('../../backend/src/main/java/com/example/blog/service/SiteSettingService.java')
+
+  assert.match(settingSource, /findSettingMismatches\(payload, savedSettings/)
+  assert.match(settingSource, /portalApi\.site\(\{[\s\S]*?'Cache-Control': 'no-cache'/)
+  assert.match(settingSource, /findSettingMismatches\(savedSettings, publicSettings/)
+  assert.match(settingSource, /localStorage\.setItem\(SITE_SETTINGS_SYNC_KEY/)
+  assert.match(storeSource, /if \(siteLoadPromise\) \{[\s\S]*?if \(!force\) return activeResult/)
+  assert.match(mainSource, /event\.key === SITE_SETTINGS_SYNC_KEY[\s\S]*?loadSite\(true\)/)
+  assert.match(footerSource, /class="footer-notice"/)
+  assert.match(footerSource, /<strong>站点说明<\/strong>/)
+  assert.match(serviceSource, /@Transactional\s+public Map<String, String> saveSite/)
 })
 
 test('admin login path uses a dedicated save action and hard redirect', async () => {
@@ -65,7 +101,7 @@ test('admin login entry always refreshes server settings and rejects stale paths
   assert.match(loginSource, /window\.location\.pathname !== site\.adminLoginPath/)
   assert.match(loginSource, /window\.location\.replace\('\/'\)/)
   assert.match(loginSource, /adminLoginPath: isAdminLogin\.value \? window\.location\.pathname : undefined/)
-  assert.match(storeSource, /if \(siteLoadPromise\) return siteLoadPromise/)
+  assert.match(storeSource, /if \(siteLoadPromise\) \{[\s\S]*?const activeResult = await siteLoadPromise[\s\S]*?if \(!force\) return activeResult/)
 })
 
 test('custom login path also controls every admin page route', () => {

@@ -16,10 +16,13 @@
         <RouterLink to="/about">关于我们</RouterLink>
       </div>
       <div class="footer-links">
-        <strong>连接</strong>
-        <span v-if="safeContactHtml" class="portal-contact-html" v-html="safeContactHtml"></span>
-        <RouterLink v-else to="/about#contact">联系方式</RouterLink>
+        <strong>更多</strong>
+        <RouterLink to="/about#contact">关于与联系</RouterLink>
         <a href="/rss.xml" rel="alternate">RSS Feed</a>
+      </div>
+      <div v-if="safeContactHtml" class="footer-notice">
+        <strong>站点说明</strong>
+        <div class="portal-contact-html" v-html="safeContactHtml"></div>
       </div>
       <div class="footer-bottom">
         <span>© {{ year }} {{ site.name }}</span>
@@ -37,7 +40,7 @@ import { useSiteStore } from '../stores/site'
 import { sanitizeContactHtml } from '../utils/sanitize'
 
 const site = useSiteStore()
-const version = ref('1.1.20')
+const version = ref('1.1.21')
 const year = new Date().getFullYear()
 
 const safeContactHtml = computed(() => sanitizeContactHtml(site.contactHtml).trim())

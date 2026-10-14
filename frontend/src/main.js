@@ -6,7 +6,7 @@ import App from './App.vue'
 import router from './router'
 import { setUnauthorizedHandler } from './api/http'
 import { useAuthStore } from './stores/auth'
-import { useSiteStore } from './stores/site'
+import { SITE_SETTINGS_SYNC_KEY, useSiteStore } from './stores/site'
 import { isAdminPagePath } from './utils/adminPath'
 import { activateThemeScope, initializeTheme } from './utils/theme'
 import './assets/styles.css'
@@ -31,6 +31,12 @@ router.afterEach((to) => {
 })
 
 app.use(pinia).use(router)
+
+window.addEventListener('storage', (event) => {
+  if (event.key === SITE_SETTINGS_SYNC_KEY && event.newValue) {
+    useSiteStore(pinia).loadSite(true)
+  }
+})
 
 setUnauthorizedHandler(() => {
   const auth = useAuthStore()

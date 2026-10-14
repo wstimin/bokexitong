@@ -53,6 +53,32 @@ class SiteSettingServiceTest {
     }
 
     @Test
+    void saveSite_shouldPersistFooterNoticeAndEverySubmittedPublicSetting() {
+        Map<String, String> payload = Map.ofEntries(
+                Map.entry(SiteSettingService.SITE_NAME, "新站点"),
+                Map.entry(SiteSettingService.HERO_TITLE, "新标题"),
+                Map.entry(SiteSettingService.HERO_SUBTITLE, "新说明"),
+                Map.entry(SiteSettingService.HERO_BADGE, "新徽标"),
+                Map.entry(SiteSettingService.BACKGROUND_URL, "/uploads/background.png"),
+                Map.entry(SiteSettingService.LOGO_URL, "/uploads/logo.png"),
+                Map.entry(SiteSettingService.SEO_DESCRIPTION, "新 SEO 描述"),
+                Map.entry(SiteSettingService.SEO_KEYWORDS, "博客,技术"),
+                Map.entry(SiteSettingService.ICP_BEIAN, "测试备案号"),
+                Map.entry(SiteSettingService.FOOTER_TEXT, "新页脚"),
+                Map.entry(SiteSettingService.CONTACT_HTML, "新版审核与版权说明"),
+                Map.entry(SiteSettingService.ALLOW_REGISTER, "false")
+        );
+
+        service.saveSite(payload);
+
+        ArgumentCaptor<SiteSetting> captor = ArgumentCaptor.forClass(SiteSetting.class);
+        verify(siteSettingMapper, atLeastOnce()).insert(captor.capture());
+        Map<String, String> saved = captor.getAllValues().stream()
+                .collect(java.util.stream.Collectors.toMap(SiteSetting::getSettingKey, SiteSetting::getSettingValue));
+        payload.forEach((key, value) -> assertEquals(value, saved.get(key), key));
+    }
+
+    @Test
     void saveAdminLoginPath_shouldNormalizeAndPersistDedicatedSetting() {
         String savedPath = service.saveAdminLoginPath("shiyeotimin/login/");
 

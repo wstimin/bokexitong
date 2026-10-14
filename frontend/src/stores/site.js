@@ -9,6 +9,9 @@ import {
   normalizeHeroColor,
   normalizeHeroTextShadow
 } from '../utils/heroAppearance'
+import { SITE_SETTINGS_SYNC_KEY } from '../utils/siteSettings'
+
+export { SITE_SETTINGS_SYNC_KEY }
 
 const SITE_NAME = '博客系统'
 const HERO_SUBTITLE = '用清透的卡片浏览公开文章，点开后阅读完整内容。登录后可以进入用户中心创作和管理自己的文章。'
@@ -90,10 +93,16 @@ export const useSiteStore = defineStore('site', {
       localStorage.setItem('blog_admin_login_path', this.adminLoginPath)
     },
     async loadSite(force = false) {
-      if (siteLoadPromise) return siteLoadPromise
-      if (this.loaded && !force) return
+      if (siteLoadPromise) {
+        const activeResult = await siteLoadPromise
+        if (!force) return activeResult
+      }
+      if (this.loaded && !force) return true
       this.loading = true
-      siteLoadPromise = portalApi.site()
+      siteLoadPromise = portalApi.site(force ? {
+        params: { _ts: Date.now() },
+        headers: { 'Cache-Control': 'no-cache' }
+      } : {})
         .then((res) => {
           this.applySettings(res.data || {})
           return true

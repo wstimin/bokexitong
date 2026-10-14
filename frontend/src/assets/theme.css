@@ -954,7 +954,20 @@ h1, h2, h3, .brand { font-family: "Playfair Display", "Songti SC", serif; }
 .footer-links strong { margin-bottom: 5px; color: var(--text-primary); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; }
 .footer-links a { color: var(--text-tertiary); }
 .footer-links a:hover { color: var(--accent); }
-.portal-contact-html { color: var(--text-tertiary); }
+.portal-contact-html { max-width: 920px; color: var(--text-secondary); line-height: 1.85; white-space: pre-line; overflow-wrap: anywhere; }
+.portal-contact-html p { margin: 0 0 10px; }
+.portal-contact-html p:last-child { margin-bottom: 0; }
+.footer-notice { grid-column: 1 / -1; display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 28px; align-items: start; padding: 24px 0; border-top: 1px solid var(--border); }
+.footer-notice > strong { color: var(--text-primary); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; }
+.settings-save-actions { display: flex; align-items: center; justify-content: flex-end; gap: 14px; flex-wrap: wrap; }
+.settings-save-state { color: var(--text-tertiary); font-size: 12px; line-height: 1.5; }
+.settings-save-state.is-saving { color: var(--accent); }
+.settings-save-state.is-saved { color: var(--success); }
+.settings-save-state.is-dirty { color: var(--warning); }
+.settings-save-state.is-error { color: var(--danger); }
+.setting-content-preview { width: 100%; margin-top: 10px; padding: 14px 16px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-secondary); }
+.setting-content-preview > strong { display: block; margin-bottom: 8px; color: var(--text-primary); font-size: 12px; }
+.setting-content-preview > span { color: var(--text-tertiary); font-size: 13px; }
 .footer-bottom { grid-column: 1 / -1; display: flex; gap: 16px; align-items: center; padding-top: 22px; border-top: 1px solid var(--border); color: var(--text-tertiary); font-size: 11px; }
 .version-badge { margin-left: auto; padding: 4px 8px; border: 1px solid var(--border); border-radius: 999px; }
 .back-to-top { position: fixed; right: 24px; bottom: 24px; z-index: 100; display: grid; width: 46px; height: 46px; place-items: center; border: 1px solid var(--border-strong); border-radius: 50%; color: var(--text-inverse); background: var(--accent); box-shadow: var(--shadow), var(--glow); cursor: pointer; }
@@ -1028,6 +1041,7 @@ h1, h2, h3, .brand { font-family: "Playfair Display", "Songti SC", serif; }
   .article-body, .markdown { font-size: 17px; line-height: 1.82; }
   .portal-footer-inner { grid-template-columns: 1fr; }
   .footer-brand, .footer-bottom { grid-column: 1; }
+  .footer-notice { grid-template-columns: 1fr; gap: 12px; }
   .footer-bottom { flex-wrap: wrap; }
   .version-badge { margin-left: 0; }
   .search-overlay { padding: 12px; }

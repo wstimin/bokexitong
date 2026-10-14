@@ -5,7 +5,10 @@
         <h2>站点设置</h2>
         <p class="section-subtitle">配置站点名称、Logo、首页文案、全站背景、SEO、登录入口和违禁词规则。</p>
       </div>
-      <button class="btn-primary" type="button" :disabled="loading || pathSaving" @click="save">保存设置</button>
+      <div class="settings-save-actions">
+        <span :class="['settings-save-state', `is-${saveState}`]">{{ saveStateText }}</span>
+        <button class="btn-primary" type="button" :disabled="loading || pathSaving" @click="save">{{ saveState === 'saving' ? '保存并校验中…' : '保存并校验' }}</button>
+      </div>
     </div>
 
     <el-form label-position="top" class="settings-form grouped-settings-form">
@@ -90,8 +93,13 @@
               placeholder="一行或用逗号分隔，例如：赌博,色情,毒品,诈骗"
             />
           </el-form-item>
-          <el-form-item label="审核说明" class="field-full">
-            <el-input v-model="form.contactHtml" type="textarea" :rows="6" maxlength="2000" show-word-limit placeholder="可填写联系方式、版权说明或站点公告" />
+          <el-form-item label="页脚审核与版权说明" class="field-full">
+            <el-input v-model="form.contactHtml" type="textarea" :rows="6" maxlength="2000" show-word-limit placeholder="填写审核规则、版权说明或站点公告；保存后显示在前台页脚的“站点说明”区域" />
+            <div class="setting-content-preview">
+              <strong>前台显示预览</strong>
+              <div v-if="contactPreviewHtml" class="portal-contact-html" v-html="contactPreviewHtml"></div>
+              <span v-else>暂未填写站点说明</span>
+            </div>
           </el-form-item>
         </div>
       </div>
@@ -141,13 +149,20 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
-import { adminApi, uploadApi } from '../../api/blog'
+import { adminApi, portalApi, uploadApi } from '../../api/blog'
 import FileUploadButton from '../../components/FileUploadButton.vue'
 import { useAuthStore } from '../../stores/auth'
 import { useSiteStore } from '../../stores/site'
 import { normalizeAssetUrl } from '../../utils/assets'
+import { sanitizeContactHtml } from '../../utils/sanitize'
+import {
+  findSettingMismatches,
+  findMissingRequiredSiteField,
+  PUBLIC_SITE_SETTING_KEYS,
+  SITE_SETTINGS_SYNC_KEY
+} from '../../utils/siteSettings'
 import {
   createHeroTextStyle,
   DEFAULT_HERO_SUBTITLE_COLOR,
@@ -161,6 +176,8 @@ const site = useSiteStore()
 const auth = useAuthStore()
 const loading = ref(false)
 const pathSaving = ref(false)
+const saveState = ref('idle')
+const savedAt = ref('')
 const form = reactive({
   siteName: '',
   logoUrl: '',
@@ -187,6 +204,36 @@ const previewStyle = computed(() => ({
   ...createHeroTextStyle(form.heroTitleColor, form.heroSubtitleColor, form.heroTextShadow)
 }))
 const logoPreviewSrc = computed(() => normalizeAssetUrl(form.logoUrl))
+const contactPreviewHtml = computed(() => sanitizeContactHtml(form.contactHtml).trim())
+const saveStateText = computed(() => {
+  if (saveState.value === 'saving') return '正在写入数据库并同步前台…'
+  if (saveState.value === 'saved') return savedAt.value ? `已保存并验证 · ${savedAt.value}` : '已保存并验证'
+  if (saveState.value === 'dirty') return '有尚未保存的修改'
+  if (saveState.value === 'error') return '保存校验未通过，请重试'
+  return '修改后请保存，系统会核对前台结果'
+})
+const settingsSignature = () => JSON.stringify({
+  siteName: form.siteName,
+  logoUrl: form.logoUrl,
+  heroTitle: form.heroTitle,
+  heroSubtitle: form.heroSubtitle,
+  heroBadge: form.heroBadge,
+  heroTitleColor: form.heroTitleColor,
+  heroSubtitleColor: form.heroSubtitleColor,
+  heroTextShadow: form.heroTextShadow,
+  backgroundUrl: form.backgroundUrl,
+  forbiddenWords: form.forbiddenWords,
+  seoDescription: form.seoDescription,
+  seoKeywords: form.seoKeywords,
+  icpBeian: form.icpBeian,
+  footerText: form.footerText,
+  contactHtml: form.contactHtml,
+  allowRegister: form.allowRegister
+})
+watch(settingsSignature, () => {
+  if (saveState.value === 'saved') saveState.value = 'dirty'
+})
+const settingsVerificationError = (message) => Object.assign(new Error(message), { settingsVerification: true })
 
 const apply = (settings = {}) => {
   form.siteName = settings.siteName || '博客系统'
@@ -222,18 +269,39 @@ const load = async () => {
 }
 
 const save = async () => {
+  const missingField = findMissingRequiredSiteField(form)
+  if (missingField) return ElMessage.warning(`请填写${missingField}`)
   loading.value = true
+  saveState.value = 'saving'
   try {
     const payload = { ...form, allowRegister: String(form.allowRegister) }
     const adminLoginPathDraft = payload.adminLoginPath
     delete payload.adminLoginPath
     const res = await adminApi.saveSiteSettings(payload)
-    apply(res.data)
+    const savedSettings = res.data || {}
+    const saveMismatches = findSettingMismatches(payload, savedSettings, Object.keys(payload))
+    if (saveMismatches.length) throw settingsVerificationError(`数据库保存校验失败：${saveMismatches.join('、')}`)
+
+    const publicRes = await portalApi.site({
+      params: { _ts: Date.now() },
+      headers: { 'Cache-Control': 'no-cache' }
+    })
+    const publicSettings = publicRes.data?.settings || {}
+    const publicKeys = PUBLIC_SITE_SETTING_KEYS.filter((key) => Object.hasOwn(payload, key))
+    const publicMismatches = findSettingMismatches(savedSettings, publicSettings, publicKeys)
+    if (publicMismatches.length) throw settingsVerificationError(`前台同步校验失败：${publicMismatches.join('、')}`)
+
+    apply(savedSettings)
     form.adminLoginPath = adminLoginPathDraft
-    await site.loadSite(true)
-    ElMessage.success('站点设置已保存；后台登录路径需使用右侧独立按钮保存')
+    site.applySettings(publicRes.data || {})
+    savedAt.value = new Intl.DateTimeFormat('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).format(new Date())
+    saveState.value = 'saved'
+    localStorage.setItem(SITE_SETTINGS_SYNC_KEY, String(Date.now()))
+    ElMessage.success('站点设置已写入数据库，并通过前台接口校验；后台登录路径仍使用独立按钮保存')
   } catch (error) {
     console.error(error)
+    saveState.value = 'error'
+    if (error.settingsVerification) ElMessage.error(error.message)
   } finally {
     loading.value = false
   }

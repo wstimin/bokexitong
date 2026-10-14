@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.example.blog.entity.SiteSetting;
 import com.example.blog.mapper.SiteSettingMapper;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -108,6 +109,7 @@ public class SiteSettingService {
         return settings;
     }
 
+    @Transactional
     public Map<String, String> save(Map<String, String> payload) {
         Map<String, String> next = mailSettings();
         Map<String, String> current = mailSettings();
@@ -135,6 +137,7 @@ public class SiteSettingService {
         return adminSettings();
     }
 
+    @Transactional
     public Map<String, String> saveSite(Map<String, String> payload) {
         Map<String, String> next = adminSiteSettings();
         Map<String, String> filtered = filter(payload, SITE_FORM_KEYS);
@@ -157,12 +160,14 @@ public class SiteSettingService {
         return adminSiteSettings();
     }
 
+    @Transactional
     public String saveAdminLoginPath(String value) {
         String normalized = requireValidAdminLoginPath(value);
         upsert(ADMIN_LOGIN_PATH, normalized);
         return normalized;
     }
 
+    @Transactional
     public Map<String, String> saveMail(Map<String, String> payload) {
         save(filter(payload, MAIL_FORM_KEYS));
         return adminMailSettings();

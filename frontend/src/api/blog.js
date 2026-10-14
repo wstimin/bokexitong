@@ -16,7 +16,7 @@ export const userApi = {
 }
 
 export const portalApi = {
-  site: () => http.get('/portal/site'),
+  site: (config = {}) => http.get('/portal/site', config),
   version: (config = {}) => http.get('/portal/version', config),
   home: () => http.get('/portal/home'),
   taxonomies: () => http.get('/portal/taxonomies'),
