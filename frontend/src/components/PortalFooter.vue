@@ -40,7 +40,7 @@ import { useSiteStore } from '../stores/site'
 import { sanitizeContactHtml } from '../utils/sanitize'
 
 const site = useSiteStore()
-const version = ref('1.1.25')
+const version = ref('1.1.26')
 const year = new Date().getFullYear()
 
 const safeContactHtml = computed(() => sanitizeContactHtml(site.contactHtml).trim())
