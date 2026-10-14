@@ -1,12 +1,12 @@
 {
   "name": "bokexitong-frontend",
-  "version": "1.1.11",
+  "version": "1.1.12",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "vite build",
-    "test": "node --test test/richTextUrls.test.js test/richTextPosition.test.js test/editorContracts.test.js test/siteSettings.test.js",
+    "test": "node --test test/richTextUrls.test.js test/richTextPosition.test.js test/editorContracts.test.js test/siteSettings.test.js test/upload.test.js",
     "test:editor": "node --test test/richTextUrls.test.js test/richTextPosition.test.js test/editorContracts.test.js",
     "test:site": "node --test test/siteSettings.test.js",
     "preview": "vite preview --host 0.0.0.0"

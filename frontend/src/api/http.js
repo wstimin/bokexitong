@@ -50,14 +50,19 @@ http.interceptors.response.use(
     const silentError = error.config?.silentError === true
     const silentRestartError = error.config?.silentRestartError === true
       && (status === 502 || status === 503 || status === 504 || error.code === 'ECONNABORTED' || !error.response)
+    const isUploadRequest = String(error.config?.url || '').includes('/uploads')
     const backendMessage = responseMessage(error.response?.data)
     const resolvedMessage = backendMessage
-      || (status === 502 || status === 503 || status === 504
+      || (status === 413
+        ? '文件过大，服务器拒绝接收。请压缩后重试；若文件不足 50MB，请在 1Panel/OpenResty 将 client_max_body_size 调整为至少 55m'
+        : status === 415
+          ? '服务器不支持这种文件格式，请改用 JPG、PNG、GIF 或 WebP 图片'
+          : status === 502 || status === 503 || status === 504
         ? '后端服务暂时不可用，请检查 1Panel 中的 Java 服务是否正在运行，以及反向代理端口是否为 18080'
         : error.code === 'ECONNABORTED'
-          ? '请求超时，请检查 Java 服务状态和数据库连接'
+          ? (isUploadRequest ? '文件上传超时，请检查网络连接或压缩文件后重试' : '请求超时，请检查 Java 服务状态和数据库连接')
           : !error.response
-            ? '无法连接后端服务，请检查反向代理和 Java 服务'
+            ? (isUploadRequest ? '文件上传中断，请检查网络、1Panel 反向代理和 Java 服务' : '无法连接后端服务，请检查反向代理和 Java 服务')
             : '请求失败')
     const message = error.response?.data?.message || '请求失败'
 

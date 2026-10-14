@@ -135,9 +135,10 @@
               </button>
             </div>
             <div class="composer-cover__actions">
-              <FileUploadButton accept="image/*" :disabled="disabled" @select="(file) => emit('upload-cover', file)">
-                <Upload :size="15" aria-hidden="true" />
-                上传封面
+              <FileUploadButton accept="image/jpeg,image/png,image/gif,image/webp" :disabled="disabled || pendingUploads > 0" @select="(file) => emit('upload-cover', file)">
+                <LoaderCircle v-if="pendingUploads > 0" :size="15" class="is-spinning" aria-hidden="true" />
+                <Upload v-else :size="15" aria-hidden="true" />
+                {{ pendingUploads > 0 ? '上传中...' : '上传封面' }}
               </FileUploadButton>
             </div>
             <el-input v-model="coverUrl" size="small" clearable placeholder="或粘贴图片地址" :disabled="disabled" />

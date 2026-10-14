@@ -187,6 +187,22 @@ test('article editor API routes match backend controller contracts', async () =>
   assert.match(source, /http\.post\('\/uploads', form, \{ timeout: 120000 \}\)/)
 })
 
+test('cover upload validates files and exposes a visible uploading state', async () => {
+  const adminSource = await readSource('../src/views/admin/ArticleManage.vue')
+  const userSource = await readSource('../src/views/portal/UserCenter.vue')
+  const composerSource = await readSource('../src/components/ArticleComposer.vue')
+  const httpSource = await readSource('../src/api/http.js')
+
+  assert.match(adminSource, /validateCoverImage\(file\)/)
+  assert.match(userSource, /validateCoverImage\(file\)/)
+  assert.match(composerSource, /pendingUploads > 0 \? '上传中\.\.\.' : '上传封面'/)
+  assert.match(composerSource, /image\/jpeg,image\/png,image\/gif,image\/webp/)
+  assert.match(httpSource, /status === 413/)
+  assert.match(httpSource, /client_max_body_size/)
+  assert.match(httpSource, /文件上传超时/)
+  assert.match(httpSource, /文件上传中断/)
+})
+
 test('article payload and publish feedback follow the backend response contract', async () => {
   const adminSource = await readSource('../src/views/admin/ArticleManage.vue')
   const userSource = await readSource('../src/views/portal/UserCenter.vue')

@@ -111,6 +111,7 @@ import ArticleComposer from '../../components/ArticleComposer.vue'
 import { adminApi, articleApi, uploadApi } from '../../api/blog'
 import { normalizeAssetUrl } from '../../utils/assets'
 import { ensureRichTextFormats, isEmptyHtml, toDisplayHtml, toEditableHtml } from '../../utils/richText'
+import { validateCoverImage } from '../../utils/upload'
 
 const statusOptions = [
   { label: '草稿', value: 'DRAFT' },
@@ -274,6 +275,8 @@ const saveArticle = async (status) => {
 
 const uploadCover = async (file) => {
   if (saving.value || detailLoading.value) return ElMessage.warning('文章正在加载或保存，请稍后再上传文件')
+  const validationMessage = validateCoverImage(file)
+  if (validationMessage) return ElMessage.error(validationMessage)
   coverPendingUploads.value += 1
   try {
     const res = await uploadApi.file(file)

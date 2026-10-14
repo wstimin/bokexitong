@@ -77,7 +77,7 @@ const names = {
 }
 const title = computed(() => names[route.path] || '后台管理')
 const passwordVisible = ref(false)
-const version = ref('1.1.11')
+const version = ref('1.1.12')
 const password = reactive({ oldPassword: '', newPassword: '' })
 
 onMounted(() => {
