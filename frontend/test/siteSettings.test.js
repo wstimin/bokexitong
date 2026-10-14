@@ -182,6 +182,20 @@ test('desktop user workbench keeps navigation and content scrolling independentl
   assert.match(styleSource, /\.user-center-page \.user-workbench-sidebar,[\s\S]*?overflow-y: auto;[\s\S]*?overscroll-behavior: contain;/)
 })
 
+test('welcome access resolves before the portal mounts and its full border carries the color flow', async () => {
+  const appSource = await readSource('../src/App.vue')
+  const gateSource = await readSource('../src/components/WelcomeGate.vue')
+
+  assert.match(appSource, /<router-view v-if="contentAllowed" \/>/)
+  assert.match(appSource, /<WelcomeGate @access-change="handleAccessChange" \/>/)
+  assert.match(gateSource, /const shouldBlock = computed\(\(\) => routeReady\.value && !excludedRoute\.value/)
+  assert.match(gateSource, /await site\.loadSite\(hadCachedSite\)/)
+  assert.match(gateSource, /emit\('access-change', \{ allowContent:/)
+  assert.match(gateSource, /conic-gradient\(from var\(--welcome-border-angle\), #f7cf91 0deg,[\s\S]*?#f7cf91 360deg\)/)
+  assert.match(gateSource, /@keyframes welcome-border-flow \{ to \{ --welcome-border-angle: 360deg; \} \}/)
+  assert.doesNotMatch(gateSource, /@keyframes welcome-border-flow \{ to \{ transform: rotate\(360deg\); \} \}/)
+})
+
 test('recommendation card keeps its surface while only the border glow moves', async () => {
   const source = await readSource('../src/assets/theme.css')
   const panelRule = source.match(/\.recommend-panel \{([\s\S]*?)\n\}/)?.[1] || ''
