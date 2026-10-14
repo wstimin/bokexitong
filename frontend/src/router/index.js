@@ -43,7 +43,8 @@ const routes = [
 
 const router = createRouter({ history: createWebHistory(), routes })
 
-let installState
+const INSTALL_CACHE_KEY = 'blog_installation_complete'
+let installState = typeof localStorage !== 'undefined' && localStorage.getItem(INSTALL_CACHE_KEY) === 'true'
 let installStatePromise
 
 const resolveInstallState = async () => {
@@ -52,6 +53,9 @@ const resolveInstallState = async () => {
     installStatePromise = installApi.status()
       .then((res) => {
         installState = Boolean(res.data?.installed)
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem(INSTALL_CACHE_KEY, String(installState))
+        }
         return installState
       })
       .finally(() => { installStatePromise = null })
@@ -82,11 +86,17 @@ router.beforeEach(async (to) => {
   // Login entry checks must always use the server value. This prevents an old
   // custom path cached in another tab or browser session from remaining usable.
   const checksAdminRoute = Boolean(to.meta.dynamicAdminLogin || to.meta.dynamicAdminArea)
-  const siteLoaded = await site.loadSite(checksAdminRoute)
-  if (checksAdminRoute && siteLoaded === false) {
-    return '/'
-  }
   const adminLoginPath = site.adminLoginPath || '/admin/login'
+  const cachedAdminPathMatches = isAdminPagePath(to.path, adminLoginPath)
+  let siteLoaded = true
+  if (!checksAdminRoute) {
+    if (!site.loaded) void site.loadSite()
+  } else if (site.loaded && cachedAdminPathMatches) {
+    void site.loadSite(true)
+  } else {
+    siteLoaded = await site.loadSite(true)
+  }
+  if (checksAdminRoute && siteLoaded === false) return '/'
   const adminBasePath = adminBasePathFromLogin(adminLoginPath)
   if (to.meta.dynamicAdminLogin) {
     if (to.path === adminLoginPath) {

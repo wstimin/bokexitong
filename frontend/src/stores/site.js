@@ -15,7 +15,22 @@ export { SITE_SETTINGS_SYNC_KEY }
 
 const SITE_NAME = '博客系统'
 const HERO_SUBTITLE = '用清透的卡片浏览公开文章，点开后阅读完整内容。登录后可以进入用户中心创作和管理自己的文章。'
+const SITE_CACHE_KEY = 'blog_site_settings_cache'
 let siteLoadPromise = null
+
+const readCachedSite = () => {
+  if (typeof localStorage === 'undefined') return null
+  try {
+    const cached = JSON.parse(localStorage.getItem(SITE_CACHE_KEY) || 'null')
+    return cached && typeof cached === 'object' ? cached : null
+  } catch {
+    return null
+  }
+}
+
+const cachedSite = readCachedSite()
+const cachedSettings = cachedSite?.settings || {}
+const cachedLogo = Array.isArray(cachedSite?.logo) ? cachedSite.logo[0] : cachedSite?.logo
 
 const setFavicon = (url) => {
   const href = normalizeAssetUrl(url)
@@ -42,33 +57,33 @@ const setMeta = (name, content) => {
 
 export const useSiteStore = defineStore('site', {
   state: () => ({
-    name: SITE_NAME,
-    heroTitle: SITE_NAME,
-    heroSubtitle: HERO_SUBTITLE,
-    heroBadge: '博客',
-    heroTitleColor: DEFAULT_HERO_TITLE_COLOR,
-    heroSubtitleColor: DEFAULT_HERO_SUBTITLE_COLOR,
-    heroTextShadow: DEFAULT_HERO_TEXT_SHADOW,
-    allowRegister: true,
-    logoUrl: '',
-    backgroundUrl: '',
-    seoDescription: '',
-    seoKeywords: '',
-    icpBeian: '',
-    footerText: '',
-    contactHtml: '',
-    welcomeEnabled: true,
-    welcomeAvatarUrl: '',
-    welcomeBackgroundUrl: '',
-    welcomeDisplayName: 'Lily',
-    welcomeTitle: '愿你在这里，遇见温柔的光',
-    welcomeSubtitle: '每一次相遇，都值得被认真收藏',
-    welcomeDescription: '在字里行间，慢慢认识我。',
-    welcomeButtonText: '进入博客',
-    welcomeAccentColor: '#c9a227',
-    welcomeAnimationEnabled: true,
+    name: cachedSettings.siteName || SITE_NAME,
+    heroTitle: cachedSettings.heroTitle || SITE_NAME,
+    heroSubtitle: cachedSettings.heroSubtitle || HERO_SUBTITLE,
+    heroBadge: cachedSettings.heroBadge || '博客',
+    heroTitleColor: normalizeHeroColor(cachedSettings.heroTitleColor, DEFAULT_HERO_TITLE_COLOR),
+    heroSubtitleColor: normalizeHeroColor(cachedSettings.heroSubtitleColor, DEFAULT_HERO_SUBTITLE_COLOR),
+    heroTextShadow: normalizeHeroTextShadow(cachedSettings.heroTextShadow),
+    allowRegister: cachedSettings.allowRegister !== 'false',
+    logoUrl: cachedSettings.logoUrl || cachedLogo?.url || '',
+    backgroundUrl: cachedSettings.backgroundUrl || '',
+    seoDescription: cachedSettings.seoDescription || '',
+    seoKeywords: cachedSettings.seoKeywords || '',
+    icpBeian: cachedSettings.icpBeian || '',
+    footerText: cachedSettings.footerText || '',
+    contactHtml: cachedSettings.contactHtml || '',
+    welcomeEnabled: cachedSettings.welcomeEnabled !== 'false',
+    welcomeAvatarUrl: cachedSettings.welcomeAvatarUrl || '',
+    welcomeBackgroundUrl: cachedSettings.welcomeBackgroundUrl || '',
+    welcomeDisplayName: cachedSettings.welcomeDisplayName || 'Lily',
+    welcomeTitle: cachedSettings.welcomeTitle || '愿你在这里，遇见温柔的光',
+    welcomeSubtitle: cachedSettings.welcomeSubtitle || '每一次相遇，都值得被认真收藏',
+    welcomeDescription: cachedSettings.welcomeDescription || '在字里行间，慢慢认识我。',
+    welcomeButtonText: cachedSettings.welcomeButtonText || '进入博客',
+    welcomeAccentColor: cachedSettings.welcomeAccentColor || '#c9a227',
+    welcomeAnimationEnabled: cachedSettings.welcomeAnimationEnabled !== 'false',
     adminLoginPath: localStorage.getItem('blog_admin_login_path') || '/admin/login',
-    loaded: false,
+    loaded: Boolean(cachedSite),
     loading: false
   }),
   getters: {
@@ -107,6 +122,9 @@ export const useSiteStore = defineStore('site', {
       this.setAdminLoginPath(settings.adminLoginPath)
       this.loaded = true
       this.applyHead()
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(SITE_CACHE_KEY, JSON.stringify({ settings, logo: data.logo || null }))
+      }
     },
     setAdminLoginPath(path) {
       this.adminLoginPath = normalizeAdminLoginPath(path)
