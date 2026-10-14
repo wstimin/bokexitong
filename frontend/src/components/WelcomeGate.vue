@@ -35,21 +35,29 @@
 
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useSiteStore } from '../stores/site'
 import { normalizeAssetUrl } from '../utils/assets'
+import { isAdminPagePath } from '../utils/adminPath'
 
 const SESSION_KEY = 'blog_welcome_gate_entered'
 const route = useRoute()
+const router = useRouter()
 const site = useSiteStore()
 const canvasRef = ref(null)
 const entered = ref(false)
+const routeReady = ref(false)
 let frameId = 0
 let resizeHandler
 
-const excludedRoute = computed(() => route.path === '/install' || route.path === '/login'
-  || route.meta.requiresAdmin || route.meta.loginType === 'ADMIN')
-const shouldShow = computed(() => site.loaded && site.welcomeEnabled && !entered.value && !excludedRoute.value)
+const excludedRoute = computed(() => {
+  const path = route.path || ''
+  const isLegacyAdminPath = path === '/admin' || path.startsWith('/admin/')
+  return path === '/install' || path === '/login' || isLegacyAdminPath
+    || route.meta.requiresAdmin || route.meta.loginType === 'ADMIN'
+    || isAdminPagePath(path, site.adminLoginPath)
+})
+const shouldShow = computed(() => routeReady.value && site.loaded && site.welcomeEnabled && !entered.value && !excludedRoute.value)
 const animationEnabled = computed(() => site.welcomeAnimationEnabled)
 const avatarUrl = computed(() => normalizeAssetUrl(site.welcomeAvatarUrl))
 const backgroundUrl = computed(() => normalizeAssetUrl(site.welcomeBackgroundUrl || site.backgroundUrl) || '/welcome-background.png')
@@ -115,6 +123,8 @@ const startParticles = async () => {
 
 onMounted(async () => {
   entered.value = sessionStorage.getItem(SESSION_KEY) === '1'
+  await router.isReady()
+  routeReady.value = true
   await site.loadSite()
   startParticles()
 })
