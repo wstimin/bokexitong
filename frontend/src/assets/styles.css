@@ -360,6 +360,8 @@ button, input, textarea, select { font: inherit; }
 .settings-preview p { margin: 0; max-width: 640px; line-height: 1.8; color: var(--hero-subtitle-color, var(--text-inverse)); text-shadow: var(--hero-subtitle-shadow, 0 3px 18px rgba(0,0,0,.48)); }
 .color-setting-field { display: flex; align-items: center; gap: 10px; min-height: 32px; }
 .color-setting-field span { color: var(--muted); font-family: Consolas, monospace; font-size: 13px; }
+.admin-login-path-field { width: 100%; }
+.admin-login-path-field p { margin: 7px 0 0; color: var(--muted); font-size: 12px; line-height: 1.55; }
 
 .writer-panel { overflow: visible; }
 .article-rich-editor { display: flex; flex-direction: column; width: 100%; height: clamp(520px, 68vh, 760px); min-height: 0; overflow: hidden; border: 1px solid var(--border); border-radius: 10px; color: var(--text-primary); background: var(--bg-elevated); box-shadow: var(--shadow); }

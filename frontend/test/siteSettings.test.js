@@ -36,6 +36,9 @@ test('admin logout and settings save use the configured login path', async () =>
 
   assert.match(layoutSource, /router\.push\(site\.adminLoginPath \|\| '\/admin\/login'\)/)
   assert.match(settingSource, /site\.setAdminLoginPath\(form\.adminLoginPath\)/)
+  assert.match(settingSource, /const previousAdminLoginPath = savedAdminLoginPath\.value/)
+  assert.match(settingSource, /auth\.logout\('admin'\)/)
+  assert.match(settingSource, /await router\.replace\(nextAdminLoginPath\)/)
   assert.match(storeSource, /setAdminLoginPath\(path\)/)
 })
 

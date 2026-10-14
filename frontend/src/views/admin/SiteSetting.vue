@@ -115,7 +115,10 @@
             <el-input v-model="form.footerText" maxlength="120" show-word-limit placeholder="例如：Copyright 2026 博客系统" />
           </el-form-item>
           <el-form-item label="后台登录路径">
-            <el-input v-model="form.adminLoginPath" maxlength="80" placeholder="例如：/admin/login 或 /manage-login" />
+            <div class="admin-login-path-field">
+              <el-input v-model="form.adminLoginPath" maxlength="80" placeholder="例如：/admin/login 或 /manage-login" />
+              <p>修改后保存会退出当前后台会话，并自动跳转到新的登录地址。</p>
+            </div>
           </el-form-item>
           <el-form-item label="开放注册" class="field-full setting-switch-field">
             <el-switch v-model="form.allowRegister" active-text="允许新用户注册" inactive-text="关闭公开注册" />
@@ -135,8 +138,10 @@
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
+import { useRouter } from 'vue-router'
 import { adminApi, uploadApi } from '../../api/blog'
 import FileUploadButton from '../../components/FileUploadButton.vue'
+import { useAuthStore } from '../../stores/auth'
 import { useSiteStore } from '../../stores/site'
 import { normalizeAssetUrl } from '../../utils/assets'
 import {
@@ -149,7 +154,10 @@ import {
 } from '../../utils/heroAppearance'
 
 const site = useSiteStore()
+const auth = useAuthStore()
+const router = useRouter()
 const loading = ref(false)
+const savedAdminLoginPath = ref('/admin/login')
 const form = reactive({
   siteName: '',
   logoUrl: '',
@@ -202,7 +210,8 @@ const load = async () => {
   try {
     const res = await adminApi.siteSettings()
     apply(res.data)
-    localStorage.setItem('blog_admin_login_path', form.adminLoginPath || '/admin/login')
+    site.setAdminLoginPath(form.adminLoginPath)
+    savedAdminLoginPath.value = site.adminLoginPath
   } catch (error) {
     console.error(error)
   } finally {
@@ -213,11 +222,22 @@ const load = async () => {
 const save = async () => {
   loading.value = true
   try {
+    const previousAdminLoginPath = savedAdminLoginPath.value
     const payload = { ...form, allowRegister: String(form.allowRegister) }
     const res = await adminApi.saveSiteSettings(payload)
     apply(res.data)
     site.setAdminLoginPath(form.adminLoginPath)
     await site.loadSite(true)
+
+    savedAdminLoginPath.value = site.adminLoginPath
+    if (site.adminLoginPath !== previousAdminLoginPath) {
+      const nextAdminLoginPath = site.adminLoginPath
+      auth.logout('admin')
+      ElMessage.success(`后台登录路径已更新：${nextAdminLoginPath}，请重新登录`)
+      await router.replace(nextAdminLoginPath)
+      return
+    }
+
     ElMessage.success(`站点设置已保存，后台入口：${site.adminLoginPath}`)
   } catch (error) {
     console.error(error)
