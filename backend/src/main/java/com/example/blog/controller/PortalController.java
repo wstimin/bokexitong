@@ -31,7 +31,7 @@ public class PortalController {
     private final ImageResourceMapper imageResourceMapper;
     private final SiteSettingService siteSettingService;
 
-    @Value("${blog.version:1.1.23}")
+    @Value("${blog.version:1.1.24}")
     private String version;
 
     @Value("${blog.build-time:development}")
@@ -70,7 +70,9 @@ public class PortalController {
     @GetMapping("/site")
     public Result<Map<String, Object>> site() {
         Map<String, Object> data = new HashMap<>();
-        Map<String, String> settings = siteSettingService.publicSettings();
+        Map<String, String> settings = new HashMap<>(siteSettingService.publicSettings());
+        applyWelcomeResource(settings, SiteSettingService.WELCOME_BACKGROUND_URL, "WELCOME_BACKGROUND");
+        applyWelcomeResource(settings, SiteSettingService.WELCOME_AVATAR_URL, "WELCOME_AVATAR");
         data.put("settings", settings);
         data.put("logo", resolveLogo(settings));
         return Result.ok(data);
@@ -104,6 +106,21 @@ public class PortalController {
                 .stream()
                 .findFirst()
                 .orElse(null);
+    }
+
+    private void applyWelcomeResource(Map<String, String> settings, String settingKey, String resourceType) {
+        ImageResource resource = imageResourceMapper.selectList(new LambdaQueryWrapper<ImageResource>()
+                        .eq(ImageResource::getEnabled, 1)
+                        .eq(ImageResource::getType, resourceType)
+                        .orderByAsc(ImageResource::getSort)
+                        .orderByDesc(ImageResource::getCreatedAt)
+                        .last("LIMIT 1"))
+                .stream()
+                .findFirst()
+                .orElse(null);
+        if (resource != null && resource.getUrl() != null && !resource.getUrl().isBlank()) {
+            settings.put(settingKey, resource.getUrl());
+        }
     }
 
     @GetMapping("/articles")
