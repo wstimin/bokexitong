@@ -19,7 +19,17 @@
 </template>
 
 <script setup>
+import { onMounted } from 'vue'
 import { useTheme } from '../utils/theme'
 
-const { theme, toggleTheme } = useTheme()
+const props = defineProps({
+  scope: {
+    type: String,
+    default: 'portal'
+  }
+})
+
+const { theme, toggleTheme, activateTheme } = useTheme(props.scope)
+
+onMounted(activateTheme)
 </script>

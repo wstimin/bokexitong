@@ -22,7 +22,7 @@
       <div class="admin-header">
         <h1>{{ title }}</h1>
         <div class="hero-actions">
-          <ThemeToggle />
+          <ThemeToggle scope="admin" />
           <button class="btn-ghost" type="button" @click="openPasswordDialog">修改密码</button>
           <RouterLink class="btn-ghost" to="/">打开前台首页</RouterLink>
           <button class="btn-ghost danger-action" type="button" @click="logout">退出登录</button>
@@ -143,7 +143,7 @@ const names = {
 const title = computed(() => names[route.meta.adminPage] || '后台管理')
 const passwordVisible = ref(false)
 const passwordSaving = ref(false)
-const version = ref('1.1.17')
+const version = ref('1.1.18')
 const password = reactive({ oldPassword: '', newPassword: '', confirmPassword: '' })
 const passwordMatches = computed(() => password.newPassword === password.confirmPassword)
 const hasLetterAndNumber = computed(() => /[A-Za-z]/.test(password.newPassword) && /\d/.test(password.newPassword))

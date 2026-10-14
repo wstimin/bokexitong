@@ -8,14 +8,27 @@ import { setUnauthorizedHandler } from './api/http'
 import { useAuthStore } from './stores/auth'
 import { useSiteStore } from './stores/site'
 import { isAdminPagePath } from './utils/adminPath'
-import { initializeTheme } from './utils/theme'
+import { activateThemeScope, initializeTheme } from './utils/theme'
 import './assets/styles.css'
 import './assets/theme.css'
 
 const pinia = createPinia()
 const app = createApp(App)
+const cachedAdminLoginPath = localStorage.getItem('blog_admin_login_path') || '/admin/login'
+const initialRoute = router.resolve(window.location.pathname)
+const initialThemeScope = (
+  initialRoute.meta.requiresAdmin
+  || initialRoute.meta.loginType === 'ADMIN'
+  || isAdminPagePath(window.location.pathname, cachedAdminLoginPath)
+)
+  ? 'admin'
+  : 'portal'
 
-initializeTheme()
+initializeTheme(initialThemeScope)
+router.afterEach((to) => {
+  const scope = to.meta.requiresAdmin || to.meta.loginType === 'ADMIN' ? 'admin' : 'portal'
+  activateThemeScope(scope)
+})
 
 app.use(pinia).use(router)
 
