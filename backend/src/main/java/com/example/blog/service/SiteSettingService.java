@@ -157,6 +157,12 @@ public class SiteSettingService {
         return adminSiteSettings();
     }
 
+    public String saveAdminLoginPath(String value) {
+        String normalized = requireValidAdminLoginPath(value);
+        upsert(ADMIN_LOGIN_PATH, normalized);
+        return normalized;
+    }
+
     public Map<String, String> saveMail(Map<String, String> payload) {
         save(filter(payload, MAIL_FORM_KEYS));
         return adminMailSettings();
@@ -164,6 +170,11 @@ public class SiteSettingService {
 
     public boolean allowRegister() {
         return "true".equalsIgnoreCase(publicSettings().get(ALLOW_REGISTER));
+    }
+
+    public boolean isCurrentAdminLoginPath(String value) {
+        String candidate = value == null ? "" : value.trim();
+        return !candidate.isEmpty() && candidate.equals(publicSettings().get(ADMIN_LOGIN_PATH));
     }
 
     public boolean isInstalled() {
@@ -266,6 +277,32 @@ public class SiteSettingService {
         }
         if (trimmed.length() > 80 || !trimmed.matches("/[A-Za-z0-9/_-]+")) {
             return fallback == null || fallback.isBlank() ? "/admin/login" : fallback;
+        }
+        return trimmed;
+    }
+
+    private String requireValidAdminLoginPath(String value) {
+        String trimmed = value == null ? "" : value.trim();
+        if (trimmed.isEmpty()) {
+            throw new IllegalArgumentException("请填写后台登录路径");
+        }
+        if (!trimmed.startsWith("/")) {
+            trimmed = "/" + trimmed;
+        }
+        while (trimmed.length() > 1 && trimmed.endsWith("/")) {
+            trimmed = trimmed.substring(0, trimmed.length() - 1);
+        }
+        if (trimmed.length() > 80 || !trimmed.matches("/[A-Za-z0-9_-]+(?:/[A-Za-z0-9_-]+)*")) {
+            throw new IllegalArgumentException("后台登录路径只能包含字母、数字、横线、下划线和斜杠，且不能超过 80 个字符");
+        }
+        Set<String> reservedPrefixes = Set.of("/api", "/uploads", "/install", "/login", "/user", "/article", "/archive", "/about", "/create");
+        for (String prefix : reservedPrefixes) {
+            if (trimmed.equals(prefix) || trimmed.startsWith(prefix + "/")) {
+                throw new IllegalArgumentException("该路径与系统页面冲突，请更换后台登录路径");
+            }
+        }
+        if ((trimmed.equals("/admin") || trimmed.startsWith("/admin/")) && !"/admin/login".equals(trimmed)) {
+            throw new IllegalArgumentException("自定义登录路径不能使用 /admin 管理路由前缀");
         }
         return trimmed;
     }

@@ -42,6 +42,10 @@ public class AuthService {
         if (account == null || clean(request.getPassword()) == null) {
             throw new IllegalArgumentException("请填写账号和密码");
         }
+        String loginType = clean(request.getLoginType());
+        if ("ADMIN".equals(loginType) && !siteSettingService.isCurrentAdminLoginPath(request.getAdminLoginPath())) {
+            throw new IllegalArgumentException("后台登录地址已失效，请使用最新地址");
+        }
         BlogUser user = userMapper.selectOne(new LambdaQueryWrapper<BlogUser>()
                 .eq(BlogUser::getUsername, account)
                 .or()
@@ -52,7 +56,7 @@ public class AuthService {
         if (user.getStatus() != null && user.getStatus() == 0) {
             throw new IllegalArgumentException("账号已被禁用");
         }
-        validateLoginType(user, clean(request.getLoginType()));
+        validateLoginType(user, loginType);
         boolean passwordChangeRequired = isDefaultAdminPassword(user);
         user.setPassword(null);
         String token = jwtTokenProvider.generateToken(user.getId(), user.getUsername(), user.getRole());

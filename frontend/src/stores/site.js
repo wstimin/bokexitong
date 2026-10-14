@@ -11,6 +11,7 @@ import {
 
 const SITE_NAME = '博客系统'
 const HERO_SUBTITLE = '用清透的卡片浏览公开文章，点开后阅读完整内容。登录后可以进入用户中心创作和管理自己的文章。'
+let siteLoadPromise = null
 
 const setFavicon = (url) => {
   const href = normalizeAssetUrl(url)
@@ -89,17 +90,24 @@ export const useSiteStore = defineStore('site', {
       localStorage.setItem('blog_admin_login_path', this.adminLoginPath)
     },
     async loadSite(force = false) {
-      if (this.loading || (this.loaded && !force)) return
+      if (siteLoadPromise) return siteLoadPromise
+      if (this.loaded && !force) return
       this.loading = true
-      try {
-        const res = await portalApi.site()
-        this.applySettings(res.data || {})
-      } catch (error) {
-        console.error(error)
-      } finally {
-        this.applyHead()
-        this.loading = false
-      }
+      siteLoadPromise = portalApi.site()
+        .then((res) => {
+          this.applySettings(res.data || {})
+          return true
+        })
+        .catch((error) => {
+          console.error(error)
+          return false
+        })
+        .finally(() => {
+          this.applyHead()
+          this.loading = false
+          siteLoadPromise = null
+        })
+      return siteLoadPromise
     },
     applyHead() {
       if (typeof document === 'undefined') return

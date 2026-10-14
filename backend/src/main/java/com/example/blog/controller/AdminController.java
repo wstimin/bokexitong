@@ -123,6 +123,14 @@ public class AdminController {
         return Result.ok(settings);
     }
 
+    @PutMapping("/site-settings/admin-login-path")
+    public Result<Map<String, String>> saveAdminLoginPath(@AuthenticationPrincipal BlogPrincipal principal,
+                                                          @RequestBody Map<String, String> payload) {
+        String path = siteSettingService.saveAdminLoginPath(payload.get(SiteSettingService.ADMIN_LOGIN_PATH));
+        operationLogService.record(principal, "UPDATE", "SITE_SETTING", null, "更新后台登录路径");
+        return Result.ok(Map.of(SiteSettingService.ADMIN_LOGIN_PATH, path));
+    }
+
     @PutMapping("/mail-settings")
     public Result<Map<String, String>> saveMailSettings(@AuthenticationPrincipal BlogPrincipal principal,
                                                         @RequestBody Map<String, String> payload) {

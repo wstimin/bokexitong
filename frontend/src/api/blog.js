@@ -57,6 +57,7 @@ export const adminApi = {
   saveSettings: (data) => http.put('/admin/settings', data),
   siteSettings: () => http.get('/admin/site-settings'),
   saveSiteSettings: (data) => http.put('/admin/site-settings', data),
+  saveAdminLoginPath: (data) => http.put('/admin/site-settings/admin-login-path', data),
   mailSettings: () => http.get('/admin/mail-settings'),
   saveMailSettings: (data) => http.put('/admin/mail-settings', data),
   testMail: (data) => http.post('/admin/mail-settings/test-mail', data),

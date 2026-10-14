@@ -12,7 +12,6 @@ const routes = [
   { path: '/create', redirect: '/user' },
   { path: '/user', component: () => import('../views/portal/UserCenter.vue'), meta: { requiresAuth: true, requiresUser: true } },
   { path: '/login', component: () => import('../views/LoginView.vue'), meta: { loginType: 'USER' } },
-  { path: '/admin/login', component: () => import('../views/LoginView.vue'), meta: { loginType: 'ADMIN' } },
   {
     path: '/admin',
     component: () => import('../views/admin/AdminLayout.vue'),
@@ -72,15 +71,17 @@ router.beforeEach(async (to) => {
     return '/install'
   }
 
-  await site.loadSite()
+  // Login entry checks must always use the server value. This prevents an old
+  // custom path cached in another tab or browser session from remaining usable.
+  const siteLoaded = await site.loadSite(Boolean(to.meta.dynamicAdminLogin))
+  if (to.meta.dynamicAdminLogin && siteLoaded === false) {
+    return '/'
+  }
   const adminLoginPath = site.adminLoginPath || '/admin/login'
   if (to.meta.dynamicAdminLogin) {
     if (to.path === adminLoginPath) {
       return auth.isAdminLogin ? '/admin/dashboard' : undefined
     }
-    return '/'
-  }
-  if (to.path === '/admin/login' && adminLoginPath !== '/admin/login') {
     return '/'
   }
   if (to.path === '/login' && auth.isUserLogin) {

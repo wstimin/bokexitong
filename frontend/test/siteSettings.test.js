@@ -29,17 +29,35 @@ test('hero style exposes normalized CSS variables', () => {
   })
 })
 
-test('admin logout and settings save use the configured login path', async () => {
+test('admin login path uses a dedicated save action and hard redirect', async () => {
   const layoutSource = await readSource('../src/views/admin/AdminLayout.vue')
   const settingSource = await readSource('../src/views/admin/SiteSetting.vue')
   const storeSource = await readSource('../src/stores/site.js')
+  const apiSource = await readSource('../src/api/blog.js')
 
   assert.match(layoutSource, /router\.push\(site\.adminLoginPath \|\| '\/admin\/login'\)/)
   assert.match(settingSource, /site\.setAdminLoginPath\(form\.adminLoginPath\)/)
-  assert.match(settingSource, /const previousAdminLoginPath = savedAdminLoginPath\.value/)
+  assert.match(settingSource, /delete payload\.adminLoginPath/)
+  assert.match(settingSource, /adminApi\.saveAdminLoginPath\(\{ adminLoginPath: form\.adminLoginPath \}\)/)
   assert.match(settingSource, /auth\.logout\('admin'\)/)
-  assert.match(settingSource, /await router\.replace\(nextAdminLoginPath\)/)
+  assert.match(settingSource, /window\.location\.replace\(nextAdminLoginPath\)/)
+  assert.match(apiSource, /saveAdminLoginPath: \(data\) => http\.put\('\/admin\/site-settings\/admin-login-path', data\)/)
   assert.match(storeSource, /setAdminLoginPath\(path\)/)
+})
+
+test('admin login entry always refreshes server settings and rejects stale paths', async () => {
+  const routerSource = await readSource('../src/router/index.js')
+  const loginSource = await readSource('../src/views/LoginView.vue')
+  const storeSource = await readSource('../src/stores/site.js')
+
+  assert.doesNotMatch(routerSource, /path: '\/admin\/login', component:/)
+  assert.match(routerSource, /const siteLoaded = await site\.loadSite\(Boolean\(to\.meta\.dynamicAdminLogin\)\)/)
+  assert.match(routerSource, /to\.meta\.dynamicAdminLogin && siteLoaded === false/)
+  assert.match(loginSource, /const siteLoaded = await site\.loadSite\(true\)/)
+  assert.match(loginSource, /window\.location\.pathname !== site\.adminLoginPath/)
+  assert.match(loginSource, /window\.location\.replace\('\/'\)/)
+  assert.match(loginSource, /adminLoginPath: isAdminLogin\.value \? window\.location\.pathname : undefined/)
+  assert.match(storeSource, /if \(siteLoadPromise\) return siteLoadPromise/)
 })
 
 test('dark theme gives Element controls themed surfaces and readable text', async () => {

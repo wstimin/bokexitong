@@ -138,6 +138,11 @@ const canSendResetCode = computed(() => !sendingScene.value && !resetCountdown.v
 
 onMounted(() => {
   site.loadSite().catch((error) => console.error(error))
+  const updatedPath = sessionStorage.getItem('blog_admin_login_path_updated')
+  if (updatedPath && window.location.pathname === updatedPath) {
+    sessionStorage.removeItem('blog_admin_login_path_updated')
+    ElMessage.success('后台登录路径已更新，请从新入口重新登录')
+  }
 })
 
 const redirectTo = () => route.query.redirect || (isAdminLogin.value ? '/admin/dashboard' : '/user')
@@ -179,7 +184,21 @@ const login = async () => {
     ElMessage.warning('请填写账号和密码')
     return
   }
-  await auth.login({ account: form.account, password: form.password, loginType: isAdminLogin.value ? 'ADMIN' : 'USER' })
+  if (isAdminLogin.value) {
+    const siteLoaded = await site.loadSite(true)
+    if (!siteLoaded) return
+    if (window.location.pathname !== site.adminLoginPath) {
+      ElMessage.warning('该后台登录地址已失效')
+      window.location.replace('/')
+      return
+    }
+  }
+  await auth.login({
+    account: form.account,
+    password: form.password,
+    loginType: isAdminLogin.value ? 'ADMIN' : 'USER',
+    adminLoginPath: isAdminLogin.value ? window.location.pathname : undefined
+  })
   if (auth.passwordChangeRequired) ElMessage.warning('当前管理员仍在使用默认密码，请尽快修改。')
   router.push(redirectTo())
 }

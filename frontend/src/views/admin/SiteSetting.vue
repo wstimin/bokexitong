@@ -5,7 +5,7 @@
         <h2>站点设置</h2>
         <p class="section-subtitle">配置站点名称、Logo、首页文案、全站背景、SEO、登录入口和违禁词规则。</p>
       </div>
-      <button class="btn-primary" type="button" :disabled="loading" @click="save">保存设置</button>
+      <button class="btn-primary" type="button" :disabled="loading || pathSaving" @click="save">保存设置</button>
     </div>
 
     <el-form label-position="top" class="settings-form grouped-settings-form">
@@ -114,10 +114,15 @@
           <el-form-item label="页脚文字">
             <el-input v-model="form.footerText" maxlength="120" show-word-limit placeholder="例如：Copyright 2026 博客系统" />
           </el-form-item>
-          <el-form-item label="后台登录路径">
+          <el-form-item label="后台登录路径" class="field-full">
             <div class="admin-login-path-field">
-              <el-input v-model="form.adminLoginPath" maxlength="80" placeholder="例如：/admin/login 或 /manage-login" />
-              <p>修改后保存会退出当前后台会话，并自动跳转到新的登录地址。</p>
+              <div class="inline-field admin-login-path-actions">
+                <el-input v-model="form.adminLoginPath" maxlength="80" placeholder="例如：/admin/login 或 /shiyeotimin/login" @keyup.enter="saveAdminLoginPath" />
+                <button class="btn-primary" type="button" :disabled="loading || pathSaving" @click="saveAdminLoginPath">
+                  {{ pathSaving ? '正在切换…' : '保存并切换入口' }}
+                </button>
+              </div>
+              <p>此项独立保存。成功后会立即退出后台并跳转到新入口，之前的登录地址随即失效。</p>
             </div>
           </el-form-item>
           <el-form-item label="开放注册" class="field-full setting-switch-field">
@@ -138,7 +143,6 @@
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import { useRouter } from 'vue-router'
 import { adminApi, uploadApi } from '../../api/blog'
 import FileUploadButton from '../../components/FileUploadButton.vue'
 import { useAuthStore } from '../../stores/auth'
@@ -155,9 +159,8 @@ import {
 
 const site = useSiteStore()
 const auth = useAuthStore()
-const router = useRouter()
 const loading = ref(false)
-const savedAdminLoginPath = ref('/admin/login')
+const pathSaving = ref(false)
 const form = reactive({
   siteName: '',
   logoUrl: '',
@@ -211,7 +214,6 @@ const load = async () => {
     const res = await adminApi.siteSettings()
     apply(res.data)
     site.setAdminLoginPath(form.adminLoginPath)
-    savedAdminLoginPath.value = site.adminLoginPath
   } catch (error) {
     console.error(error)
   } finally {
@@ -222,27 +224,37 @@ const load = async () => {
 const save = async () => {
   loading.value = true
   try {
-    const previousAdminLoginPath = savedAdminLoginPath.value
     const payload = { ...form, allowRegister: String(form.allowRegister) }
+    const adminLoginPathDraft = payload.adminLoginPath
+    delete payload.adminLoginPath
     const res = await adminApi.saveSiteSettings(payload)
     apply(res.data)
-    site.setAdminLoginPath(form.adminLoginPath)
+    form.adminLoginPath = adminLoginPathDraft
     await site.loadSite(true)
-
-    savedAdminLoginPath.value = site.adminLoginPath
-    if (site.adminLoginPath !== previousAdminLoginPath) {
-      const nextAdminLoginPath = site.adminLoginPath
-      auth.logout('admin')
-      ElMessage.success(`后台登录路径已更新：${nextAdminLoginPath}，请重新登录`)
-      await router.replace(nextAdminLoginPath)
-      return
-    }
-
-    ElMessage.success(`站点设置已保存，后台入口：${site.adminLoginPath}`)
+    ElMessage.success('站点设置已保存；后台登录路径需使用右侧独立按钮保存')
   } catch (error) {
     console.error(error)
   } finally {
     loading.value = false
+  }
+}
+
+const saveAdminLoginPath = async () => {
+  if (pathSaving.value || loading.value) return
+  pathSaving.value = true
+  try {
+    const res = await adminApi.saveAdminLoginPath({ adminLoginPath: form.adminLoginPath })
+    const nextAdminLoginPath = res.data?.adminLoginPath
+    if (!nextAdminLoginPath) throw new Error('服务器未返回新的后台登录路径')
+    form.adminLoginPath = nextAdminLoginPath
+    site.setAdminLoginPath(nextAdminLoginPath)
+    auth.logout('admin')
+    sessionStorage.setItem('blog_admin_login_path_updated', nextAdminLoginPath)
+    window.location.replace(nextAdminLoginPath)
+  } catch (error) {
+    console.error(error)
+  } finally {
+    pathSaving.value = false
   }
 }
 

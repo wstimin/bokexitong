@@ -13,10 +13,13 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class SiteSettingServiceTest {
@@ -27,8 +30,8 @@ class SiteSettingServiceTest {
     @BeforeEach
     void setUp() {
         service = new SiteSettingService(siteSettingMapper);
-        when(siteSettingMapper.selectList(null)).thenReturn(List.of());
-        when(siteSettingMapper.selectOne(any())).thenReturn(null);
+        lenient().when(siteSettingMapper.selectList(null)).thenReturn(List.of());
+        lenient().when(siteSettingMapper.selectOne(any())).thenReturn(null);
     }
 
     @Test
@@ -47,5 +50,31 @@ class SiteSettingServiceTest {
         assertEquals("#a1b2c3", saved.get(SiteSettingService.HERO_TITLE_COLOR));
         assertEquals("#f0ebe3", saved.get(SiteSettingService.HERO_SUBTITLE_COLOR));
         assertEquals("dark", saved.get(SiteSettingService.HERO_TEXT_SHADOW));
+    }
+
+    @Test
+    void saveAdminLoginPath_shouldNormalizeAndPersistDedicatedSetting() {
+        String savedPath = service.saveAdminLoginPath("shiyeotimin/login/");
+
+        ArgumentCaptor<SiteSetting> captor = ArgumentCaptor.forClass(SiteSetting.class);
+        verify(siteSettingMapper).insert(captor.capture());
+        assertEquals("/shiyeotimin/login", savedPath);
+        assertEquals(SiteSettingService.ADMIN_LOGIN_PATH, captor.getValue().getSettingKey());
+        assertEquals("/shiyeotimin/login", captor.getValue().getSettingValue());
+    }
+
+    @Test
+    void saveAdminLoginPath_shouldRejectRoutesOwnedByTheApplication() {
+        assertThrows(IllegalArgumentException.class, () -> service.saveAdminLoginPath("/admin/settings"));
+        assertThrows(IllegalArgumentException.class, () -> service.saveAdminLoginPath("/api/admin/login"));
+        assertThrows(IllegalArgumentException.class, () -> service.saveAdminLoginPath("/about"));
+    }
+
+    @Test
+    void isCurrentAdminLoginPath_shouldRequireAnExactMatch() {
+        assertTrue(service.isCurrentAdminLoginPath("/admin/login"));
+        assertFalse(service.isCurrentAdminLoginPath("/admin/login/"));
+        assertFalse(service.isCurrentAdminLoginPath("/old-admin/login"));
+        assertFalse(service.isCurrentAdminLoginPath(null));
     }
 }
