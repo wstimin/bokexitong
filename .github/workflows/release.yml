@@ -1,0 +1,123 @@
+name: Build and publish release
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - package/update-manifest.json
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-main
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: maven
+
+      - name: Read and verify version
+        id: version
+        shell: bash
+        run: |
+          node scripts/version.mjs verify
+          version="$(node -p "require('./frontend/package.json').version")"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=v$version" >> "$GITHUB_OUTPUT"
+
+      - name: Test frontend
+        working-directory: frontend
+        run: |
+          npm ci
+          npm test
+
+      - name: Test backend
+        run: mvn --batch-mode verify
+
+      - name: Build release packages
+        shell: bash
+        run: |
+          chmod +x scripts/build-package.sh
+          scripts/build-package.sh
+
+      - name: Verify release manifest
+        env:
+          EXPECTED_VERSION: ${{ steps.version.outputs.version }}
+        shell: bash
+        run: |
+          node - <<'NODE'
+          const fs = require('node:fs')
+          const crypto = require('node:crypto')
+          const manifest = JSON.parse(fs.readFileSync('package/update-manifest.json', 'utf8'))
+          const expected = process.env.EXPECTED_VERSION
+          if (manifest.version !== expected) throw new Error(`manifest version ${manifest.version} != ${expected}`)
+          const files = {
+            docker: 'package/bokexitong-linux.tar.gz',
+            web: 'package/bokexitong-web.tar.gz'
+          }
+          for (const [type, file] of Object.entries(files)) {
+            const actual = crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex')
+            const declared = manifest.packages?.[type]?.sha256
+            if (actual !== declared) throw new Error(`${type} sha256 mismatch`)
+          }
+          NODE
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+          VERSION: ${{ steps.version.outputs.version }}
+        shell: bash
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" \
+              package/bokexitong-linux.tar.gz \
+              package/bokexitong-web.tar.gz \
+              package/update-manifest.json \
+              --clobber
+            gh release edit "$TAG" --title "$TAG" --latest
+          else
+            gh release create "$TAG" \
+              package/bokexitong-linux.tar.gz \
+              package/bokexitong-web.tar.gz \
+              package/update-manifest.json \
+              --target "$GITHUB_SHA" \
+              --title "$TAG" \
+              --generate-notes \
+              --latest
+          fi
+
+      - name: Sync compatibility manifest to main
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package/update-manifest.json
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "chore: sync v$VERSION update manifest [skip ci]"
+          git push origin HEAD:main

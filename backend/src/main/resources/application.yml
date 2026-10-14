@@ -60,7 +60,7 @@ blog:
   update:
     enabled: ${BLOG_UPDATE_ENABLED:true}
     mode: ${BLOG_UPDATE_MODE:disabled}
-    manifest-url: ${BLOG_UPDATE_MANIFEST_URL:https://raw.githubusercontent.com/wstimin/bokexitong/main/package/update-manifest.json}
+    manifest-url: ${BLOG_UPDATE_MANIFEST_URL:https://github.com/wstimin/bokexitong/releases/latest/download/update-manifest.json}
     request-path: ${BLOG_UPDATE_REQUEST_PATH:./config/update-request.json}
     status-path: ${BLOG_UPDATE_STATUS_PATH:./config/update-status.json}
   article:

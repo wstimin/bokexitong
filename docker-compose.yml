@@ -41,7 +41,7 @@ services:
       BLOG_UPDATE_MODE: docker
       BLOG_UPDATE_REQUEST_PATH: /app/config/update-request.json
       BLOG_UPDATE_STATUS_PATH: /app/config/update-status.json
-      BLOG_UPDATE_MANIFEST_URL: ${BLOG_UPDATE_MANIFEST_URL:-https://raw.githubusercontent.com/wstimin/bokexitong/main/package/update-manifest.json}
+      BLOG_UPDATE_MANIFEST_URL: ${BLOG_UPDATE_MANIFEST_URL:-https://github.com/wstimin/bokexitong/releases/latest/download/update-manifest.json}
       SPRING_MAIL_HOST: ${SPRING_MAIL_HOST:-}
       SPRING_MAIL_PORT: ${SPRING_MAIL_PORT:-587}
       SPRING_MAIL_USERNAME: ${SPRING_MAIL_USERNAME:-}
