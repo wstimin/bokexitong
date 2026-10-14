@@ -54,6 +54,8 @@ test('dark theme gives Element controls themed surfaces and readable text', asyn
   assert.match(source, /--el-table-header-bg-color: var\(--bg-tertiary\);/)
   assert.match(source, /\.el-table__empty-block \{ background-color: var\(--el-table-bg-color\); \}/)
   assert.match(source, /\.el-table \.el-loading-mask \{[\s\S]*?background-color: color-mix\(in srgb, var\(--bg-secondary\) 88%, transparent\) !important;/)
+  assert.match(source, /:root \.el-loading-mask \{[\s\S]*?background-color: color-mix\(in srgb, var\(--bg-secondary\) 88%, transparent\) !important;/)
+  assert.match(source, /\.el-loading-spinner \.path \{ stroke: var\(--accent\) !important; \}/)
   assert.match(source, /\.el-table__fixed-right-patch \{ background: var\(--el-table-header-bg-color\) !important; \}/)
 })
 

@@ -525,6 +525,13 @@ h1, h2, h3, .brand { font-family: "Playfair Display", "Songti SC", serif; }
 :root .el-table__empty-block { background-color: var(--el-table-bg-color); }
 :root .el-table__empty-text { color: var(--text-tertiary); }
 :root .el-table__fixed-right-patch { background: var(--el-table-header-bg-color) !important; }
+:root .el-loading-mask {
+  background-color: color-mix(in srgb, var(--bg-secondary) 88%, transparent) !important;
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+:root .el-loading-spinner .path { stroke: var(--accent) !important; }
+:root .el-loading-spinner .el-loading-text { color: var(--text-secondary) !important; }
 :root .el-table .el-loading-mask {
   background-color: color-mix(in srgb, var(--bg-secondary) 88%, transparent) !important;
   backdrop-filter: blur(3px);
