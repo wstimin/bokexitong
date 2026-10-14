@@ -459,13 +459,26 @@ h1, h2, h3, .brand { font-family: "Playfair Display", "Songti SC", serif; }
   border-color: var(--accent) !important;
   box-shadow: -1px 0 0 0 var(--accent) !important;
 }
-.el-table {
+:root .el-table {
   --el-table-border-color: var(--border);
-  --el-table-header-bg-color: var(--bg-secondary);
-  --el-table-tr-bg-color: transparent;
+  --el-table-bg-color: var(--bg-secondary);
+  --el-table-header-bg-color: var(--bg-tertiary);
+  --el-table-tr-bg-color: color-mix(in srgb, var(--bg-secondary) 84%, var(--bg-primary));
   --el-table-row-hover-bg-color: var(--accent-soft);
+  --el-table-current-row-bg-color: var(--accent-soft);
+  --el-table-expanded-cell-bg-color: var(--bg-secondary);
   --el-table-text-color: var(--text-secondary);
   --el-table-header-text-color: var(--text-primary);
+  background-color: var(--el-table-bg-color);
+}
+:root .el-table__body-wrapper,
+:root .el-table__empty-block { background-color: var(--el-table-bg-color); }
+:root .el-table__empty-text { color: var(--text-tertiary); }
+:root .el-table__fixed-right-patch { background: var(--el-table-header-bg-color) !important; }
+:root .el-table .el-loading-mask {
+  background-color: color-mix(in srgb, var(--bg-secondary) 88%, transparent) !important;
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
 }
 .el-dialog, .el-message-box { color: var(--text-primary); background: var(--bg-elevated) !important; border-color: var(--border-strong); box-shadow: var(--shadow-lg), var(--glow) !important; }
 .el-overlay { background-color: var(--overlay) !important; }
@@ -489,7 +502,6 @@ h1, h2, h3, .brand { font-family: "Playfair Display", "Songti SC", serif; }
   color: var(--accent) !important;
   font-weight: 800;
 }
-.el-table { --el-table-border-color: var(--border); --el-table-header-bg-color: var(--bg-secondary); --el-table-tr-bg-color: transparent; --el-table-row-hover-bg-color: var(--accent-soft); --el-table-text-color: var(--text-secondary); --el-table-header-text-color: var(--text-primary); }
 .el-pagination.is-background .btn-prev, .el-pagination.is-background .btn-next, .el-pagination.is-background .el-pager li { color: var(--text-primary); background: var(--bg-elevated) !important; border-color: var(--border); }
 .el-pagination.is-background .el-pager li.is-active { color: var(--text-inverse); background: var(--accent) !important; }
 
