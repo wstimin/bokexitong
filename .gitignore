@@ -5,6 +5,8 @@ backend/target/
 .idea/
 .vscode/
 uploads/
-package/
+package/*
+!package/README.md
+!package/update-manifest.json
 .build-package/
 docker-compose.override.yml

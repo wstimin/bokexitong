@@ -64,6 +64,8 @@ package/bokexitong-web.tar.gz
 
 其中，`bokexitong-web.tar.gz` 只用于 1Panel / 宝塔；`bokexitong-linux.tar.gz` 只用于 Linux 一键脚本。Web 包不包含 Docker Compose、MySQL、SQL 初始化文件、`.env` 或预生成运行配置。
 
+正式安装包发布在 [GitHub Releases](https://github.com/wstimin/bokexitong/releases/latest)，仓库 `package/` 目录只保留下载说明和更新清单，避免旧二进制安装包与源码版本不一致。
+
 ### 1Panel 部署步骤
 
 1. 在 1Panel 文件管理里上传 `bokexitong-web.tar.gz`。
@@ -157,7 +159,7 @@ shiye-bk ssl example.com
 - 1Panel / 宝塔 Web 包由 `web-start.sh` 托管进程，并在应用退出码为 `42` 时调用内置更新代理后重新启动。
 - 源码调试环境默认使用 `disabled` 模式，不会修改开发目录；生产部署包会自动启用对应代理。
 
-更新代理拥有替换应用文件和重启服务所需的高权限，因此只有管理员接口能够创建更新任务。发布新版本时必须同时发布 `package/update-manifest.json` 和其中声明的两个构建包。
+更新代理拥有替换应用文件和重启服务所需的高权限，因此只有管理员接口能够创建更新任务。发布新版本时必须更新 `package/update-manifest.json`，并在相同版本的 GitHub Release 上传其中声明的两个构建包。
 
 ## 版本迭代与推送规范
 

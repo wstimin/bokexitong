@@ -6,7 +6,7 @@ REPO_URL="${REPO_URL:-https://github.com/wstimin/bokexitong.git}"
 BRANCH="${BRANCH:-main}"
 INSTALL_DIR="${INSTALL_DIR:-/opt/bokexitong}"
 PACKAGE_URL="${PACKAGE_URL:-}"
-DEFAULT_PACKAGE_URL="https://raw.githubusercontent.com/wstimin/bokexitong/${BRANCH}/package/bokexitong-linux.tar.gz"
+DEFAULT_PACKAGE_URL="https://github.com/wstimin/bokexitong/releases/latest/download/bokexitong-linux.tar.gz"
 
 info() { printf '\033[1;34m[INFO]\033[0m %s\n' "$*"; }
 ok() { printf '\033[1;32m[ OK ]\033[0m %s\n' "$*"; }
@@ -123,15 +123,6 @@ set_env_value() {
 resolve_package_url() {
   if [ -n "$PACKAGE_URL" ]; then
     printf '%s' "$PACKAGE_URL"
-    return
-  fi
-
-  ref_api="https://api.github.com/repos/wstimin/bokexitong/git/ref/heads/${BRANCH}"
-  commit_sha="$(curl -fsSL -H 'Cache-Control: no-cache' -H 'Pragma: no-cache' "${ref_api}?cache_bust=$(date +%s)" 2>/dev/null \
-    | sed -n 's/^[[:space:]]*"sha":[[:space:]]*"\([0-9a-f]\{40\}\)".*/\1/p' \
-    | head -n 1 || true)"
-  if [ -n "$commit_sha" ]; then
-    printf 'https://raw.githubusercontent.com/wstimin/bokexitong/%s/package/bokexitong-linux.tar.gz' "$commit_sha"
     return
   fi
 

@@ -196,3 +196,46 @@ README.md
 ```
 
 不要删除或覆盖 `config/bokexitong-runtime.properties` 和 `uploads/`，否则会丢失数据库连接配置或用户上传文件。替换完成后，在 1Panel 中重启一次运行环境即可。
+
+### 推荐：通过源码安全更新到最新正式版
+
+先在 1Panel 终端进入任意目录，下载更新脚本：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/wstimin/bokexitong/main/scripts/update-1panel.sh \
+  -o /tmp/update-bokexitong-1panel.sh
+chmod 700 /tmp/update-bokexitong-1panel.sh
+```
+
+然后把下面的运行目录替换成自己的真实目录：
+
+```bash
+sudo bash /tmp/update-bokexitong-1panel.sh \
+  --app-dir /opt/1panel/apps/openresty/openresty/www/sites/你的域名/index
+```
+
+脚本会自动完成：
+
+1. 查询 GitHub 最新正式版本标签并下载源码。
+2. 使用临时 Docker 构建容器执行前端测试、生产构建和后端测试打包。
+3. 备份现有程序、`config/` 和 MySQL 数据库。
+4. 只替换 `backend/app.jar`、`frontend/dist/`、`web-start.sh` 和更新代理。
+5. 完全保留数据库、`config/` 与 `uploads/`；替换失败时自动回滚程序文件。
+
+如果数据库容器无法自动识别，可显式指定：
+
+```bash
+sudo bash /tmp/update-bokexitong-1panel.sh \
+  --app-dir /你的运行目录 \
+  --db-container 1Panel-mysql-实际容器名
+```
+
+如果已经在 1Panel 的“数据库 -> 备份”中完成了手工备份，可以跳过脚本内的数据库导出：
+
+```bash
+sudo bash /tmp/update-bokexitong-1panel.sh \
+  --app-dir /你的运行目录 \
+  --skip-db-backup
+```
+
+更新完成后，进入“网站 -> 运行环境”重启 `bokexitong`。不要重新打开安装向导，也不要重新初始化数据库。

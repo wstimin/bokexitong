@@ -6,7 +6,7 @@ REPO_URL="${REPO_URL:-https://github.com/wstimin/bokexitong.git}"
 BRANCH="${BRANCH:-main}"
 DEFAULT_INSTALL_DIR="/opt/bokexitong"
 PACKAGE_URL="${PACKAGE_URL:-}"
-DEFAULT_PACKAGE_URL="https://raw.githubusercontent.com/wstimin/bokexitong/${BRANCH}/package/bokexitong-linux.tar.gz"
+DEFAULT_PACKAGE_URL="https://github.com/wstimin/bokexitong/releases/latest/download/bokexitong-linux.tar.gz"
 
 SOURCE_PATH="${0:-}"
 if [ "${BASH_SOURCE+x}" = "x" ] && [ "${#BASH_SOURCE[@]}" -gt 0 ]; then
@@ -135,12 +135,6 @@ resolve_package_url() {
     return
   fi
 
-  commit_sha="$(resolve_latest_commit_sha)"
-  if [ -n "$commit_sha" ]; then
-    printf 'https://raw.githubusercontent.com/wstimin/bokexitong/%s/package/bokexitong-linux.tar.gz' "$commit_sha"
-    return
-  fi
-
   printf '%s' "$DEFAULT_PACKAGE_URL"
 }
 
@@ -157,7 +151,7 @@ run_latest_update_script() {
   [ -n "$commit_sha" ] || return 1
 
   latest_script_url="https://raw.githubusercontent.com/wstimin/bokexitong/${commit_sha}/scripts/menu.sh"
-  latest_package_url="https://raw.githubusercontent.com/wstimin/bokexitong/${commit_sha}/package/bokexitong-linux.tar.gz"
+  latest_package_url="$DEFAULT_PACKAGE_URL"
   latest_script="$(mktemp)"
   if ! curl -fsSL -H 'Cache-Control: no-cache' -H 'Pragma: no-cache' "$latest_script_url" -o "$latest_script"; then
     rm -f "$latest_script"
@@ -191,7 +185,7 @@ download_build_package() {
   if ! curl -fL --connect-timeout 10 --retry 2 -H 'Cache-Control: no-cache' -H 'Pragma: no-cache' "$package_request_url" -o "$tmp_file"; then
     rm -f "$tmp_file"
     rm -rf "$tmp_dir"
-    fail "构建包下载失败，请确认仓库 main 分支已上传 package/bokexitong-linux.tar.gz。"
+    fail "构建包下载失败，请确认 GitHub 最新 Release 已发布 bokexitong-linux.tar.gz。"
   fi
   tar -xzf "$tmp_file" -C "$tmp_dir"
   package_root="$tmp_dir/$APP_NAME"

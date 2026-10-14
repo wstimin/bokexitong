@@ -109,7 +109,7 @@ EOF
   linux_sha="$(sha256sum "$PACKAGE_FILE" | awk '{print $1}')"
   web_sha="$(sha256sum "$WEB_PACKAGE_FILE" | awk '{print $1}')"
   cat > "$PACKAGE_DIR/update-manifest.json" <<EOF
-{"version":"$app_version","releaseDate":"$built_at","notes":"性能、视觉体验与稳定性更新。","packages":{"docker":{"url":"https://raw.githubusercontent.com/wstimin/bokexitong/main/package/bokexitong-linux.tar.gz","sha256":"$linux_sha"},"web":{"url":"https://raw.githubusercontent.com/wstimin/bokexitong/main/package/bokexitong-web.tar.gz","sha256":"$web_sha"}}}
+{"version":"$app_version","releaseDate":"$built_at","notes":"性能、视觉体验与稳定性更新。","packages":{"docker":{"url":"https://github.com/wstimin/bokexitong/releases/download/v$app_version/bokexitong-linux.tar.gz","sha256":"$linux_sha"},"web":{"url":"https://github.com/wstimin/bokexitong/releases/download/v$app_version/bokexitong-web.tar.gz","sha256":"$web_sha"}}}
 EOF
   ok "Update manifest created: $PACKAGE_DIR/update-manifest.json"
 }
