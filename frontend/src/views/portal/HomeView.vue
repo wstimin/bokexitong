@@ -68,70 +68,62 @@
       </div>
     </section>
 
-    <main id="articles" class="shell main-grid">
-      <section>
+    <main id="articles" class="shell home-articles">
+      <section class="article-main">
         <div class="section-title article-toolbar">
           <div>
             <span class="section-kicker">LATEST STORIES</span>
             <h2>{{ activeCategoryName }}</h2>
             <p class="section-subtitle">{{ filterSummary }}，共 {{ articlePage.total }} 篇文章</p>
           </div>
-          <div class="article-search">
-            <el-input v-model="keyword" placeholder="搜索标题、摘要或正文" clearable @keyup.enter="searchArticles" @clear="searchArticles" />
-            <button class="btn-ghost" type="button" :disabled="articleLoading" @click="searchArticles">搜索</button>
-            <button v-if="hasActiveFilter" class="btn-ghost" type="button" :disabled="articleLoading" @click="resetFilters">重置</button>
-          </div>
         </div>
 
-        <div v-loading="articleLoading" class="article-grid article-results">
+        <div class="article-filterbar" role="search" aria-label="文章筛选">
+          <div class="article-search">
+            <el-input v-model="keyword" placeholder="搜索标题、摘要或正文" clearable @keyup.enter="searchArticles" @clear="searchArticles" />
+            <button class="btn-ghost filter-action" type="button" @click="searchArticles">搜索</button>
+          </div>
+
+          <label class="filter-select">
+            <span>分类</span>
+            <el-select v-model="selectedCategoryId" placeholder="全部文章" clearable @change="selectCategory">
+              <el-option label="全部文章" :value="null" />
+              <el-option v-for="item in categories" :key="item.id" :label="item.name" :value="item.id" />
+            </el-select>
+          </label>
+
+          <label class="filter-select">
+            <span>标签</span>
+            <el-select v-model="selectedTagId" placeholder="全部标签" clearable @change="selectTag">
+              <el-option label="全部标签" :value="null" />
+              <el-option v-for="tag in tags" :key="tag.id" :label="tag.name" :value="tag.id" />
+            </el-select>
+          </label>
+
+          <button v-if="hasActiveFilter" class="filter-reset" type="button" @click="resetFilters">清除筛选</button>
+          <span class="filter-status" :class="{ active: articleLoading }" aria-live="polite">
+            {{ articleLoading ? '正在更新…' : '' }}
+          </span>
+        </div>
+
+        <div class="article-results" :class="{ 'is-updating': articleLoading }" :aria-busy="articleLoading">
+          <div v-if="articleLoading && articles.length === 0" class="article-grid skeleton-grid" aria-hidden="true">
+            <div v-for="index in 4" :key="index" class="article-skeleton">
+              <span class="skeleton-cover"></span>
+              <span class="skeleton-line skeleton-line--short"></span>
+              <span class="skeleton-line"></span>
+              <span class="skeleton-line"></span>
+            </div>
+          </div>
+          <div v-else class="article-grid">
           <ArticleCard v-for="article in articles" :key="article.id" :article="article" />
+          </div>
         </div>
         <el-empty v-if="!articleLoading && articles.length === 0" description="没有找到相关文章" />
         <div v-if="articlePage.total > articlePage.size" class="pager">
           <el-pagination v-model:current-page="articlePage.current" background layout="prev, pager, next" :total="articlePage.total" :page-size="articlePage.size" @current-change="loadArticles" />
         </div>
       </section>
-
-      <aside>
-        <div class="side-panel">
-          <h3>分类</h3>
-          <el-input v-model="categoryKeyword" placeholder="搜索分类" clearable size="small" class="category-search" />
-          <div class="category-list category-scroll">
-            <button class="category-item category-button" type="button" :class="{ active: selectedCategoryId === null }" @click="selectCategory(null)">
-              <span>全部文章</span><span>{{ articlePage.total }}</span>
-            </button>
-            <button
-              v-for="item in filteredCategories"
-              :key="item.id"
-              class="category-item category-button"
-              type="button"
-              :class="{ active: selectedCategoryId === item.id }"
-              @click="selectCategory(item.id)"
-            >
-              <span>{{ item.name }}</span><span>#</span>
-            </button>
-          </div>
-          <el-empty v-if="filteredCategories.length === 0" description="暂无匹配分类" :image-size="72" />
-        </div>
-
-        <div class="side-panel">
-          <h3>标签</h3>
-          <div class="tag-row">
-            <button
-              v-for="tag in tags"
-              :key="tag.id"
-              class="anime-tag tag-button"
-              type="button"
-              :class="{ active: selectedTagId === tag.id }"
-              :style="{ color: tag.color }"
-              @click="selectTag(tag)"
-            >
-              {{ tag.name }}
-            </button>
-          </div>
-          <el-empty v-if="tags.length === 0" description="暂无标签" :image-size="72" />
-        </div>
-      </aside>
     </main>
 
     <PortalFooter />
@@ -139,7 +131,8 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue'
+import axios from 'axios'
+import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import PortalNav from '../../components/PortalNav.vue'
 import PortalFooter from '../../components/PortalFooter.vue'
 import ArticleCard from '../../components/ArticleCard.vue'
@@ -156,7 +149,6 @@ const recommendedArticles = ref([])
 const activeRecommendIndex = ref(0)
 const site = useSiteStore()
 const keyword = ref('')
-const categoryKeyword = ref('')
 const selectedCategoryId = ref(null)
 const selectedTagId = ref(null)
 const articleLoading = ref(false)
@@ -165,11 +157,6 @@ const articlePage = reactive({ current: 1, size: 9, total: 0 })
 const heroTextStyle = computed(() => createHeroTextStyle(site.heroTitleColor, site.heroSubtitleColor, site.heroTextShadow))
 const activeRecommended = computed(() => recommendedArticles.value[activeRecommendIndex.value] || {})
 const recommendCoverSrc = computed(() => normalizeAssetUrl(activeRecommended.value.coverUrl))
-const filteredCategories = computed(() => {
-  const key = categoryKeyword.value.trim().toLowerCase()
-  if (!key) return categories.value
-  return categories.value.filter((item) => item.name?.toLowerCase().includes(key))
-})
 const activeCategoryName = computed(() => {
   if (!selectedCategoryId.value) return '最新文章'
   return categories.value.find((item) => item.id === selectedCategoryId.value)?.name || '分类文章'
@@ -194,7 +181,16 @@ const loadHomeMeta = async () => {
   activeRecommendIndex.value = 0
 }
 
+let articleRequestController = null
+let articleRequestSequence = 0
+let filterTimer = null
+
 const loadArticles = async () => {
+  window.clearTimeout(filterTimer)
+  filterTimer = null
+  articleRequestController?.abort()
+  articleRequestController = new AbortController()
+  const requestSequence = ++articleRequestSequence
   articleLoading.value = true
   try {
     const res = await portalApi.articles({
@@ -203,12 +199,27 @@ const loadArticles = async () => {
       keyword: keyword.value.trim() || undefined,
       categoryId: selectedCategoryId.value || undefined,
       tagId: selectedTagId.value || undefined
-    })
+    }, { signal: articleRequestController.signal })
+    if (requestSequence !== articleRequestSequence) return
     articles.value = res.data.records || []
     articlePage.total = res.data.total || 0
+  } catch (error) {
+    if (!axios.isCancel(error) && error.code !== 'ERR_CANCELED') throw error
   } finally {
-    articleLoading.value = false
+    if (requestSequence === articleRequestSequence) {
+      articleLoading.value = false
+      articleRequestController = null
+    }
   }
+}
+
+const scheduleArticleLoad = () => {
+  window.clearTimeout(filterTimer)
+  articleRequestSequence += 1
+  articleRequestController?.abort()
+  articleRequestController = null
+  articleLoading.value = true
+  filterTimer = window.setTimeout(loadArticles, 140)
 }
 
 const searchArticles = () => {
@@ -219,13 +230,13 @@ const searchArticles = () => {
 const selectCategory = (id) => {
   selectedCategoryId.value = id
   articlePage.current = 1
-  loadArticles()
+  scheduleArticleLoad()
 }
 
-const selectTag = (tag) => {
-  selectedTagId.value = selectedTagId.value === tag.id ? null : tag.id
+const selectTag = (id) => {
+  selectedTagId.value = id
   articlePage.current = 1
-  loadArticles()
+  scheduleArticleLoad()
 }
 
 const resetFilters = () => {
@@ -252,5 +263,10 @@ onMounted(async () => {
   results
     .filter((result) => result.status === 'rejected')
     .forEach((result) => console.error(result.reason))
+})
+
+onBeforeUnmount(() => {
+  window.clearTimeout(filterTimer)
+  articleRequestController?.abort()
 })
 </script>

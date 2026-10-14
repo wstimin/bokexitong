@@ -167,9 +167,41 @@ h1, h2, h3, .brand { font-family: "Playfair Display", "Songti SC", serif; }
 .editorial-strip__inner p { justify-self: end; margin: 0; text-align: right; }
 
 .main-grid { gap: 36px; padding: 60px 0 82px; }
+.home-articles { padding-top: 54px; padding-bottom: 82px; }
+.article-main { min-width: 0; }
 .section-title h2, .toolbar h2, .chart-title h2 { color: var(--text-primary); font-family: "Playfair Display", "Songti SC", serif; }
 .section-subtitle, .meta { color: var(--text-tertiary); }
+.article-toolbar { margin-bottom: 18px; }
+.article-filterbar {
+  display: grid;
+  grid-template-columns: minmax(280px, 1fr) minmax(176px, .42fr) minmax(176px, .42fr) auto auto;
+  align-items: end;
+  gap: 12px;
+  margin-bottom: 24px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--bg-elevated) 78%, transparent);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(16px) saturate(120%);
+  -webkit-backdrop-filter: blur(16px) saturate(120%);
+}
+.article-search { display: grid; grid-template-columns: minmax(180px, 1fr) auto; gap: 8px; align-items: center; }
+.filter-action { min-height: 40px; padding-inline: 15px; }
+.filter-select { display: grid; gap: 6px; min-width: 0; }
+.filter-select > span { color: var(--text-tertiary); font-size: 10px; font-weight: 800; letter-spacing: .08em; }
+.filter-select .el-select { width: 100%; }
+.filter-reset { min-height: 40px; padding: 0 4px; border: 0; color: var(--accent); background: transparent; font-size: 12px; font-weight: 800; cursor: pointer; white-space: nowrap; }
+.filter-reset:hover { color: var(--accent-hover); }
+.filter-status { align-self: center; min-width: 66px; color: var(--text-tertiary); font-size: 11px; opacity: 0; transition: opacity .16s cubic-bezier(.4, 0, .2, 1); }
+.filter-status.active { opacity: 1; }
 .article-grid { gap: 22px; }
+.article-results { min-height: 260px; opacity: 1; transition: opacity .16s cubic-bezier(.4, 0, .2, 1); }
+.article-results.is-updating { opacity: .72; }
+.article-skeleton { overflow: hidden; border: 1px solid var(--border); border-radius: 16px; background: var(--bg-elevated); }
+.skeleton-cover { display: block; aspect-ratio: 16 / 9; background: var(--bg-tertiary); }
+.skeleton-line { display: block; height: 11px; margin: 14px 18px; border-radius: 999px; background: var(--bg-tertiary); }
+.skeleton-line--short { width: 38%; margin-top: 18px; }
 .post-card { background: var(--bg-elevated); border-color: var(--border); }
 .post-card:hover, .image-resource-card:hover, .shortcut-item:hover, .interest-card:hover { border-color: var(--border-strong); box-shadow: var(--shadow-lg), var(--glow); transform: translateY(-5px); }
 .cover { background: var(--bg-tertiary); }
@@ -381,6 +413,8 @@ h1, h2, h3, .brand { font-family: "Playfair Display", "Songti SC", serif; }
   .about-grid { gap: 30px; }
   .article-toc { position: static; }
   .update-grid { grid-template-columns: 1fr; }
+  .article-filterbar { grid-template-columns: minmax(280px, 1fr) repeat(2, minmax(160px, .45fr)); }
+  .filter-reset, .filter-status { justify-self: start; }
   .admin-sidebar { position: sticky; top: 0; z-index: 80; display: block; height: auto; padding: 12px 16px; border-right: 0; border-bottom: 1px solid var(--border); }
   .admin-sidebar .brand { margin-bottom: 10px; }
   .admin-menu { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 3px; scrollbar-width: none; }
@@ -411,6 +445,8 @@ h1, h2, h3, .brand { font-family: "Playfair Display", "Songti SC", serif; }
   .login-box > .brand { display: inline-flex; }
   .update-hero { grid-template-columns: 1fr; }
   .version-orbit { width: 150px; height: 150px; }
+  .article-filterbar { grid-template-columns: 1fr 1fr; }
+  .article-search { grid-column: 1 / -1; }
 }
 
 @media (max-width: 640px) {
@@ -441,6 +477,8 @@ h1, h2, h3, .brand { font-family: "Playfair Display", "Songti SC", serif; }
   .admin-header .hero-actions .btn-ghost { flex: 1; padding-inline: 10px; }
   .system-facts { grid-template-columns: 1fr; }
   .update-actions { align-items: stretch; flex-direction: column; }
+  .article-filterbar { grid-template-columns: 1fr; padding: 12px; }
+  .article-search { grid-column: auto; }
 }
 
 @media (prefers-reduced-motion: reduce) {

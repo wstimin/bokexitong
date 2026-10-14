@@ -20,7 +20,7 @@ export const portalApi = {
   version: () => http.get('/portal/version'),
   home: () => http.get('/portal/home'),
   taxonomies: () => http.get('/portal/taxonomies'),
-  articles: (params) => http.get('/portal/articles', { params }),
+  articles: (params, config = {}) => http.get('/portal/articles', { ...config, params }),
   detail: (id) => http.get(`/portal/articles/${id}`),
   articleContext: (id) => http.get(`/portal/articles/${id}/context`)
 }

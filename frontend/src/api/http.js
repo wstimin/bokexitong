@@ -42,6 +42,10 @@ http.interceptors.request.use((config) => {
 http.interceptors.response.use(
   (response) => response.data,
   (error) => {
+    // A superseded filter request is expected and must never surface as an error toast.
+    if (axios.isCancel(error) || error.code === 'ERR_CANCELED') {
+      return Promise.reject(error)
+    }
     const status = error.response?.status
     const silentError = error.config?.silentError === true
     const silentRestartError = error.config?.silentRestartError === true
