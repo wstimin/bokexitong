@@ -6,6 +6,11 @@ import {
   normalizeHeroColor,
   normalizeHeroTextShadow
 } from '../src/utils/heroAppearance.js'
+import {
+  adminBasePathFromLogin,
+  adminPagePath,
+  isAdminPagePath
+} from '../src/utils/adminPath.js'
 
 const readSource = (relativePath) => readFile(new URL(relativePath, import.meta.url), 'utf8')
 
@@ -51,13 +56,24 @@ test('admin login entry always refreshes server settings and rejects stale paths
   const storeSource = await readSource('../src/stores/site.js')
 
   assert.doesNotMatch(routerSource, /path: '\/admin\/login', component:/)
-  assert.match(routerSource, /const siteLoaded = await site\.loadSite\(Boolean\(to\.meta\.dynamicAdminLogin\)\)/)
-  assert.match(routerSource, /to\.meta\.dynamicAdminLogin && siteLoaded === false/)
+  assert.doesNotMatch(routerSource, /path: '\/admin',/)
+  assert.match(routerSource, /path: '\/:adminLoginBase\(\.\*\)\/login'/)
+  assert.match(routerSource, /path: '\/:adminBase\(\.\*\)'/)
+  assert.match(routerSource, /const checksAdminRoute = Boolean\(to\.meta\.dynamicAdminLogin \|\| to\.meta\.dynamicAdminArea\)/)
+  assert.match(routerSource, /if \(requestedBasePath !== adminBasePath\) return '\/'/)
   assert.match(loginSource, /const siteLoaded = await site\.loadSite\(true\)/)
   assert.match(loginSource, /window\.location\.pathname !== site\.adminLoginPath/)
   assert.match(loginSource, /window\.location\.replace\('\/'\)/)
   assert.match(loginSource, /adminLoginPath: isAdminLogin\.value \? window\.location\.pathname : undefined/)
   assert.match(storeSource, /if \(siteLoadPromise\) return siteLoadPromise/)
+})
+
+test('custom login path also controls every admin page route', () => {
+  assert.equal(adminBasePathFromLogin('/shiyeotimin/login'), '/shiyeotimin')
+  assert.equal(adminPagePath('/shiyeotimin/login', 'settings'), '/shiyeotimin/settings')
+  assert.equal(adminPagePath('/private/control/login', 'users'), '/private/control/users')
+  assert.equal(isAdminPagePath('/shiyeotimin/settings', '/shiyeotimin/login'), true)
+  assert.equal(isAdminPagePath('/admin/settings', '/shiyeotimin/login'), false)
 })
 
 test('admin password dialog is readable, validates confirmation, and exposes progress', async () => {

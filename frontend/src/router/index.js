@@ -2,6 +2,17 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useSiteStore } from '../stores/site'
 import { installApi } from '../api/blog'
+import { adminBasePathFromLogin, adminPagePath } from '../utils/adminPath'
+
+const adminAreaMeta = { requiresAuth: true, requiresAdmin: true, dynamicAdminArea: true }
+const adminPageRoute = (page, component) => ({
+  path: `/:adminBase(.*)/${page}`,
+  component: () => import('../views/admin/AdminLayout.vue'),
+  meta: { ...adminAreaMeta, adminPage: page },
+  children: [
+    { path: '', component, meta: { adminPage: page } }
+  ]
+})
 
 const routes = [
   { path: '/install', component: () => import('../views/InstallView.vue') },
@@ -12,25 +23,22 @@ const routes = [
   { path: '/create', redirect: '/user' },
   { path: '/user', component: () => import('../views/portal/UserCenter.vue'), meta: { requiresAuth: true, requiresUser: true } },
   { path: '/login', component: () => import('../views/LoginView.vue'), meta: { loginType: 'USER' } },
+  { path: '/:adminLoginBase(.*)/login', component: () => import('../views/LoginView.vue'), meta: { dynamicAdminLogin: true, loginType: 'ADMIN' } },
+  adminPageRoute('dashboard', () => import('../views/admin/DashboardView.vue')),
+  adminPageRoute('settings', () => import('../views/admin/SiteSetting.vue')),
+  adminPageRoute('mail-settings', () => import('../views/admin/MailSetting.vue')),
+  adminPageRoute('system-update', () => import('../views/admin/SystemUpdate.vue')),
+  adminPageRoute('articles', () => import('../views/admin/ArticleManage.vue')),
+  adminPageRoute('taxonomies', () => import('../views/admin/TaxonomyManage.vue')),
+  adminPageRoute('images', () => import('../views/admin/ImageManage.vue')),
+  adminPageRoute('comments', () => import('../views/admin/CommentManage.vue')),
+  adminPageRoute('users', () => import('../views/admin/UserManage.vue')),
+  adminPageRoute('logs', () => import('../views/admin/OperationLog.vue')),
   {
-    path: '/admin',
-    component: () => import('../views/admin/AdminLayout.vue'),
-    meta: { requiresAuth: true, requiresAdmin: true },
-    children: [
-      { path: '', redirect: '/admin/dashboard' },
-      { path: 'dashboard', component: () => import('../views/admin/DashboardView.vue') },
-      { path: 'settings', component: () => import('../views/admin/SiteSetting.vue') },
-      { path: 'mail-settings', component: () => import('../views/admin/MailSetting.vue') },
-      { path: 'system-update', component: () => import('../views/admin/SystemUpdate.vue') },
-      { path: 'articles', component: () => import('../views/admin/ArticleManage.vue') },
-      { path: 'taxonomies', component: () => import('../views/admin/TaxonomyManage.vue') },
-      { path: 'images', component: () => import('../views/admin/ImageManage.vue') },
-      { path: 'comments', component: () => import('../views/admin/CommentManage.vue') },
-      { path: 'users', component: () => import('../views/admin/UserManage.vue') },
-      { path: 'logs', component: () => import('../views/admin/OperationLog.vue') }
-    ]
-  },
-  { path: '/:pathMatch(.*)*', component: () => import('../views/LoginView.vue'), meta: { dynamicAdminLogin: true, loginType: 'ADMIN' } }
+    path: '/:adminBase(.*)',
+    redirect: (to) => `/${to.params.adminBase}/dashboard`,
+    meta: adminAreaMeta
+  }
 ]
 
 const router = createRouter({ history: createWebHistory(), routes })
@@ -73,25 +81,28 @@ router.beforeEach(async (to) => {
 
   // Login entry checks must always use the server value. This prevents an old
   // custom path cached in another tab or browser session from remaining usable.
-  const siteLoaded = await site.loadSite(Boolean(to.meta.dynamicAdminLogin))
-  if (to.meta.dynamicAdminLogin && siteLoaded === false) {
+  const checksAdminRoute = Boolean(to.meta.dynamicAdminLogin || to.meta.dynamicAdminArea)
+  const siteLoaded = await site.loadSite(checksAdminRoute)
+  if (checksAdminRoute && siteLoaded === false) {
     return '/'
   }
   const adminLoginPath = site.adminLoginPath || '/admin/login'
+  const adminBasePath = adminBasePathFromLogin(adminLoginPath)
   if (to.meta.dynamicAdminLogin) {
     if (to.path === adminLoginPath) {
-      return auth.isAdminLogin ? '/admin/dashboard' : undefined
+      return auth.isAdminLogin ? adminPagePath(adminLoginPath, 'dashboard') : undefined
     }
     return '/'
   }
   if (to.path === '/login' && auth.isUserLogin) {
     return '/user'
   }
-  if (to.path === adminLoginPath && auth.isAdminLogin) {
-    return '/admin/dashboard'
-  }
-  if (to.meta.requiresAdmin && !auth.isAdminLogin) {
-    return { path: adminLoginPath, query: { redirect: to.fullPath } }
+  if (to.meta.requiresAdmin) {
+    const requestedBasePath = `/${String(to.params.adminBase || '').replace(/^\/+|\/+$/g, '')}`
+    if (requestedBasePath !== adminBasePath) return '/'
+    if (!auth.isAdminLogin) {
+      return { path: adminLoginPath, query: { redirect: to.fullPath } }
+    }
   }
   if (to.meta.requiresUser && !auth.isUserLogin) {
     return { path: '/login', query: { redirect: to.fullPath } }

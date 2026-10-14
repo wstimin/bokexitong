@@ -122,7 +122,7 @@
                   {{ pathSaving ? '正在切换…' : '保存并切换入口' }}
                 </button>
               </div>
-              <p>此项独立保存。成功后会立即退出后台并跳转到新入口，之前的登录地址随即失效。</p>
+              <p>此项独立保存且必须以 /login 结尾。保存后登录页和全部后台页面都会切换到新前缀，旧入口与旧后台地址随即失效。</p>
             </div>
           </el-form-item>
           <el-form-item label="开放注册" class="field-full setting-switch-field">

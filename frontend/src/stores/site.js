@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { portalApi } from '../api/blog'
 import { normalizeAssetUrl } from '../utils/assets'
+import { normalizeAdminLoginPath } from '../utils/adminPath'
 import {
   DEFAULT_HERO_SUBTITLE_COLOR,
   DEFAULT_HERO_TEXT_SHADOW,
@@ -85,8 +86,7 @@ export const useSiteStore = defineStore('site', {
       this.applyHead()
     },
     setAdminLoginPath(path) {
-      const normalized = String(path || '').trim() || '/admin/login'
-      this.adminLoginPath = normalized.startsWith('/') ? normalized : `/${normalized}`
+      this.adminLoginPath = normalizeAdminLoginPath(path)
       localStorage.setItem('blog_admin_login_path', this.adminLoginPath)
     },
     async loadSite(force = false) {

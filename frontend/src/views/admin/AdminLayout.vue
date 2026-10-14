@@ -122,27 +122,28 @@ import { useAuthStore } from '../../stores/auth'
 import { useSiteStore } from '../../stores/site'
 import ThemeToggle from '../../components/ThemeToggle.vue'
 import { portalApi } from '../../api/blog'
+import { adminPagePath } from '../../utils/adminPath'
 
 const route = useRoute()
 const router = useRouter()
 const site = useSiteStore()
 const auth = useAuthStore()
 const names = {
-  '/admin/dashboard': '数据看板',
-  '/admin/settings': '站点设置',
-  '/admin/mail-settings': '邮件设置',
-  '/admin/system-update': '版本与更新',
-  '/admin/articles': '内容管理',
-  '/admin/taxonomies': '分类标签',
-  '/admin/images': '图片资源管理',
-  '/admin/comments': '评论审核',
-  '/admin/users': '用户权限',
-  '/admin/logs': '操作日志'
+  dashboard: '数据看板',
+  settings: '站点设置',
+  'mail-settings': '邮件设置',
+  'system-update': '版本与更新',
+  articles: '内容管理',
+  taxonomies: '分类标签',
+  images: '图片资源管理',
+  comments: '评论审核',
+  users: '用户权限',
+  logs: '操作日志'
 }
-const title = computed(() => names[route.path] || '后台管理')
+const title = computed(() => names[route.meta.adminPage] || '后台管理')
 const passwordVisible = ref(false)
 const passwordSaving = ref(false)
-const version = ref('1.1.16')
+const version = ref('1.1.17')
 const password = reactive({ oldPassword: '', newPassword: '', confirmPassword: '' })
 const passwordMatches = computed(() => password.newPassword === password.confirmPassword)
 const hasLetterAndNumber = computed(() => /[A-Za-z]/.test(password.newPassword) && /\d/.test(password.newPassword))
@@ -169,18 +170,19 @@ onMounted(() => {
   portalApi.version().then((res) => { version.value = res.data?.version || version.value }).catch(() => {})
 })
 
-const menuItems = [
-  { to: '/admin/dashboard', label: '数据看板' },
-  { to: '/admin/settings', label: '站点设置' },
-  { to: '/admin/mail-settings', label: '邮件设置' },
-  { to: '/admin/articles', label: '内容管理' },
-  { to: '/admin/taxonomies', label: '分类标签' },
-  { to: '/admin/images', label: '图片资源' },
-  { to: '/admin/comments', label: '评论审核' },
-  { to: '/admin/users', label: '用户权限' },
-  { to: '/admin/logs', label: '操作日志' },
-  { to: '/admin/system-update', label: '版本与更新' }
-]
+const adminPath = (page) => adminPagePath(site.adminLoginPath, page)
+const menuItems = computed(() => [
+  { to: adminPath('dashboard'), label: '数据看板' },
+  { to: adminPath('settings'), label: '站点设置' },
+  { to: adminPath('mail-settings'), label: '邮件设置' },
+  { to: adminPath('articles'), label: '内容管理' },
+  { to: adminPath('taxonomies'), label: '分类标签' },
+  { to: adminPath('images'), label: '图片资源' },
+  { to: adminPath('comments'), label: '评论审核' },
+  { to: adminPath('users'), label: '用户权限' },
+  { to: adminPath('logs'), label: '操作日志' },
+  { to: adminPath('system-update'), label: '版本与更新' }
+])
 
 const resetPasswordForm = () => {
   password.oldPassword = ''

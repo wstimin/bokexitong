@@ -108,6 +108,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { authApi } from '../api/blog'
 import { useAuthStore } from '../stores/auth'
 import { useSiteStore } from '../stores/site'
+import { adminBasePathFromLogin, adminPagePath } from '../utils/adminPath'
 
 const form = reactive({ account: '', username: '', nickname: '', email: '', code: '', password: '', confirmPassword: '' })
 const auth = useAuthStore()
@@ -145,7 +146,13 @@ onMounted(() => {
   }
 })
 
-const redirectTo = () => route.query.redirect || (isAdminLogin.value ? '/admin/dashboard' : '/user')
+const redirectTo = () => {
+  if (!isAdminLogin.value) return route.query.redirect || '/user'
+  const adminHome = adminPagePath(site.adminLoginPath, 'dashboard')
+  const requested = typeof route.query.redirect === 'string' ? route.query.redirect : ''
+  const adminBase = adminBasePathFromLogin(site.adminLoginPath)
+  return requested === adminBase || requested.startsWith(`${adminBase}/`) ? requested : adminHome
+}
 
 const setMode = (nextMode) => {
   const query = { ...route.query }

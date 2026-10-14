@@ -38,15 +38,15 @@
       <section class="admin-card dashboard-alerts">
         <div class="chart-title"><h2>待处理事项</h2></div>
         <div class="todo-list">
-          <RouterLink to="/admin/articles" class="todo-item">
+          <RouterLink :to="adminPath('articles')" class="todo-item">
             <span>待审核文章</span>
             <strong>{{ stats.pendingArticleCount || 0 }}</strong>
           </RouterLink>
-          <RouterLink to="/admin/comments" class="todo-item">
+          <RouterLink :to="adminPath('comments')" class="todo-item">
             <span>待审核评论</span>
             <strong>{{ stats.pendingCommentCount || 0 }}</strong>
           </RouterLink>
-          <RouterLink to="/admin/articles" class="todo-item">
+          <RouterLink :to="adminPath('articles')" class="todo-item">
             <span>已拒绝文章</span>
             <strong>{{ stats.rejectedArticleCount || 0 }}</strong>
           </RouterLink>
@@ -63,6 +63,8 @@ import { GridComponent, TooltipComponent } from 'echarts/components'
 import { init, use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
 import { adminApi } from '../../api/blog'
+import { useSiteStore } from '../../stores/site'
+import { adminPagePath } from '../../utils/adminPath'
 
 use([LineChart, PieChart, GridComponent, TooltipComponent, CanvasRenderer])
 
@@ -71,6 +73,8 @@ const trendRef = ref()
 const statusRef = ref()
 const categoryRef = ref()
 const charts = []
+const site = useSiteStore()
+const adminPath = (page) => adminPagePath(site.adminLoginPath, page)
 
 const statItems = computed(() => [
   { label: '文章总数', value: stats.value.articleCount || 0 },
@@ -83,15 +87,15 @@ const statItems = computed(() => [
   { label: '已发布文章', value: stats.value.publishedArticleCount || 0 }
 ])
 
-const shortcuts = [
-  { title: '站点设置', desc: '修改站点名称、首页文案和背景', to: '/admin/settings' },
-  { title: '邮件设置', desc: '配置 SMTP、发件名和验证码邮件', to: '/admin/mail-settings' },
-  { title: '图片资源', desc: '维护 Logo、横幅、封面和素材', to: '/admin/images' },
-  { title: '文章审核', desc: '审核、下架或删除用户文章', to: '/admin/articles' },
-  { title: '分类标签', desc: '整理文章分类和标签体系', to: '/admin/taxonomies' },
-  { title: '评论审核', desc: '处理待审评论和违规内容', to: '/admin/comments' },
-  { title: '用户权限', desc: '管理用户角色、状态和密码', to: '/admin/users' }
-]
+const shortcuts = computed(() => [
+  { title: '站点设置', desc: '修改站点名称、首页文案和背景', to: adminPath('settings') },
+  { title: '邮件设置', desc: '配置 SMTP、发件名和验证码邮件', to: adminPath('mail-settings') },
+  { title: '图片资源', desc: '维护 Logo、横幅、封面和素材', to: adminPath('images') },
+  { title: '文章审核', desc: '审核、下架或删除用户文章', to: adminPath('articles') },
+  { title: '分类标签', desc: '整理文章分类和标签体系', to: adminPath('taxonomies') },
+  { title: '评论审核', desc: '处理待审评论和违规内容', to: adminPath('comments') },
+  { title: '用户权限', desc: '管理用户角色、状态和密码', to: adminPath('users') }
+])
 
 const initChart = (el, option) => {
   if (!el) return

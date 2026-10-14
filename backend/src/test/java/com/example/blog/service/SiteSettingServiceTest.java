@@ -68,6 +68,8 @@ class SiteSettingServiceTest {
         assertThrows(IllegalArgumentException.class, () -> service.saveAdminLoginPath("/admin/settings"));
         assertThrows(IllegalArgumentException.class, () -> service.saveAdminLoginPath("/api/admin/login"));
         assertThrows(IllegalArgumentException.class, () -> service.saveAdminLoginPath("/about"));
+        assertThrows(IllegalArgumentException.class, () -> service.saveAdminLoginPath("/manage-login"));
+        assertThrows(IllegalArgumentException.class, () -> service.saveAdminLoginPath("/one/two/three/login"));
     }
 
     @Test

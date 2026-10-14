@@ -1,15 +1,15 @@
 import axios from 'axios'
 import { ElMessage } from 'element-plus'
+import { isAdminPagePath } from '../utils/adminPath'
 
 let unauthorizedHandler = null
 let unauthorizedNotified = false
 
 const isAdminPath = (path = '') => {
   if (!path) return false
-  if (path.startsWith('/admin')) return true
   if (path === '/login' || path === '/') return false
   const adminLoginPath = localStorage.getItem('blog_admin_login_path') || '/admin/login'
-  return path === adminLoginPath
+  return isAdminPagePath(path, adminLoginPath)
 }
 
 export const setUnauthorizedHandler = (handler) => {

@@ -275,7 +275,7 @@ public class SiteSettingService {
         if ("/".equals(trimmed) || "/login".equals(trimmed) || "/user".equals(trimmed) || "/article".equals(trimmed)) {
             return fallback == null || fallback.isBlank() ? "/admin/login" : fallback;
         }
-        if (trimmed.length() > 80 || !trimmed.matches("/[A-Za-z0-9/_-]+")) {
+        if (trimmed.length() > 80 || !trimmed.matches("/[A-Za-z0-9_-]+(?:/[A-Za-z0-9_-]+)?/login")) {
             return fallback == null || fallback.isBlank() ? "/admin/login" : fallback;
         }
         return trimmed;
@@ -292,17 +292,14 @@ public class SiteSettingService {
         while (trimmed.length() > 1 && trimmed.endsWith("/")) {
             trimmed = trimmed.substring(0, trimmed.length() - 1);
         }
-        if (trimmed.length() > 80 || !trimmed.matches("/[A-Za-z0-9_-]+(?:/[A-Za-z0-9_-]+)*")) {
-            throw new IllegalArgumentException("后台登录路径只能包含字母、数字、横线、下划线和斜杠，且不能超过 80 个字符");
+        if (trimmed.length() > 80 || !trimmed.matches("/[A-Za-z0-9_-]+(?:/[A-Za-z0-9_-]+)?/login")) {
+            throw new IllegalArgumentException("后台入口必须以 /login 结尾，支持一至两级前缀，且只能包含字母、数字、横线和下划线");
         }
         Set<String> reservedPrefixes = Set.of("/api", "/uploads", "/install", "/login", "/user", "/article", "/archive", "/about", "/create");
         for (String prefix : reservedPrefixes) {
             if (trimmed.equals(prefix) || trimmed.startsWith(prefix + "/")) {
                 throw new IllegalArgumentException("该路径与系统页面冲突，请更换后台登录路径");
             }
-        }
-        if ((trimmed.equals("/admin") || trimmed.startsWith("/admin/")) && !"/admin/login".equals(trimmed)) {
-            throw new IllegalArgumentException("自定义登录路径不能使用 /admin 管理路由前缀");
         }
         return trimmed;
     }
