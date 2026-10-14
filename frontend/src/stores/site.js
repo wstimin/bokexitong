@@ -79,10 +79,14 @@ export const useSiteStore = defineStore('site', {
       this.icpBeian = settings.icpBeian || ''
       this.footerText = settings.footerText || ''
       this.contactHtml = settings.contactHtml || ''
-      this.adminLoginPath = settings.adminLoginPath || '/admin/login'
-      localStorage.setItem('blog_admin_login_path', this.adminLoginPath)
+      this.setAdminLoginPath(settings.adminLoginPath)
       this.loaded = true
       this.applyHead()
+    },
+    setAdminLoginPath(path) {
+      const normalized = String(path || '').trim() || '/admin/login'
+      this.adminLoginPath = normalized.startsWith('/') ? normalized : `/${normalized}`
+      localStorage.setItem('blog_admin_login_path', this.adminLoginPath)
     },
     async loadSite(force = false) {
       if (this.loading || (this.loaded && !force)) return

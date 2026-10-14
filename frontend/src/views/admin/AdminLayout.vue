@@ -77,7 +77,7 @@ const names = {
 }
 const title = computed(() => names[route.path] || '后台管理')
 const passwordVisible = ref(false)
-const version = ref('1.1.3')
+const version = ref('1.1.4')
 const password = reactive({ oldPassword: '', newPassword: '' })
 
 onMounted(() => {
@@ -117,6 +117,6 @@ const changePassword = async () => {
 
 const logout = () => {
   auth.logout('admin')
-  router.push('/admin/login')
+  router.push(site.adminLoginPath || '/admin/login')
 }
 </script>

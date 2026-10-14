@@ -216,9 +216,9 @@ const save = async () => {
     const payload = { ...form, allowRegister: String(form.allowRegister) }
     const res = await adminApi.saveSiteSettings(payload)
     apply(res.data)
-    localStorage.setItem('blog_admin_login_path', form.adminLoginPath || '/admin/login')
+    site.setAdminLoginPath(form.adminLoginPath)
     await site.loadSite(true)
-    ElMessage.success('站点设置已保存')
+    ElMessage.success(`站点设置已保存，后台入口：${site.adminLoginPath}`)
   } catch (error) {
     console.error(error)
   } finally {

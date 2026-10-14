@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
+import jakarta.servlet.http.HttpServletRequest;
 
 import java.io.IOException;
 
@@ -27,6 +28,26 @@ public class PageController {
     @GetMapping("/")
     @ResponseBody
     public ResponseEntity<Resource> page() throws IOException {
+        return indexPage();
+    }
+
+    @GetMapping({
+            "/{first:[A-Za-z0-9_-]+}",
+            "/{first:[A-Za-z0-9_-]+}/{second:[A-Za-z0-9_-]+}",
+            "/{first:[A-Za-z0-9_-]+}/{second:[A-Za-z0-9_-]+}/{third:[A-Za-z0-9_-]+}"
+    })
+    @ResponseBody
+    public ResponseEntity<Resource> spaPage(HttpServletRequest request) throws IOException {
+        String path = request.getRequestURI();
+        if (path.equals("/api") || path.startsWith("/api/")
+                || path.equals("/assets") || path.startsWith("/assets/")
+                || path.equals("/uploads") || path.startsWith("/uploads/")) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+        return indexPage();
+    }
+
+    private ResponseEntity<Resource> indexPage() throws IOException {
         Resource index = resourceLoader.getResource(webRoot + "index.html");
         if (!index.exists() || !index.isReadable()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
