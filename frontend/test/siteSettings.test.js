@@ -45,6 +45,8 @@ test('dark theme gives Element controls themed surfaces and readable text', asyn
   assert.match(source, /\.el-input, \.el-textarea, \.el-select, \.el-input-number \{[\s\S]*?--el-input-text-color: var\(--text-primary\);/)
   assert.match(source, /\.el-input__inner, \.el-textarea__inner, \.el-select__selected-item \{[\s\S]*?-webkit-text-fill-color: var\(--text-primary\);/)
   assert.match(source, /\.el-input__inner::placeholder, \.el-textarea__inner::placeholder \{[\s\S]*?opacity: \.72;/)
+  assert.match(source, /\.el-select__placeholder \{[\s\S]*?color: var\(--text-primary\) !important;[\s\S]*?opacity: 1;/)
+  assert.match(source, /\.el-select__placeholder\.is-transparent \{[\s\S]*?color: var\(--text-tertiary\) !important;[\s\S]*?opacity: \.72;/)
   assert.match(source, /\.el-radio-button__inner \{[\s\S]*?background: var\(--bg-secondary\) !important;/)
   assert.match(source, /\.el-radio-button__original-radio:checked \+ \.el-radio-button__inner \{[\s\S]*?background: var\(--accent\) !important;/)
   assert.match(source, /\.el-textarea \.el-input__count[\s\S]*?color: var\(--text-tertiary\) !important;/)
@@ -53,6 +55,16 @@ test('dark theme gives Element controls themed surfaces and readable text', asyn
   assert.match(source, /\.el-table__empty-block \{ background-color: var\(--el-table-bg-color\); \}/)
   assert.match(source, /\.el-table \.el-loading-mask \{[\s\S]*?background-color: color-mix\(in srgb, var\(--bg-secondary\) 88%, transparent\) !important;/)
   assert.match(source, /\.el-table__fixed-right-patch \{ background: var\(--el-table-header-bg-color\) !important; \}/)
+})
+
+test('directional controls and multi-select tags stay readable in both themes', async () => {
+  const source = await readSource('../src/assets/theme.css')
+
+  assert.match(source, /:root \.el-select__selection \.el-tag \{[\s\S]*?background: var\(--accent-soft\) !important;[\s\S]*?border-color: var\(--border-strong\) !important;/)
+  assert.match(source, /:root \.el-select__caret,[\s\S]*?color: var\(--text-secondary\) !important;/)
+  assert.match(source, /:root \.el-input-number__increase,[\s\S]*?color: var\(--text-primary\) !important;[\s\S]*?background: var\(--bg-tertiary\) !important;/)
+  assert.match(source, /:root \.el-pagination \.btn-prev,[\s\S]*?:root \.el-pagination \.btn-next,[\s\S]*?color: var\(--text-primary\);/)
+  assert.match(source, /:root \.el-pagination \.btn-prev:disabled,[\s\S]*?color: var\(--text-tertiary\) !important;/)
 })
 
 test('recommendation card keeps its surface while only the border glow moves', async () => {

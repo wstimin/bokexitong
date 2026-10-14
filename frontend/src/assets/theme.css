@@ -450,11 +450,34 @@ h1, h2, h3, .brand { font-family: "Playfair Display", "Songti SC", serif; }
   opacity: .72;
   -webkit-text-fill-color: var(--text-tertiary);
 }
-.el-select__placeholder, .el-select__placeholder.is-transparent {
+.el-select__placeholder {
+  color: var(--text-primary) !important;
+  opacity: 1;
+  -webkit-text-fill-color: var(--text-primary);
+}
+.el-select__placeholder.is-transparent {
   color: var(--text-tertiary) !important;
   opacity: .72;
   -webkit-text-fill-color: var(--text-tertiary);
 }
+.el-select {
+  --el-select-input-color: var(--text-secondary);
+  --el-select-multiple-input-color: var(--text-primary);
+}
+:root .el-select__caret,
+:root .el-select__prefix,
+:root .el-select__suffix { color: var(--text-secondary) !important; }
+:root .el-select__wrapper.is-focused .el-select__caret { color: var(--accent) !important; }
+:root .el-select__selection .el-tag {
+  --el-tag-bg-color: var(--accent-soft);
+  --el-tag-border-color: var(--border-strong);
+  --el-tag-text-color: var(--text-primary);
+  color: var(--text-primary) !important;
+  background: var(--accent-soft) !important;
+  border-color: var(--border-strong) !important;
+}
+:root .el-select__selection .el-tag .el-tag__close { color: var(--text-secondary) !important; }
+:root .el-select__selection .el-tag .el-tag__close:hover { color: var(--text-inverse) !important; background: var(--accent) !important; }
 .el-input .el-input__count, .el-textarea .el-input__count, .el-input__count-inner {
   color: var(--text-tertiary) !important;
   background: color-mix(in srgb, var(--bg-secondary) 88%, transparent) !important;
@@ -474,6 +497,18 @@ h1, h2, h3, .brand { font-family: "Playfair Display", "Songti SC", serif; }
   border-color: var(--accent) !important;
   box-shadow: -1px 0 0 0 var(--accent) !important;
 }
+:root .el-input-number__increase,
+:root .el-input-number__decrease {
+  color: var(--text-primary) !important;
+  background: var(--bg-tertiary) !important;
+  border-color: var(--border) !important;
+}
+:root .el-input-number__increase .el-icon,
+:root .el-input-number__decrease .el-icon { color: inherit; }
+:root .el-input-number__increase:hover:not(.is-disabled),
+:root .el-input-number__decrease:hover:not(.is-disabled) { color: var(--accent) !important; background: var(--accent-soft) !important; }
+:root .el-input-number__increase.is-disabled,
+:root .el-input-number__decrease.is-disabled { color: var(--text-tertiary) !important; background: var(--bg-secondary) !important; opacity: .56; }
 :root .el-table {
   --el-table-border-color: var(--border);
   --el-table-bg-color: var(--bg-secondary);
@@ -517,8 +552,29 @@ h1, h2, h3, .brand { font-family: "Playfair Display", "Songti SC", serif; }
   color: var(--accent) !important;
   font-weight: 800;
 }
-.el-pagination.is-background .btn-prev, .el-pagination.is-background .btn-next, .el-pagination.is-background .el-pager li { color: var(--text-primary); background: var(--bg-elevated) !important; border-color: var(--border); }
-.el-pagination.is-background .el-pager li.is-active { color: var(--text-inverse); background: var(--accent) !important; }
+:root .el-pagination {
+  --el-pagination-bg-color: var(--bg-secondary);
+  --el-pagination-text-color: var(--text-secondary);
+  --el-pagination-button-color: var(--text-primary);
+  --el-pagination-button-disabled-color: var(--text-tertiary);
+  --el-pagination-button-disabled-bg-color: var(--bg-secondary);
+  --el-pagination-button-bg-color: var(--bg-elevated);
+  --el-pagination-hover-color: var(--accent);
+}
+:root .el-pagination .btn-prev,
+:root .el-pagination .btn-next,
+:root .el-pagination .el-pager li { color: var(--text-primary); background: var(--bg-elevated) !important; border: 1px solid var(--border); }
+:root .el-pagination .btn-prev .el-icon,
+:root .el-pagination .btn-next .el-icon { color: currentColor; }
+:root .el-pagination .btn-prev:hover:not(:disabled),
+:root .el-pagination .btn-next:hover:not(:disabled),
+:root .el-pagination .el-pager li:hover:not(.is-disabled) { color: var(--accent) !important; border-color: var(--border-strong); }
+:root .el-pagination.is-background .el-pager li.is-active { color: var(--text-inverse) !important; background: var(--accent) !important; border-color: var(--accent); }
+:root .el-pagination .btn-prev:disabled,
+:root .el-pagination .btn-prev.is-disabled,
+:root .el-pagination .btn-next:disabled,
+:root .el-pagination .btn-next.is-disabled,
+:root .el-pagination .el-pager li.is-disabled { color: var(--text-tertiary) !important; background: var(--bg-secondary) !important; opacity: .58; }
 
 /* Rich text composer and Quill controls */
 .article-composer, .article-composer__document, .article-composer__preview { color: var(--text-primary); }
