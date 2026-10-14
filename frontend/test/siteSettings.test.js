@@ -60,6 +60,23 @@ test('admin login entry always refreshes server settings and rejects stale paths
   assert.match(storeSource, /if \(siteLoadPromise\) return siteLoadPromise/)
 })
 
+test('admin password dialog is readable, validates confirmation, and exposes progress', async () => {
+  const layoutSource = await readSource('../src/views/admin/AdminLayout.vue')
+  const themeSource = await readSource('../src/assets/theme.css')
+
+  assert.match(layoutSource, /class="password-dialog"/)
+  assert.match(layoutSource, /append-to-body/)
+  assert.match(layoutSource, /v-model="password\.confirmPassword"/)
+  assert.match(layoutSource, /autocomplete="current-password"/)
+  assert.match(layoutSource, /autocomplete="new-password"/)
+  assert.match(layoutSource, /const passwordStrength = computed/)
+  assert.match(layoutSource, /password\.oldPassword === password\.newPassword/)
+  assert.match(layoutSource, /:disabled="!canChangePassword \|\| passwordSaving"/)
+  assert.match(themeSource, /\.el-dialog__title, \.el-message-box__title \{ color: var\(--text-primary\) !important;/)
+  assert.match(themeSource, /\.password-dialog \.el-form-item__label|\.el-dialog \.el-form-item__label/)
+  assert.match(themeSource, /\.password-dialog__tips span\.is-met/)
+})
+
 test('dark theme gives Element controls themed surfaces and readable text', async () => {
   const source = await readSource('../src/assets/theme.css')
 

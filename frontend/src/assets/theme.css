@@ -538,6 +538,50 @@ h1, h2, h3, .brand { font-family: "Playfair Display", "Songti SC", serif; }
   -webkit-backdrop-filter: blur(3px);
 }
 .el-dialog, .el-message-box { color: var(--text-primary); background: var(--bg-elevated) !important; border-color: var(--border-strong); box-shadow: var(--shadow-lg), var(--glow) !important; }
+.el-dialog__title, .el-message-box__title { color: var(--text-primary) !important; }
+.el-dialog__headerbtn .el-dialog__close { color: var(--text-secondary) !important; }
+.el-dialog__headerbtn:hover .el-dialog__close { color: var(--accent) !important; transform: rotate(90deg); }
+.el-dialog .el-form-item__label { color: var(--text-secondary) !important; font-weight: 750; }
+.password-dialog { overflow: hidden; border: 1px solid var(--border-strong) !important; border-radius: 18px !important; }
+.password-dialog .el-dialog__header { margin: 0; padding: 24px 26px 18px; border-bottom: 1px solid var(--border); }
+.password-dialog .el-dialog__headerbtn { top: 18px; right: 18px; width: 36px; height: 36px; border-radius: 10px; }
+.password-dialog .el-dialog__headerbtn:hover { background: var(--accent-soft); }
+.password-dialog .el-dialog__body { padding: 22px 26px 18px; }
+.password-dialog .el-dialog__footer { padding: 18px 26px 22px; border-top: 1px solid var(--border); }
+.password-dialog__heading { display: flex; align-items: center; gap: 13px; padding-right: 40px; }
+.password-dialog__icon { display: grid; width: 42px; height: 42px; flex: 0 0 42px; place-items: center; border: 1px solid var(--border-strong); border-radius: 12px; color: var(--accent); background: var(--accent-soft); box-shadow: var(--glow); }
+.password-dialog__icon svg { width: 21px; height: 21px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.password-dialog__heading h2 { margin: 0; color: var(--text-primary); font-size: 21px; line-height: 1.2; }
+.password-dialog__heading p { margin: 5px 0 0; color: var(--text-secondary); font-size: 12px; line-height: 1.55; }
+.password-dialog__form .el-form-item { margin-bottom: 17px; }
+.password-dialog__form .el-form-item:last-child { margin-bottom: 0; }
+.password-dialog__form .el-input__wrapper { min-height: 44px; border-color: var(--border) !important; background: var(--bg-secondary) !important; }
+.password-dialog__form .el-input__wrapper:hover { border-color: var(--border-strong) !important; background: var(--bg-tertiary) !important; }
+.password-dialog__form .el-input__wrapper.is-focus { border-color: var(--accent) !important; box-shadow: 0 0 0 3px var(--accent-soft) !important; }
+.password-dialog__form .el-input__password { color: var(--text-secondary) !important; }
+.password-dialog__form .el-input__password:hover { color: var(--accent) !important; }
+.password-strength { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; width: 100%; margin-top: 8px; color: var(--text-tertiary); font-size: 11px; }
+.password-strength__track { height: 4px; overflow: hidden; border-radius: 999px; background: var(--bg-tertiary); }
+.password-strength__track span { display: block; height: 100%; border-radius: inherit; transition: width .35s cubic-bezier(.4, 0, .2, 1), background .35s cubic-bezier(.4, 0, .2, 1); }
+.password-strength__track .is-weak { background: var(--danger); }
+.password-strength__track .is-medium { background: var(--accent); }
+.password-strength__track .is-strong { background: var(--success); }
+.password-dialog__error { width: 100%; margin: 7px 0 0; color: var(--danger); font-size: 12px; line-height: 1.4; }
+.password-dialog__tips { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 18px; }
+.password-dialog__tips span { padding: 5px 9px; border: 1px solid var(--border); border-radius: 999px; color: var(--text-tertiary); background: var(--bg-secondary); font-size: 11px; font-weight: 700; }
+.password-dialog__tips span::before { margin-right: 5px; content: "○"; }
+.password-dialog__tips span.is-met { color: var(--success); border-color: color-mix(in srgb, var(--success) 42%, var(--border)); background: color-mix(in srgb, var(--success) 10%, var(--bg-secondary)); }
+.password-dialog__tips span.is-met::before { content: "✓"; }
+.password-dialog__footer { display: flex; align-items: center; justify-content: space-between; gap: 16px; text-align: left; }
+.password-dialog__footer > span { max-width: 180px; color: var(--text-tertiary); font-size: 11px; line-height: 1.5; }
+.password-dialog__footer > div { display: flex; gap: 9px; }
+@media (max-width: 560px) {
+  .password-dialog { width: calc(100vw - 28px) !important; margin: 14px auto !important; }
+  .password-dialog .el-dialog__header, .password-dialog .el-dialog__body, .password-dialog .el-dialog__footer { padding-left: 18px; padding-right: 18px; }
+  .password-dialog__footer { align-items: stretch; flex-direction: column; }
+  .password-dialog__footer > span { max-width: none; }
+  .password-dialog__footer > div { display: grid; grid-template-columns: 1fr 1fr; }
+}
 .el-overlay { background-color: var(--overlay) !important; }
 .el-popper, .el-select__popper, .el-picker__popper, .el-dropdown__popper, .el-autocomplete__popper { color: var(--text-primary); background: var(--bg-elevated) !important; border-color: var(--border) !important; box-shadow: var(--shadow-lg) !important; }
 .el-popper__arrow::before { background: var(--bg-elevated) !important; border-color: var(--border) !important; }

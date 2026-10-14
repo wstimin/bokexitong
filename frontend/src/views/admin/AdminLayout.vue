@@ -23,7 +23,7 @@
         <h1>{{ title }}</h1>
         <div class="hero-actions">
           <ThemeToggle />
-          <button class="btn-ghost" type="button" @click="passwordVisible = true">修改密码</button>
+          <button class="btn-ghost" type="button" @click="openPasswordDialog">修改密码</button>
           <RouterLink class="btn-ghost" to="/">打开前台首页</RouterLink>
           <button class="btn-ghost danger-action" type="button" @click="logout">退出登录</button>
         </div>
@@ -32,18 +32,82 @@
       <RouterView />
     </main>
 
-    <el-dialog v-model="passwordVisible" title="修改密码" width="420px">
-      <el-form label-position="top">
-        <el-form-item label="原密码">
-          <el-input v-model="password.oldPassword" type="password" show-password />
+    <el-dialog
+      v-model="passwordVisible"
+      class="password-dialog"
+      width="460px"
+      append-to-body
+      align-center
+      destroy-on-close
+      :close-on-click-modal="false"
+      @closed="resetPasswordForm"
+    >
+      <template #header>
+        <div class="password-dialog__heading">
+          <span class="password-dialog__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M7 10V8a5 5 0 0 1 10 0v2M6 10h12v10H6zM12 14v2" /></svg>
+          </span>
+          <div>
+            <h2>修改登录密码</h2>
+            <p>设置一个不易被猜到的新密码，保护后台账号安全。</p>
+          </div>
+        </div>
+      </template>
+
+      <el-form class="password-dialog__form" label-position="top" @keyup.enter="changePassword">
+        <el-form-item label="当前密码">
+          <el-input
+            v-model="password.oldPassword"
+            type="password"
+            show-password
+            autocomplete="current-password"
+            maxlength="64"
+            placeholder="请输入当前登录密码"
+          />
         </el-form-item>
         <el-form-item label="新密码">
-          <el-input v-model="password.newPassword" type="password" show-password />
+          <el-input
+            v-model="password.newPassword"
+            type="password"
+            show-password
+            autocomplete="new-password"
+            maxlength="64"
+            placeholder="至少 6 位，建议包含字母、数字和符号"
+          />
+          <div v-if="password.newPassword" class="password-strength" aria-live="polite">
+            <div class="password-strength__track"><span :style="{ width: `${passwordStrength.percent}%` }" :class="passwordStrength.className"></span></div>
+            <span>{{ passwordStrength.label }}</span>
+          </div>
+        </el-form-item>
+        <el-form-item label="确认新密码">
+          <el-input
+            v-model="password.confirmPassword"
+            type="password"
+            show-password
+            autocomplete="new-password"
+            maxlength="64"
+            placeholder="请再次输入新密码"
+          />
+          <p v-if="password.confirmPassword && !passwordMatches" class="password-dialog__error">两次输入的新密码不一致</p>
         </el-form-item>
       </el-form>
+
+      <div class="password-dialog__tips">
+        <span :class="{ 'is-met': password.newPassword.length >= 6 }">至少 6 位</span>
+        <span :class="{ 'is-met': hasLetterAndNumber }">包含字母和数字</span>
+        <span :class="{ 'is-met': hasSymbol }">包含符号更安全</span>
+      </div>
+
       <template #footer>
-        <button class="btn-ghost" type="button" @click="passwordVisible = false">取消</button>
-        <button class="btn-primary" type="button" @click="changePassword">保存</button>
+        <div class="password-dialog__footer">
+          <span>修改成功后请使用新密码登录。</span>
+          <div>
+            <button class="btn-ghost" type="button" :disabled="passwordSaving" @click="passwordVisible = false">取消</button>
+            <button class="btn-primary" type="button" :disabled="!canChangePassword || passwordSaving" @click="changePassword">
+              {{ passwordSaving ? '正在保存…' : '确认修改' }}
+            </button>
+          </div>
+        </div>
       </template>
     </el-dialog>
   </div>
@@ -77,8 +141,28 @@ const names = {
 }
 const title = computed(() => names[route.path] || '后台管理')
 const passwordVisible = ref(false)
-const version = ref('1.1.15')
-const password = reactive({ oldPassword: '', newPassword: '' })
+const passwordSaving = ref(false)
+const version = ref('1.1.16')
+const password = reactive({ oldPassword: '', newPassword: '', confirmPassword: '' })
+const passwordMatches = computed(() => password.newPassword === password.confirmPassword)
+const hasLetterAndNumber = computed(() => /[A-Za-z]/.test(password.newPassword) && /\d/.test(password.newPassword))
+const hasSymbol = computed(() => /[^A-Za-z0-9]/.test(password.newPassword))
+const passwordStrength = computed(() => {
+  let score = 0
+  if (password.newPassword.length >= 6) score += 1
+  if (password.newPassword.length >= 10) score += 1
+  if (hasLetterAndNumber.value) score += 1
+  if (hasSymbol.value) score += 1
+  if (score <= 1) return { label: '强度较弱', percent: 33, className: 'is-weak' }
+  if (score <= 3) return { label: '强度适中', percent: 66, className: 'is-medium' }
+  return { label: '强度良好', percent: 100, className: 'is-strong' }
+})
+const canChangePassword = computed(() => Boolean(
+  password.oldPassword
+  && password.newPassword.length >= 6
+  && passwordMatches.value
+  && password.oldPassword !== password.newPassword
+))
 
 onMounted(() => {
   site.loadSite().catch((error) => console.error(error))
@@ -98,20 +182,44 @@ const menuItems = [
   { to: '/admin/system-update', label: '版本与更新' }
 ]
 
+const resetPasswordForm = () => {
+  password.oldPassword = ''
+  password.newPassword = ''
+  password.confirmPassword = ''
+}
+
+const openPasswordDialog = () => {
+  resetPasswordForm()
+  passwordVisible.value = true
+}
+
 const changePassword = async () => {
   if (!password.oldPassword || !password.newPassword) {
     ElMessage.warning('请填写原密码和新密码')
     return
   }
+  if (password.newPassword.length < 6) {
+    ElMessage.warning('新密码至少需要 6 位')
+    return
+  }
+  if (!passwordMatches.value) {
+    ElMessage.warning('两次输入的新密码不一致')
+    return
+  }
+  if (password.oldPassword === password.newPassword) {
+    ElMessage.warning('新密码不能与当前密码相同')
+    return
+  }
+  passwordSaving.value = true
   try {
-    await userApi.changePassword({ ...password })
+    await userApi.changePassword({ oldPassword: password.oldPassword, newPassword: password.newPassword })
     auth.clearPasswordRequired()
-    password.oldPassword = ''
-    password.newPassword = ''
     passwordVisible.value = false
     ElMessage.success('密码已修改')
   } catch (error) {
     console.error(error)
+  } finally {
+    passwordSaving.value = false
   }
 }
 
