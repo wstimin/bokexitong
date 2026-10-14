@@ -148,8 +148,8 @@ build_source() {
       has_cmd docker || fail "缺少 Docker，无法使用 docker 构建模式"
       info "使用临时 Node.js 容器构建前端……"
       docker run --rm --user "$(id -u):$(id -g)" \
-        -e HOME=/tmp -v "$SOURCE_DIR/frontend:/workspace" -w /workspace \
-        node:22-bookworm sh -c 'npm ci && npm test && npm run build && npm audit --omit=dev'
+        -e HOME=/tmp -v "$SOURCE_DIR:/workspace" -w /workspace \
+        node:22-bookworm sh -c 'cd frontend && npm ci && npm test && npm run build && npm audit --omit=dev'
       info "使用临时 Maven 容器构建后端……"
       docker run --rm --user "$(id -u):$(id -g)" \
         -e HOME=/tmp -v "$SOURCE_DIR:/workspace" -w /workspace \
