@@ -42,8 +42,22 @@ test('admin logout and settings save use the configured login path', async () =>
 test('dark theme gives Element controls themed surfaces and readable text', async () => {
   const source = await readSource('../src/assets/theme.css')
 
+  assert.match(source, /\.el-input, \.el-textarea, \.el-select, \.el-input-number \{[\s\S]*?--el-input-text-color: var\(--text-primary\);/)
+  assert.match(source, /\.el-input__inner, \.el-textarea__inner, \.el-select__selected-item \{[\s\S]*?-webkit-text-fill-color: var\(--text-primary\);/)
+  assert.match(source, /\.el-input__inner::placeholder, \.el-textarea__inner::placeholder \{[\s\S]*?opacity: \.72;/)
   assert.match(source, /\.el-radio-button__inner \{[\s\S]*?background: var\(--bg-secondary\) !important;/)
   assert.match(source, /\.el-radio-button__original-radio:checked \+ \.el-radio-button__inner \{[\s\S]*?background: var\(--accent\) !important;/)
   assert.match(source, /\.el-textarea \.el-input__count[\s\S]*?color: var\(--text-tertiary\) !important;/)
   assert.match(source, /--el-table-header-bg-color: var\(--bg-secondary\);/)
+})
+
+test('recommendation card keeps its surface while only the border glow moves', async () => {
+  const source = await readSource('../src/assets/theme.css')
+  const panelRule = source.match(/\.recommend-panel \{([\s\S]*?)\n\}/)?.[1] || ''
+  const borderRule = source.match(/\.recommend-panel::before,\s*\n\.recommend-panel::after \{([\s\S]*?)\n\}/)?.[1] || ''
+
+  assert.match(panelRule, /background: var\(--bg-elevated\);/)
+  assert.doesNotMatch(panelRule, /linear-gradient/)
+  assert.match(borderRule, /mask-composite: exclude;/)
+  assert.match(borderRule, /animation: recommend-border-flow 8s linear infinite;/)
 })

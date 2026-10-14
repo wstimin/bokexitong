@@ -153,26 +153,36 @@ h1, h2, h3, .brand { font-family: "Playfair Display", "Songti SC", serif; }
   position: relative;
   color: var(--text-primary);
   border: 1px solid transparent;
-  background:
-    linear-gradient(var(--bg-elevated), var(--bg-elevated)) padding-box,
-    linear-gradient(125deg, #ff5c8a, #ffb347 24%, #e0b83a 43%, #54d6c7 67%, #7b8cff 84%, #ff5c8a) border-box;
-  box-shadow: var(--shadow-lg), 0 0 32px rgba(255, 92, 138, .1), 0 0 54px rgba(84, 214, 199, .08);
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow-lg);
 }
-.recommend-panel::before {
+.recommend-panel::before,
+.recommend-panel::after {
   position: absolute;
   inset: -1px;
-  z-index: -1;
   border-radius: inherit;
-  background: linear-gradient(125deg, #ff5c8a, #ffb347 24%, #e0b83a 43%, #54d6c7 67%, #7b8cff 84%, #ff5c8a);
+  padding: 1px;
+  background: linear-gradient(110deg, #ff5c8a, #ffb347 20%, #e0b83a 38%, #54d6c7 61%, #7b8cff 80%, #ff5c8a);
+  background-size: 260% 260%;
   content: "";
-  opacity: .34;
-  filter: blur(13px);
+  -webkit-mask: linear-gradient(#111 0 0) content-box, linear-gradient(#111 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#111 0 0) content-box, linear-gradient(#111 0 0);
+  mask-composite: exclude;
   pointer-events: none;
-  animation: recommend-glow-shift 10s linear infinite;
+  animation: recommend-border-flow 8s linear infinite;
 }
-@keyframes recommend-glow-shift {
-  0%, 100% { filter: blur(13px) hue-rotate(0deg); opacity: .3; }
-  50% { filter: blur(16px) hue-rotate(24deg); opacity: .48; }
+.recommend-panel::before { z-index: 1; }
+.recommend-panel::after {
+  inset: -6px;
+  z-index: -1;
+  padding: 6px;
+  opacity: .34;
+  filter: blur(9px);
+}
+@keyframes recommend-border-flow {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
 }
 .recommend-track { scrollbar-width: none; }
 .recommend-track::-webkit-scrollbar { display: none; }
@@ -407,9 +417,29 @@ h1, h2, h3, .brand { font-family: "Playfair Display", "Songti SC", serif; }
 .safety-note span { color: var(--text-tertiary); font-size: 11px; line-height: 1.7; }
 
 /* Element Plus */
+.el-input, .el-textarea, .el-select, .el-input-number {
+  --el-input-text-color: var(--text-primary);
+  --el-input-placeholder-color: var(--text-tertiary);
+  --el-text-color-regular: var(--text-primary);
+  --el-text-color-placeholder: var(--text-tertiary);
+}
 .el-input__wrapper, .el-textarea__inner, .el-select__wrapper { color: var(--text-primary); background: var(--bg-secondary) !important; border-color: var(--border); backdrop-filter: blur(12px); }
 .el-input__wrapper:hover, .el-textarea__inner:hover, .el-select__wrapper:hover { background: var(--bg-elevated) !important; border-color: var(--border-strong); }
-.el-input__inner, .el-textarea__inner { color: var(--text-primary); }
+.el-input__inner, .el-textarea__inner, .el-select__selected-item {
+  color: var(--text-primary) !important;
+  opacity: 1;
+  -webkit-text-fill-color: var(--text-primary);
+}
+.el-input__inner::placeholder, .el-textarea__inner::placeholder {
+  color: var(--text-tertiary) !important;
+  opacity: .72;
+  -webkit-text-fill-color: var(--text-tertiary);
+}
+.el-select__placeholder, .el-select__placeholder.is-transparent {
+  color: var(--text-tertiary) !important;
+  opacity: .72;
+  -webkit-text-fill-color: var(--text-tertiary);
+}
 .el-input .el-input__count, .el-textarea .el-input__count, .el-input__count-inner {
   color: var(--text-tertiary) !important;
   background: color-mix(in srgb, var(--bg-secondary) 88%, transparent) !important;
@@ -657,4 +687,5 @@ h1, h2, h3, .brand { font-family: "Playfair Display", "Songti SC", serif; }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
+  .recommend-panel::before, .recommend-panel::after { background-position: 50% 50%; }
 }
