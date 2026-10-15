@@ -82,6 +82,19 @@ export const adminApi = {
   deleteComment: (id) => http.delete(`/admin/comments/${id}`)
 }
 
+export const backupApi = {
+  exportBackup: (data) => http.post('/admin/backup/export', data, { responseType: 'blob', timeout: 0 }),
+  beginUpload: (data) => http.post('/admin/backup/uploads', data),
+  uploadChunk: (uploadId, index, file) => {
+    const form = new FormData()
+    form.append('file', file, `backup.part-${index}`)
+    return http.post(`/admin/backup/uploads/${uploadId}/chunks`, form, { params: { index }, timeout: 0 })
+  },
+  inspectUpload: (uploadId, data) => http.post(`/admin/backup/uploads/${uploadId}/inspect`, data, { timeout: 0 }),
+  restoreUpload: (uploadId, data) => http.post(`/admin/backup/uploads/${uploadId}/restore`, data, { timeout: 0 }),
+  cancelUpload: (uploadId) => http.delete(`/admin/backup/uploads/${uploadId}`, { silentError: true })
+}
+
 export const commentApi = {
   page: (params) => http.get('/comments', { params }),
   save: (data) => http.post('/comments', data)

@@ -133,6 +133,7 @@ const names = {
   settings: '站点设置',
   'mail-settings': '邮件设置',
   'system-update': '版本与更新',
+  backup: '备份与恢复',
   articles: '内容管理',
   taxonomies: '分类标签',
   images: '图片资源管理',
@@ -143,7 +144,7 @@ const names = {
 const title = computed(() => names[route.meta.adminPage] || '后台管理')
 const passwordVisible = ref(false)
 const passwordSaving = ref(false)
-const version = ref('1.1.32')
+const version = ref('1.1.33')
 const password = reactive({ oldPassword: '', newPassword: '', confirmPassword: '' })
 const passwordMatches = computed(() => password.newPassword === password.confirmPassword)
 const hasLetterAndNumber = computed(() => /[A-Za-z]/.test(password.newPassword) && /\d/.test(password.newPassword))
@@ -181,6 +182,7 @@ const menuItems = computed(() => [
   { to: adminPath('comments'), label: '评论审核' },
   { to: adminPath('users'), label: '用户权限' },
   { to: adminPath('logs'), label: '操作日志' },
+  { to: adminPath('backup'), label: '备份恢复' },
   { to: adminPath('system-update'), label: '版本与更新' }
 ])
 

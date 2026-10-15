@@ -28,6 +28,7 @@ const routes = [
   adminPageRoute('settings', () => import('../views/admin/SiteSetting.vue')),
   adminPageRoute('mail-settings', () => import('../views/admin/MailSetting.vue')),
   adminPageRoute('system-update', () => import('../views/admin/SystemUpdate.vue')),
+  adminPageRoute('backup', () => import('../views/admin/BackupRestore.vue')),
   adminPageRoute('articles', () => import('../views/admin/ArticleManage.vue')),
   adminPageRoute('taxonomies', () => import('../views/admin/TaxonomyManage.vue')),
   adminPageRoute('images', () => import('../views/admin/ImageManage.vue')),

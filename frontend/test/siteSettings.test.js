@@ -196,6 +196,22 @@ test('welcome access resolves before the portal mounts and its full border carri
   assert.doesNotMatch(gateSource, /@keyframes welcome-border-flow \{ to \{ transform: rotate\(360deg\); \} \}/)
 })
 
+test('portable backup UI includes chunked restore, integrity inspection, and image preservation messaging', async () => {
+  const apiSource = await readSource('../src/api/blog.js')
+  const routerSource = await readSource('../src/router/index.js')
+  const layoutSource = await readSource('../src/views/admin/AdminLayout.vue')
+  const backupSource = await readSource('../src/views/admin/BackupRestore.vue')
+
+  assert.match(apiSource, /export const backupApi = \{/)
+  assert.match(apiSource, /uploadChunk:[\s\S]*?backup\.part-/)
+  assert.match(routerSource, /adminPageRoute\('backup',[\s\S]*?BackupRestore\.vue/)
+  assert.match(layoutSource, /label: '备份恢复'/)
+  assert.match(backupSource, /const CHUNK_SIZE = 5 \* 1024 \* 1024/)
+  assert.match(backupSource, /完整性校验通过/)
+  assert.match(backupSource, /上传到本站的本地图片和附件会完整进入备份包/)
+  assert.match(backupSource, /confirmation\.value !== '确认恢复'/)
+})
+
 test('recommendation card keeps its surface while only the border glow moves', async () => {
   const source = await readSource('../src/assets/theme.css')
   const panelRule = source.match(/\.recommend-panel \{([\s\S]*?)\n\}/)?.[1] || ''

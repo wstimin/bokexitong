@@ -421,7 +421,7 @@ public class SiteSettingService {
         }
     }
 
-    private void invalidateCache() {
+    public void invalidateCache() {
         cacheExpiresAt = 0L;
     }
 }
